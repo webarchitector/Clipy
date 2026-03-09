@@ -16,11 +16,7 @@ import RealmSwift
 final class CPYUtilities {
 
     static func initSDKs() {
-        // Fabric
         AppEnvironment.current.defaults.register(defaults: ["NSApplicationCrashOnExceptions": true])
-        guard AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.collectCrashReport) else { return }
-        // TODO: - Migrate Firebase Crashlytics
-        CPYUtilities.sendCustomLog(with: "applicationDidFinishLaunching")
     }
 
     static func registerUserDefaultKeys() {
@@ -35,7 +31,6 @@ final class CPYUtilities {
         defaultValues.updateValue(AppDelegate.storeTypesDictinary(), forKey: Constants.UserDefaults.storeTypes)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.inputPasteCommand)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.reorderClipsAfterPasting)
-        defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.collectCrashReport)
 
         /* Menu */
         defaultValues.updateValue(NSNumber(value: 16), forKey: Constants.UserDefaults.menuIconSize)
@@ -57,10 +52,6 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.copySameHistory)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showColorPreviewInTheMenu)
 
-        /* Updates */
-        defaultValues.updateValue(NSNumber(value: true), forKey: Constants.Update.enableAutomaticCheck)
-        defaultValues.updateValue(NSNumber(value: 86400), forKey: Constants.Update.checkInterval)
-
         /* Beta */
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.Beta.pastePlainText)
         defaultValues.updateValue(NSNumber(value: 0), forKey: Constants.Beta.pastePlainTextModifier)
@@ -71,7 +62,6 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: false), forKey: Constants.Beta.observerScreenshot)
 
         AppEnvironment.current.defaults.register(defaults: defaultValues)
-        AppEnvironment.current.defaults.synchronize()
     }
 
     static func applicationSupportFolder() -> String {
@@ -104,7 +94,6 @@ final class CPYUtilities {
     }
 
     static func sendCustomLog(with name: String) {
-        guard AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.collectCrashReport) else { return }
-        // TODO: - Migrate Firebase Crashlytics
+        _ = name
     }
 }

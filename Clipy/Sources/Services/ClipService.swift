@@ -30,7 +30,7 @@ final class ClipService {
     func startMonitoring() {
         disposeBag = DisposeBag()
         // Pasteboard observe timer
-        Observable<Int>.interval(.microseconds(750), scheduler: scheduler)
+        Observable<Int>.interval(.milliseconds(250), scheduler: scheduler)
             .map { _ in NSPasteboard.general.changeCount }
             .withLatestFrom(cachedChangeCount.asObservable()) { ($0, $1) }
             .filter { $0 != $1 }
@@ -84,6 +84,8 @@ final class ClipService {
 
 // MARK: - Create Clip
 extension ClipService {
+    // SwiftLint misidentifies a plain guard in this method as empty enum arguments.
+    // swiftlint:disable empty_enum_arguments
     fileprivate func create() {
         lock.lock(); defer { lock.unlock() }
 
@@ -103,6 +105,7 @@ extension ClipService {
         let data = CPYClipData(pasteboard: pasteboard, types: types)
         save(with: data)
     }
+    // swiftlint:enable empty_enum_arguments
 
     func create(with image: NSImage) {
         lock.lock(); defer { lock.unlock() }
@@ -125,7 +128,7 @@ extension ClipService {
 
         // Overwrite same history
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
-        let savedHash = (isOverwriteHistory) ? data.hash : Int(arc4random() % 1000000)
+        let savedHash = (isOverwriteHistory) ? data.hash : Int.random(in: 0..<1000000)
 
         // Saved time and path
         let unixTime = Int(Date().timeIntervalSince1970)
@@ -138,7 +141,7 @@ extension ClipService {
         clip.updateTime = unixTime
         clip.primaryType = data.primaryType?.rawValue ?? ""
 
-        DispatchQueue.main.async {
+        DispatchQueue.global(qos: .userInitiated).async {
             // Save thumbnail image
             if let thumbnailImage = data.thumbnailImage {
                 PINCache.shared.setObjectAsync(thumbnailImage, forKey: "\(unixTime)", completion: nil)
@@ -149,21 +152,22 @@ extension ClipService {
                 clip.thumbnailPath = "\(unixTime)"
                 clip.isColorCode = true
             }
-            // Save Realm and .data file
-            let dispatchRealm = try! Realm()
-            if CPYUtilities.prepareSaveToPath(CPYUtilities.applicationSupportFolder()) {
-                if NSKeyedArchiver.archiveRootObject(data, toFile: savedPath) {
-                    dispatchRealm.transaction {
-                        dispatchRealm.add(clip, update: .all)
-                    }
+            // Save .data file on background thread
+            guard CPYUtilities.prepareSaveToPath(CPYUtilities.applicationSupportFolder()) else { return }
+            guard LegacyKeyedArchive.archiveRootObject(data, toFile: savedPath) else { return }
+            // Realm write must happen on main thread
+            DispatchQueue.main.async {
+                let dispatchRealm = try! Realm()
+                dispatchRealm.transaction {
+                    dispatchRealm.add(clip, update: .all)
                 }
             }
         }
     }
 
     private func types(with pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
-        let types = pasteboard.types?.filter { canSave(with: $0) } ?? []
-        return NSOrderedSet(array: types).array as? [NSPasteboard.PasteboardType] ?? []
+        var seen = Set<NSPasteboard.PasteboardType>()
+        return pasteboard.types?.filter { canSave(with: $0) && seen.insert($0).inserted } ?? []
     }
 
     private func canSave(with type: NSPasteboard.PasteboardType) -> Bool {

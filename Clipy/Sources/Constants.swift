@@ -20,7 +20,6 @@ struct Constants {
         #else
             static let name = "Clipy"
         #endif
-        static let appcastURL = URL(string: "https://clipy-app.com/appcast.xml")!
     }
 
     struct Menu {
@@ -66,7 +65,6 @@ struct Constants {
         static let copySameHistory = "kCPYPrefCopySameHistroy"
         static let suppressAlertForDeleteSnippet = "kCPYSuppressAlertForDeleteSnippet"
         static let excludeApplications = "kCPYExcludeApplications"
-        static let collectCrashReport = "kCPYCollectCrashReport"
         static let showColorPreviewInTheMenu = "kCPYPrefShowColorPreviewInTheMenu"
     }
 
@@ -78,11 +76,6 @@ struct Constants {
         static let pasteAndDeleteHistory = "kCPYBetaPasteAndDeleteHistory"
         static let pasteAndDeleteHistoryModifier = "kCPYBetapasteAndDeleteHistoryModifier"
         static let observerScreenshot = "kCPYBetaObserveScreenshot"
-    }
-
-    struct Update {
-        static let enableAutomaticCheck = "kCPYEnableAutomaticCheckKey"
-        static let checkInterval = "kCPYUpdateCheckIntervalKey"
     }
 
     struct Notification {

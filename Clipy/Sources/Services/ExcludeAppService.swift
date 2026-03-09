@@ -71,9 +71,9 @@ extension ExcludeAppService {
     }
 
     private func save() {
-        let data = applications.archive()
-        AppEnvironment.current.defaults.set(data, forKey: Constants.UserDefaults.excludeApplications)
-        AppEnvironment.current.defaults.synchronize()
+        if let data = applications.archive() {
+            AppEnvironment.current.defaults.set(data, forKey: Constants.UserDefaults.excludeApplications)
+        }
     }
 }
 
@@ -99,7 +99,7 @@ extension ExcludeAppService {
 
         // MARK: - Excluded
         func isExcluded(applications: [CPYAppInfo]) -> Bool {
-            return !applications.filter { macApplicationIdentifiers.contains($0.identifier) }.isEmpty
+            return applications.contains { macApplicationIdentifiers.contains($0.identifier) }
         }
 
     }

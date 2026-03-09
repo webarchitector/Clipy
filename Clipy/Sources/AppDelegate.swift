@@ -11,7 +11,7 @@
 //
 
 import Cocoa
-import Sparkle
+import ServiceManagement
 import RxCocoa
 import RxSwift
 import LoginServiceKit
@@ -19,7 +19,43 @@ import Magnet
 import Screeen
 import RxScreeen
 import RealmSwift
-import LetsMove
+
+private enum NetworkIsolation {
+    private static let blockedSchemes = Set(["ftp", "ftps", "http", "https", "ws", "wss"])
+
+    static func configureProcess() {
+        setenv("REALM_DISABLE_ANALYTICS", "1", 1)
+        setenv("REALM_DISABLE_UPDATE_CHECKER", "1", 1)
+        URLCache.shared.removeAllCachedResponses()
+        URLCache.shared.memoryCapacity = 0
+        URLCache.shared.diskCapacity = 0
+        _ = URLProtocol.registerClass(RemoteNetworkBlockerURLProtocol.self)
+    }
+
+    static func shouldBlock(_ url: URL?) -> Bool {
+        guard let scheme = url?.scheme?.lowercased() else { return false }
+        return blockedSchemes.contains(scheme)
+    }
+}
+
+private final class RemoteNetworkBlockerURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool {
+        NetworkIsolation.shouldBlock(request.url)
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        let error = NSError(domain: NSURLErrorDomain,
+                            code: NSURLErrorDataNotAllowed,
+                            userInfo: [NSLocalizedDescriptionKey: UpdateService.disabledMessage])
+        client?.urlProtocol(self, didFailWithError: error)
+    }
+
+    override func stopLoading() {}
+}
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSMenuItemValidation {
@@ -27,6 +63,12 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     // MARK: - Properties
     let screenshotObserver = ScreenShotObserver()
     let disposeBag = DisposeBag()
+    private var isSyncingLoginItemPreference = false
+
+    override init() {
+        NetworkIsolation.configureProcess()
+        super.init()
+    }
 
     // MARK: - Init
     override func awakeFromNib() {
@@ -84,7 +126,6 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             if alert.suppressionButton?.state == NSControl.StateValue.on {
                 AppEnvironment.current.defaults.set(false, forKey: Constants.UserDefaults.showAlertBeforeClearHistory)
             }
-            AppEnvironment.current.defaults.synchronize()
         }
 
         AppEnvironment.current.clipService.clearAll()
@@ -140,27 +181,124 @@ class AppDelegate: NSObject, NSMenuItemValidation {
 
         //  Launch on system startup
         if alert.runModal() == NSApplication.ModalResponse.alertFirstButtonReturn {
-            AppEnvironment.current.defaults.set(true, forKey: Constants.UserDefaults.loginItem)
-            AppEnvironment.current.defaults.synchronize()
+            setStoredLoginItemState(true)
             reflectLoginItemState()
         }
         // Do not show this message again
         if alert.suppressionButton?.state == NSControl.StateValue.on {
             AppEnvironment.current.defaults.set(true, forKey: Constants.UserDefaults.suppressAlertForLoginItem)
-            AppEnvironment.current.defaults.synchronize()
         }
     }
 
     private func toggleAddingToLoginItems(_ isEnable: Bool) {
+        if #available(macOS 13.0, *) {
+            guard updateMainAppLoginItemState(to: isEnable) else {
+                syncStoredLoginItemState()
+                return
+            }
+            syncStoredLoginItemState()
+            return
+        }
+
+        guard updateLegacyLoginItemState(to: isEnable) else {
+            syncStoredLoginItemState()
+            return
+        }
+        syncStoredLoginItemState()
+    }
+
+    private func updateLegacyLoginItemState(to isEnabled: Bool) -> Bool {
         let appPath = Bundle.main.bundlePath
         LoginServiceKit.removeLoginItems(at: appPath)
-        guard isEnable else { return }
-        LoginServiceKit.addLoginItems(at: appPath)
+        guard isEnabled else { return true }
+        return LoginServiceKit.addLoginItems(at: appPath)
+    }
+
+    @available(macOS 13.0, *)
+    private func updateMainAppLoginItemState(to isEnabled: Bool) -> Bool {
+        let service = SMAppService.mainApp
+
+        if !isEnabled {
+            let removedLegacy = updateLegacyLoginItemState(to: false)
+            do {
+                try service.unregister()
+                return true
+            } catch let error as NSError {
+                if error.code == kSMErrorJobNotFound {
+                    return removedLegacy
+                }
+                CPYUtilities.sendCustomLog(with: "Failed to unregister main app login item: \(error)")
+                return false
+            }
+        }
+
+        _ = updateLegacyLoginItemState(to: false)
+
+        do {
+            try service.register()
+        } catch let error as NSError {
+            if error.code == kSMErrorAlreadyRegistered {
+                return true
+            }
+            // Unsigned local debug builds cannot use SMAppService; keep a legacy fallback.
+            if error.code == kSMErrorInvalidSignature {
+                return updateLegacyLoginItemState(to: true)
+            }
+
+            CPYUtilities.sendCustomLog(with: "Failed to register main app login item: \(error)")
+            if service.status == .requiresApproval || error.code == kSMErrorLaunchDeniedByUser {
+                showLoginItemApprovalAlert()
+            }
+            return false
+        }
+
+        if service.status == .requiresApproval {
+            showLoginItemApprovalAlert()
+        }
+        return true
     }
 
     private func reflectLoginItemState() {
         let isInLoginItems = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.loginItem)
         toggleAddingToLoginItems(isInLoginItems)
+    }
+
+    private func syncStoredLoginItemState() {
+        setStoredLoginItemState(systemLoginItemEnabledState())
+    }
+
+    private func setStoredLoginItemState(_ isEnabled: Bool) {
+        guard AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.loginItem) != isEnabled else { return }
+
+        isSyncingLoginItemPreference = true
+        AppEnvironment.current.defaults.set(isEnabled, forKey: Constants.UserDefaults.loginItem)
+        isSyncingLoginItemPreference = false
+    }
+
+    private func systemLoginItemEnabledState() -> Bool {
+        let legacyLoginItemEnabled = LoginServiceKit.isExistLoginItems(at: Bundle.main.bundlePath)
+
+        if #available(macOS 13.0, *) {
+            switch SMAppService.mainApp.status {
+            case .enabled, .requiresApproval:
+                return true
+            case .notRegistered, .notFound:
+                return legacyLoginItemEnabled
+            @unknown default:
+                return legacyLoginItemEnabled
+            }
+        }
+
+        return legacyLoginItemEnabled
+    }
+
+    private func showLoginItemApprovalAlert() {
+        let alert = NSAlert()
+        alert.messageText = L10n.launchOnSystemStartup
+        alert.informativeText = "Allow Clipy in System Settings > General > Login Items to finish enabling launch at login."
+        alert.addButton(withTitle: "OK")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 }
 
@@ -172,6 +310,7 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.replaceCurrent(environment: AppEnvironment.fromStorage())
         // UserDefaults
         CPYUtilities.registerUserDefaultKeys()
+        syncStoredLoginItemState()
         // SDKs
         CPYUtilities.initSDKs()
         // Check Accessibility Permission
@@ -181,12 +320,6 @@ extension AppDelegate: NSApplicationDelegate {
         if !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.loginItem) && !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.suppressAlertForLoginItem) {
             promptToAddLoginItems()
         }
-
-        // Sparkle
-        let updater = SUUpdater.shared()
-        updater?.feedURL = Constants.Application.appcastURL
-        updater?.automaticallyChecksForUpdates = AppEnvironment.current.defaults.bool(forKey: Constants.Update.enableAutomaticCheck)
-        updater?.updateCheckInterval = TimeInterval(AppEnvironment.current.defaults.integer(forKey: Constants.Update.checkInterval))
 
         // Binding Events
         bind()
@@ -200,13 +333,6 @@ extension AppDelegate: NSApplicationDelegate {
         // Managers
         AppEnvironment.current.menuManager.setup()
     }
-
-    func applicationWillFinishLaunching(_ notification: Notification) {
-        #if RELEASE
-            PFMoveToApplicationsFolderIfNecessary()
-        #endif
-    }
-
 }
 
 // MARK: - Bind
@@ -216,7 +342,8 @@ private extension AppDelegate {
         AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.UserDefaults.loginItem, retainSelf: false)
             .compactMap { $0 }
             .subscribe(onNext: { [weak self] _ in
-                self?.reflectLoginItemState()
+                guard let self = self, !self.isSyncingLoginItemPreference else { return }
+                self.reflectLoginItemState()
             })
             .disposed(by: disposeBag)
         // Observe Screenshot

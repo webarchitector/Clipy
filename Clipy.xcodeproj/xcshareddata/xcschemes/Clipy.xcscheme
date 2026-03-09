@@ -20,21 +20,25 @@
                ReferencedContainer = "container:Clipy.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FAC43DD71B35D8B100C06102"
-               BuildableName = "ClipyTests.xctest"
-               BlueprintName = "ClipyTests"
-               ReferencedContainer = "container:Clipy.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Strip Non-ARM64 Slices"
+               scriptText = "&quot;${PROJECT_DIR}/Scripts/strip-non-arm64-slices.sh&quot; &quot;${TARGET_BUILD_DIR}/${WRAPPER_NAME}&quot;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "FAC43DC51B35D8B100C06102"
+                     BuildableName = "Clipy.app"
+                     BlueprintName = "Clipy"
+                     ReferencedContainer = "container:Clipy.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"
@@ -111,5 +115,23 @@
    <ArchiveAction
       buildConfiguration = "Release"
       revealArchiveInOrganizer = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Strip Non-ARM64 Slices"
+               scriptText = "&quot;${PROJECT_DIR}/Scripts/strip-non-arm64-slices.sh&quot; &quot;${TARGET_BUILD_DIR}/${WRAPPER_NAME}&quot;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "FAC43DC51B35D8B100C06102"
+                     BuildableName = "Clipy.app"
+                     BlueprintName = "Clipy"
+                     ReferencedContainer = "container:Clipy.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </ArchiveAction>
 </Scheme>

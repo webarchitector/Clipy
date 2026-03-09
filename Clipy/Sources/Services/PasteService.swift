@@ -57,7 +57,7 @@ final class PasteService {
 extension PasteService {
     func paste(with clip: CPYClip) {
         guard !clip.isInvalidated else { return }
-        guard let data = NSKeyedUnarchiver.unarchiveObject(withFile: clip.dataPath) as? CPYClipData else { return }
+        guard let data = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath) else { return }
 
         // Handling modifier actions
         let isPastePlainText = self.isPastePlainText
@@ -98,7 +98,7 @@ extension PasteService {
     func copyToPasteboard(with clip: CPYClip) {
         lock.lock(); defer { lock.unlock() }
 
-        guard let data = NSKeyedUnarchiver.unarchiveObject(withFile: clip.dataPath) as? CPYClipData else { return }
+        guard let data = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath) else { return }
 
         if isPastePlainText {
             copyToPasteboard(with: data.stringValue)
@@ -107,30 +107,40 @@ extension PasteService {
 
         let pasteboard = NSPasteboard.general
         let types = data.types
+        // Pre-compute expensive tiffRepresentation once before the loop
+        let cachedTIFFData = data.image?.tiffRepresentation
         pasteboard.declareTypes(types, owner: nil)
         types.forEach { type in
             switch type {
-            case .deprecatedString:
+            case .deprecatedString, .string:
                 let pbString = data.stringValue
-                pasteboard.setString(pbString, forType: .deprecatedString)
+                pasteboard.setString(pbString, forType: type)
             case .deprecatedRTFD:
                 guard let rtfData = data.RTFData else { return }
                 pasteboard.setData(rtfData, forType: .deprecatedRTFD)
-            case .deprecatedRTF:
+            case .deprecatedRTF, .rtf:
                 guard let rtfData = data.RTFData else { return }
-                pasteboard.setData(rtfData, forType: .deprecatedRTF)
-            case .deprecatedPDF:
+                pasteboard.setData(rtfData, forType: type)
+            case .deprecatedPDF, .pdf:
                 guard let pdfData = data.PDF, let pdfRep = NSPDFImageRep(data: pdfData) else { return }
-                pasteboard.setData(pdfRep.pdfRepresentation, forType: .deprecatedPDF)
+                pasteboard.setData(pdfRep.pdfRepresentation, forType: type)
             case .deprecatedFilenames:
                 let fileNames = data.fileNames
                 pasteboard.setPropertyList(fileNames, forType: .deprecatedFilenames)
+            case .fileURL:
+                let urls = data.fileNames.compactMap { URL(fileURLWithPath: $0) as NSURL }
+                guard !urls.isEmpty else { return }
+                pasteboard.writeObjects(urls)
             case .deprecatedURL:
                 let url = data.URLs
                 pasteboard.setPropertyList(url, forType: .deprecatedURL)
-            case .deprecatedTIFF:
-                guard let image = data.image, let imageData = image.tiffRepresentation else { return }
-                pasteboard.setData(imageData, forType: .deprecatedTIFF)
+            case .URL:
+                let urls = data.URLs.compactMap { URL(string: $0) as NSURL? }
+                guard !urls.isEmpty else { return }
+                pasteboard.writeObjects(urls)
+            case .deprecatedTIFF, .tiff, .png:
+                guard let imageData = cachedTIFFData else { return }
+                pasteboard.setData(imageData, forType: type)
             default: break
             }
         }

@@ -176,35 +176,37 @@ extension CPYSnippetsEditorWindowController {
             var options = AEXMLOptions()
             options.parserSettings.shouldTrimWhitespace = false
             let xmlDocument = try AEXMLDocument(xml: data, options: options)
-            xmlDocument[Constants.Xml.rootElement]
-                .children
-                .forEach { folderElement in
-                    let folder = CPYFolder()
-                    // Title
-                    folder.title = folderElement[Constants.Xml.titleElement].value ?? "untitled folder"
-                    // Index
-                    folder.index = folderIndex
-                    // Sync DB
-                    realm.transaction { realm.add(folder) }
-                    // Snippet
-                    var snippetIndex = 0
-                    folderElement[Constants.Xml.snippetsElement][Constants.Xml.snippetElement]
-                        .all?
-                        .forEach { snippetElement in
-                            let snippet = CPYSnippet()
-                            snippet.title = snippetElement[Constants.Xml.titleElement].value ?? "untitled snippet"
-                            snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
-                            snippet.index = snippetIndex
-                            realm.transaction { folder.snippets.append(snippet) }
-                            // Increment snippet index
-                            snippetIndex += 1
-                        }
-                    // Increment folder index
-                    folderIndex += 1
-                    // Add folder
-                    let copyFolder = folder.deepCopy()
-                    folders.append(copyFolder)
-                }
+            realm.transaction {
+                xmlDocument[Constants.Xml.rootElement]
+                    .children
+                    .forEach { folderElement in
+                        let folder = CPYFolder()
+                        // Title
+                        folder.title = folderElement[Constants.Xml.titleElement].value ?? "untitled folder"
+                        // Index
+                        folder.index = folderIndex
+                        // Sync DB
+                        realm.add(folder)
+                        // Snippet
+                        var snippetIndex = 0
+                        folderElement[Constants.Xml.snippetsElement][Constants.Xml.snippetElement]
+                            .all?
+                            .forEach { snippetElement in
+                                let snippet = CPYSnippet()
+                                snippet.title = snippetElement[Constants.Xml.titleElement].value ?? "untitled snippet"
+                                snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
+                                snippet.index = snippetIndex
+                                folder.snippets.append(snippet)
+                                // Increment snippet index
+                                snippetIndex += 1
+                            }
+                        // Increment folder index
+                        folderIndex += 1
+                        // Add folder
+                        let copyFolder = folder.deepCopy()
+                        folders.append(copyFolder)
+                    }
+            }
             outlineView.reloadData()
         } catch {
             NSSound.beep()
@@ -334,12 +336,12 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
         let pasteboardItem = NSPasteboardItem()
         if let folder = item as? CPYFolder, let index = folders.firstIndex(of: folder) {
             let draggedData = CPYDraggedData(type: .folder, folderIdentifier: folder.identifier, snippetIdentifier: nil, index: index)
-            let data = NSKeyedArchiver.archivedData(withRootObject: draggedData)
+            guard let data = LegacyKeyedArchive.archivedData(withRootObject: draggedData) else { return nil }
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))
         } else if let snippet = item as? CPYSnippet, let folder = outlineView.parent(forItem: snippet) as? CPYFolder {
             guard let index = folder.snippets.index(of: snippet) else { return nil }
             let draggedData = CPYDraggedData(type: .snippet, folderIdentifier: folder.identifier, snippetIdentifier: snippet.identifier, index: Int(index))
-            let data = NSKeyedArchiver.archivedData(withRootObject: draggedData)
+            guard let data = LegacyKeyedArchive.archivedData(withRootObject: draggedData) else { return nil }
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))
         } else {
             return nil
@@ -350,7 +352,7 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
     func outlineView(_ outlineView: NSOutlineView, validateDrop info: NSDraggingInfo, proposedItem item: Any?, proposedChildIndex index: Int) -> NSDragOperation {
         let pasteboard = info.draggingPasteboard
         guard let data = pasteboard.data(forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType)) else { return NSDragOperation() }
-        guard let draggedData = NSKeyedUnarchiver.unarchiveObject(with: data) as? CPYDraggedData else { return NSDragOperation() }
+        guard let draggedData = LegacyKeyedArchive.unarchivedObject(of: CPYDraggedData.self, from: data) else { return NSDragOperation() }
 
         switch draggedData.type {
         case .folder where item == nil:
@@ -365,7 +367,7 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
     func outlineView(_ outlineView: NSOutlineView, acceptDrop info: NSDraggingInfo, item: Any?, childIndex index: Int) -> Bool {
         let pasteboard = info.draggingPasteboard
         guard let data = pasteboard.data(forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType)) else { return false }
-        guard let draggedData = NSKeyedUnarchiver.unarchiveObject(with: data) as? CPYDraggedData else { return false }
+        guard let draggedData = LegacyKeyedArchive.unarchivedObject(of: CPYDraggedData.self, from: data) else { return false }
 
         switch draggedData.type {
         case .folder where index != draggedData.index:

@@ -116,30 +116,32 @@ extension CPYFolder {
     func remove() {
         let realm = try! Realm()
         guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: identifier) else { return }
-        folder.realm?.transaction { folder.realm?.delete(folder.snippets) }
-        folder.realm?.transaction { folder.realm?.delete(folder) }
+        folder.realm?.transaction {
+            folder.realm?.delete(folder.snippets)
+            folder.realm?.delete(folder)
+        }
     }
 }
 
 // MARK: - Migrate Index
 extension CPYFolder {
     static func rearrangesIndex(_ folders: [CPYFolder]) {
-        for (index, folder) in folders.enumerated() {
-            if folder.realm == nil { folder.index = index }
-            let realm = try! Realm()
-            guard let savedFolder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folder.identifier) else { return }
-            savedFolder.realm?.transaction {
+        let realm = try! Realm()
+        realm.transaction {
+            for (index, folder) in folders.enumerated() {
+                if folder.realm == nil { folder.index = index }
+                guard let savedFolder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folder.identifier) else { continue }
                 savedFolder.index = index
             }
         }
     }
 
     func rearrangesSnippetIndex() {
-        for (index, snippet) in snippets.enumerated() {
-            if snippet.realm == nil { snippet.index = index }
-            let realm = try! Realm()
-            guard let savedSnippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier) else { return }
-            savedSnippet.realm?.transaction {
+        let realm = try! Realm()
+        realm.transaction {
+            for (index, snippet) in snippets.enumerated() {
+                if snippet.realm == nil { snippet.index = index }
+                guard let savedSnippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier) else { continue }
                 savedSnippet.index = index
             }
         }

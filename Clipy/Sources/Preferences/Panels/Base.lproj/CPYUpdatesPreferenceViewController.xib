@@ -7,6 +7,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="CPYUpdatesPreferenceViewController" customModule="Clipy" customModuleProvider="target">
             <connections>
+                <outlet property="lastUpdateCheckTextField" destination="bfd-d7-m1a" id="AaC-cx-vhA"/>
                 <outlet property="versionTextField" destination="IJH-aY-lUJ" id="6Rg-gc-H50"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
             </connections>
@@ -20,15 +21,11 @@
                 <textField verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bfd-d7-m1a">
                     <rect key="frame" x="60" y="40" width="361" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="date" id="nG5-PB-zcE">
-                        <dateFormatter key="formatter" dateStyle="full" timeStyle="medium" id="uhI-da-0iN"/>
+                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="Not checked yet" id="nG5-PB-zcE">
                         <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" red="0.26666666666666666" green="0.26666666666666666" blue="0.26666666666666666" alpha="1" colorSpace="calibratedRGB"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
-                    <connections>
-                        <binding destination="BFl-Kb-QuK" name="value" keyPath="lastUpdateCheckDate" id="RZL-GJ-KxE"/>
-                    </connections>
                 </textField>
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bnR-ek-Gzp">
                     <rect key="frame" x="159" y="62" width="162" height="32"/>
@@ -38,7 +35,7 @@
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
-                        <action selector="checkForUpdates:" target="BFl-Kb-QuK" id="i13-OM-Vnw"/>
+                        <action selector="checkForUpdates:" target="-2" id="i13-OM-Vnw"/>
                     </connections>
                 </button>
                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="evV-Ot-cOb">
@@ -84,6 +81,5 @@
             <point key="canvasLocation" x="629" y="589"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="Z9l-MW-Uqh"/>
-        <customObject id="BFl-Kb-QuK" customClass="SUUpdater"/>
     </objects>
 </document>

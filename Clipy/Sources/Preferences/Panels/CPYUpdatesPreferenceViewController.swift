@@ -15,12 +15,29 @@ import Cocoa
 class CPYUpdatesPreferenceViewController: NSViewController {
 
     // MARK: - Properties
+    @IBOutlet private weak var lastUpdateCheckTextField: NSTextField!
     @IBOutlet private weak var versionTextField: NSTextField!
 
     // MARK: - Initialize
     override func loadView() {
         super.loadView()
         versionTextField.stringValue = "v\(Bundle.main.appVersion ?? "")"
+        lastUpdateCheckTextField.stringValue = AppEnvironment.current.updateService.statusDescription()
+        hideNetworkControls()
     }
 
+    // MARK: - Actions
+    @IBAction private func checkForUpdates(_ sender: Any?) {
+        _ = sender
+    }
+
+}
+
+private extension CPYUpdatesPreferenceViewController {
+    func hideNetworkControls() {
+        view.subviews
+            .compactMap { $0 as? NSControl }
+            .filter { $0 !== versionTextField && $0 !== lastUpdateCheckTextField }
+            .forEach { $0.isHidden = true }
+    }
 }

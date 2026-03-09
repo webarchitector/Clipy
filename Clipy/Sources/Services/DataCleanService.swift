@@ -64,14 +64,14 @@ final class DataCleanService {
         let fileManager = FileManager.default
         guard let paths = try? fileManager.contentsOfDirectory(atPath: CPYUtilities.applicationSupportFolder()) else { return }
 
-        let allClipPaths = Array(realm.objects(CPYClip.self)
+        let allClipPaths = Set(realm.objects(CPYClip.self)
             .filter { !$0.isInvalidated }
-            .compactMap { $0.dataPath.components(separatedBy: "/").last })
+            .compactMap { ($0.dataPath as NSString).lastPathComponent })
 
-        // Delete diff datas
-        DispatchQueue.main.async {
-            Set(allClipPaths).symmetricDifference(paths)
-                .map { CPYUtilities.applicationSupportFolder() + "/" + "\($0)" }
+        // Delete orphaned files not referenced by any clip
+        DispatchQueue.global(qos: .utility).async {
+            Set(paths).subtracting(allClipPaths)
+                .map { CPYUtilities.applicationSupportFolder() + "/" + $0 }
                 .forEach { CPYUtilities.deleteData(at: $0) }
         }
     }

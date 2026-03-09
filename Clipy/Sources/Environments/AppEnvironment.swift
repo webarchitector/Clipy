@@ -42,6 +42,7 @@ struct AppEnvironment {
                      pasteService: PasteService = current.pasteService,
                      excludeAppService: ExcludeAppService = current.excludeAppService,
                      accessibilityService: AccessibilityService = current.accessibilityService,
+                     updateService: UpdateService = current.updateService,
                      menuManager: MenuManager = current.menuManager,
                      defaults: UserDefaults = current.defaults) {
         push(environment: Environment(clipService: clipService,
@@ -50,6 +51,7 @@ struct AppEnvironment {
                                       pasteService: pasteService,
                                       excludeAppService: excludeAppService,
                                       accessibilityService: accessibilityService,
+                                      updateService: updateService,
                                       menuManager: menuManager,
                                       defaults: defaults))
     }
@@ -60,6 +62,7 @@ struct AppEnvironment {
                                pasteService: PasteService = current.pasteService,
                                excludeAppService: ExcludeAppService = current.excludeAppService,
                                accessibilityService: AccessibilityService = current.accessibilityService,
+                               updateService: UpdateService = current.updateService,
                                menuManager: MenuManager = current.menuManager,
                                defaults: UserDefaults = current.defaults) {
         replaceCurrent(environment: Environment(clipService: clipService,
@@ -68,13 +71,15 @@ struct AppEnvironment {
                                                 pasteService: pasteService,
                                                 excludeAppService: excludeAppService,
                                                 accessibilityService: accessibilityService,
+                                                updateService: updateService,
                                                 menuManager: menuManager,
                                                 defaults: defaults))
     }
 
     static func fromStorage(defaults: UserDefaults = .standard) -> Environment {
         var excludeApplications = [CPYAppInfo]()
-        if let data = defaults.object(forKey: Constants.UserDefaults.excludeApplications) as? Data, let applications = NSKeyedUnarchiver.unarchiveObject(with: data) as? [CPYAppInfo] {
+        if let data = defaults.object(forKey: Constants.UserDefaults.excludeApplications) as? Data,
+           let applications = LegacyKeyedArchive.unarchivedObject(of: [CPYAppInfo].self, from: data) {
             excludeApplications = applications
         }
         let excludeAppService = ExcludeAppService(applications: excludeApplications)
@@ -84,6 +89,7 @@ struct AppEnvironment {
                            pasteService: current.pasteService,
                            excludeAppService: excludeAppService,
                            accessibilityService: current.accessibilityService,
+                           updateService: current.updateService,
                            menuManager: current.menuManager,
                            defaults: current.defaults)
     }
