@@ -74,6 +74,10 @@ extension MenuManager {
         menu?.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
+    func showClipboardHistoryWindow() {
+        CPYClipboardHistoryWindowController.sharedController.showWindow(self)
+    }
+
     func popUpSnippetFolder(_ folder: CPYFolder) {
         let folderMenu = NSMenu(title: folder.title)
         // Folder title
@@ -232,6 +236,8 @@ private extension MenuManager {
             clipMenu?.addItem(NSMenuItem(title: L10n.clearHistory, action: #selector(AppDelegate.clearAllHistory)))
         }
 
+        clipMenu?.addItem(NSMenuItem(title: NSLocalizedString("Search History", comment: "Menu item title for searchable clipboard history") + "...",
+                                     action: #selector(AppDelegate.showClipboardHistoryWindow)))
         clipMenu?.addItem(NSMenuItem(title: L10n.editSnippets, action: #selector(AppDelegate.showSnippetEditorWindow)))
         clipMenu?.addItem(NSMenuItem(title: L10n.preferences, action: #selector(AppDelegate.showPreferenceWindow)))
         clipMenu?.addItem(NSMenuItem.separator())
@@ -303,7 +309,6 @@ private extension MenuManager {
         let placeInLine = settings.placeInLine
         let placeInsideFolder = settings.placeInsideFolder
         let maxHistory = settings.maxHistory
-
         // History title
         let labelItem = NSMenuItem(title: L10n.history, action: nil)
         labelItem.isEnabled = false
@@ -491,5 +496,374 @@ private extension MenuManager {
 private extension MenuManager {
     func firstIndexOfMenuItems() -> NSInteger {
         return AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.menuItemsTitleStartWithZero) ? 0 : 1
+    }
+}
+
+private struct ClipboardHistoryEntry: Equatable {
+    let primaryKey: String
+    let title: String
+    let displayTitle: String
+
+    init(clip: CPYClip) {
+        primaryKey = clip.dataHash
+        title = clip.title
+        displayTitle = ClipboardHistoryEntry.makeDisplayTitle(for: clip)
+    }
+
+    private static func makeDisplayTitle(for clip: CPYClip) -> String {
+        let trimmedTitle = clip.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let primaryPboardType = NSPasteboard.PasteboardType(rawValue: clip.primaryType)
+
+        if primaryPboardType == .deprecatedTIFF {
+            return "(Image)"
+        }
+        if primaryPboardType == .deprecatedPDF {
+            return "(PDF)"
+        }
+        if primaryPboardType == .deprecatedFilenames && trimmedTitle.isEmpty {
+            return "(Filenames)"
+        }
+        if trimmedTitle.isEmpty {
+            return "(Text)"
+        }
+        return trimmedTitle
+    }
+}
+
+private final class ClipboardHistoryTableView: NSTableView {
+    var confirmHandler: (() -> Void)?
+    var cancelHandler: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 36, 76:
+            confirmHandler?()
+        case 53:
+            cancelHandler?()
+        default:
+            super.keyDown(with: event)
+        }
+    }
+}
+
+private final class ClipboardHistoryCellView: NSTableCellView {
+    static let reuseIdentifier = NSUserInterfaceItemIdentifier("ClipboardHistoryCellView")
+
+    private let titleField = NSTextField(labelWithString: "")
+
+    override var backgroundStyle: NSView.BackgroundStyle {
+        didSet {
+            titleField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .labelColor
+        }
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        identifier = ClipboardHistoryCellView.reuseIdentifier
+
+        wantsLayer = true
+
+        titleField.translatesAutoresizingMaskIntoConstraints = false
+        titleField.lineBreakMode = .byTruncatingTail
+        titleField.maximumNumberOfLines = 1
+        titleField.font = NSFont.systemFont(ofSize: 13)
+        titleField.textColor = .labelColor
+
+        addSubview(titleField)
+
+        NSLayoutConstraint.activate([
+            titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            titleField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            titleField.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func configure(with entry: ClipboardHistoryEntry) {
+        titleField.stringValue = entry.displayTitle
+        titleField.toolTip = entry.title
+    }
+}
+
+private final class CPYClipboardHistoryWindowController: NSWindowController {
+    static let sharedController = CPYClipboardHistoryWindowController()
+
+    private let searchField = NSSearchField()
+    private let scrollView = NSScrollView()
+    private let tableView = ClipboardHistoryTableView()
+    private let emptyStateLabel = NSTextField(labelWithString: NSLocalizedString("No matching history items",
+                                                                                 comment: "Empty state when no history search results match"))
+    private let realm = try! Realm()
+
+    private var clipToken: NotificationToken?
+    private var workspaceObserver: NSObjectProtocol?
+    private var entries = [ClipboardHistoryEntry]()
+    private var filteredEntries = [ClipboardHistoryEntry]()
+    private var returnApplication: NSRunningApplication?
+
+    init() {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                              backing: .buffered,
+                              defer: false)
+        super.init(window: window)
+        configureWindow()
+        configureContentView()
+        observeWorkspace()
+        observeClips()
+        reloadEntries()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        clipToken?.invalidate()
+        if let workspaceObserver = workspaceObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(workspaceObserver)
+        }
+    }
+
+    override func showWindow(_ sender: Any?) {
+        rememberReturnApplication(NSWorkspace.shared.frontmostApplication)
+        searchField.stringValue = ""
+        reloadEntries()
+        super.showWindow(sender)
+        window?.backgroundColor = .windowBackgroundColor
+        CPYUtilities.presentHistoryWindow(window)
+        window?.makeFirstResponder(searchField)
+    }
+}
+
+private extension CPYClipboardHistoryWindowController {
+    func configureWindow() {
+        window?.title = L10n.history
+        window?.delegate = self
+        window?.backgroundColor = .windowBackgroundColor
+        window?.collectionBehavior = .canJoinAllSpaces
+        window?.minSize = NSSize(width: 420, height: 320)
+        window?.setFrameAutosaveName("CPYClipboardHistoryWindow")
+        window?.center()
+    }
+
+    func configureContentView() {
+        let contentView = NSView()
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.wantsLayer = true
+        contentView.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+
+        searchField.translatesAutoresizingMaskIntoConstraints = false
+        searchField.placeholderString = NSLocalizedString("Search History",
+                                                          comment: "Placeholder and title for clipboard history search")
+        searchField.delegate = self
+
+        let tableColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("history"))
+        tableColumn.resizingMask = .autoresizingMask
+        tableColumn.width = 480
+
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.addTableColumn(tableColumn)
+        tableView.headerView = nil
+        tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
+        tableView.rowHeight = 32
+        tableView.intercellSpacing = .zero
+        tableView.backgroundColor = .controlBackgroundColor
+        tableView.focusRingType = .none
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.target = self
+        tableView.doubleAction = #selector(confirmSelection(_:))
+        tableView.confirmHandler = { [weak self] in
+            self?.confirmSelection(nil)
+        }
+        tableView.cancelHandler = { [weak self] in
+            self?.close()
+        }
+
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = true
+        scrollView.drawsBackground = true
+        scrollView.backgroundColor = .controlBackgroundColor
+        scrollView.documentView = tableView
+
+        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateLabel.alignment = .center
+        emptyStateLabel.textColor = .secondaryLabelColor
+        emptyStateLabel.isHidden = true
+
+        contentView.addSubview(searchField)
+        contentView.addSubview(scrollView)
+        contentView.addSubview(emptyStateLabel)
+
+        window?.contentView = contentView
+
+        NSLayoutConstraint.activate([
+            searchField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
+            searchField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            searchField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+
+            scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
+            scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
+
+            emptyStateLabel.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: scrollView.leadingAnchor, constant: 16),
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.trailingAnchor, constant: -16)
+        ])
+    }
+
+    func observeClips() {
+        clipToken = realm.objects(CPYClip.self).observe { [weak self] _ in
+            self?.reloadEntries()
+        }
+    }
+
+    func observeWorkspace() {
+        workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification,
+                                                                              object: nil,
+                                                                              queue: .main) { [weak self] notification in
+            let application = notification.userInfo?["NSWorkspaceApplicationKey"] as? NSRunningApplication
+            self?.rememberReturnApplication(application)
+        }
+    }
+
+    func rememberReturnApplication(_ application: NSRunningApplication?) {
+        guard let application = application else { return }
+        guard application.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+        returnApplication = application
+    }
+
+    func reloadEntries() {
+        let ascending = !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
+        entries = realm.objects(CPYClip.self)
+            .sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
+            .map(ClipboardHistoryEntry.init)
+        applyFilter(searchField.stringValue)
+    }
+
+    func applyFilter(_ query: String) {
+        let selectedPrimaryKey = selectedEntry?.primaryKey
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if trimmedQuery.isEmpty {
+            filteredEntries = entries
+        } else {
+            filteredEntries = entries.filter {
+                $0.title.localizedCaseInsensitiveContains(trimmedQuery)
+            }
+        }
+
+        tableView.reloadData()
+        updateEmptyState()
+        restoreSelection(primaryKey: selectedPrimaryKey)
+    }
+
+    func updateEmptyState() {
+        let isEmpty = filteredEntries.isEmpty
+        scrollView.isHidden = isEmpty
+        emptyStateLabel.isHidden = !isEmpty
+    }
+
+    func restoreSelection(primaryKey: String?) {
+        guard !filteredEntries.isEmpty else {
+            tableView.deselectAll(nil)
+            return
+        }
+
+        if let primaryKey = primaryKey,
+           let row = filteredEntries.firstIndex(where: { $0.primaryKey == primaryKey }) {
+            tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+            tableView.scrollRowToVisible(row)
+            return
+        }
+
+        tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+        tableView.scrollRowToVisible(0)
+    }
+
+    var selectedEntry: ClipboardHistoryEntry? {
+        let selectedRow = tableView.selectedRow
+        guard selectedRow >= 0, selectedRow < filteredEntries.count else { return nil }
+        return filteredEntries[selectedRow]
+    }
+
+    @objc func confirmSelection(_ sender: Any?) {
+        guard let entry = selectedEntry ?? filteredEntries.first else {
+            NSSound.beep()
+            return
+        }
+
+        let primaryKey = entry.primaryKey
+        let returnApplication = self.returnApplication
+
+        close()
+
+        if let returnApplication = returnApplication {
+            returnApplication.activate(options: [.activateIgnoringOtherApps])
+        }
+
+        // Give the previously active app a moment to regain focus before sending Cmd+V.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            let realm = try! Realm()
+            guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else {
+                NSSound.beep()
+                return
+            }
+            AppEnvironment.current.pasteService.paste(with: clip)
+        }
+    }
+}
+
+extension CPYClipboardHistoryWindowController: NSWindowDelegate {
+    func windowWillClose(_ notification: Notification) {
+        searchField.stringValue = ""
+        returnApplication = nil
+        CPYUtilities.closeHistoryWindow()
+    }
+}
+
+extension CPYClipboardHistoryWindowController: NSSearchFieldDelegate {
+    func controlTextDidChange(_ obj: Notification) {
+        applyFilter(searchField.stringValue)
+    }
+
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        switch commandSelector {
+        case #selector(NSResponder.insertNewline(_:)):
+            confirmSelection(nil)
+            return true
+        case #selector(NSResponder.cancelOperation(_:)):
+            close()
+            return true
+        case #selector(NSResponder.moveDown(_:)):
+            guard !filteredEntries.isEmpty else { return true }
+            let row = max(tableView.selectedRow, 0)
+            tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+            window?.makeFirstResponder(tableView)
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+extension CPYClipboardHistoryWindowController: NSTableViewDataSource, NSTableViewDelegate {
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        filteredEntries.count
+    }
+
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        let entry = filteredEntries[row]
+        let cellView = (tableView.makeView(withIdentifier: ClipboardHistoryCellView.reuseIdentifier, owner: nil) as? ClipboardHistoryCellView)
+            ?? ClipboardHistoryCellView(frame: .zero)
+        cellView.configure(with: entry)
+        return cellView
     }
 }

@@ -36,6 +36,8 @@ internal enum L10n {
   internal static let launchOnSystemStartup = L10n.tr("Localizable", "Launch on system startup")
   /// Menu
   internal static let menu = L10n.tr("Localizable", "Menu")
+  /// No matching history items
+  internal static let noMatchingHistoryItems = L10n.tr("Localizable", "No matching history items")
   /// Open System Preferences
   internal static let openSystemPreferences = L10n.tr("Localizable", "Open System Preferences")
   /// Please allow Accessibility.
@@ -46,6 +48,8 @@ internal enum L10n {
   internal static let preferences = L10n.tr("Localizable", "Preferences")
   /// Quit Clipy
   internal static let quitClipy = L10n.tr("Localizable", "Quit Clipy")
+  /// Search History
+  internal static let searchHistory = L10n.tr("Localizable", "Search History")
   /// Shortcuts
   internal static let shortcuts = L10n.tr("Localizable", "Shortcuts")
   /// Snippet

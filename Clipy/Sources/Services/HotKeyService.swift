@@ -41,7 +41,7 @@ extension HotKeyService {
     }
 
     @objc func popupHistoryMenu() {
-        AppEnvironment.current.menuManager.popUpMenu(.history)
+        AppEnvironment.current.menuManager.showClipboardHistoryWindow()
     }
 
     @objc func popUpSnippetMenu() {

@@ -32,6 +32,10 @@
 
 "History" = "Verlauf";
 
+"Search History" = "Verlauf durchsuchen";
+
+"No matching history items" = "Keine passenden Verlaufseinträge";
+
 "Snippet" = "Snippet";
 
 "General" = "Allgemein";
