@@ -48,6 +48,7 @@ final class DataCleanService {
         let clips = realm.objects(CPYClip.self).sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: false)
         let maxHistorySize = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxHistorySize)
 
+        if maxHistorySize <= 0 { return clips }
         if clips.count <= maxHistorySize { return realm.objects(CPYClip.self).filter("FALSEPREDICATE") }
         // Delete first clip
         let lastClip = clips[maxHistorySize - 1]

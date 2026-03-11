@@ -22,13 +22,14 @@ final class ClipService {
     // MARK: - Properties
     fileprivate var cachedChangeCount = BehaviorRelay<Int>(value: 0)
     fileprivate var storeTypes = [String: NSNumber]()
-    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .userInteractive)
+    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
     fileprivate var disposeBag = DisposeBag()
 
     // MARK: - Clips
     func startMonitoring() {
         disposeBag = DisposeBag()
+        cachedChangeCount.accept(NSPasteboard.general.changeCount)
         // Pasteboard observe timer
         Observable<Int>.interval(.milliseconds(250), scheduler: scheduler)
             .map { _ in NSPasteboard.general.changeCount }
@@ -117,18 +118,19 @@ extension ClipService {
 
     fileprivate func save(with data: CPYClipData) {
         let realm = try! Realm()
+        let contentHash = data.contentHash
         // Copy already copied history
         let isCopySameHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
-        if realm.object(ofType: CPYClip.self, forPrimaryKey: "\(data.hash)") != nil, !isCopySameHistory { return }
+        if realm.object(ofType: CPYClip.self, forPrimaryKey: contentHash) != nil, !isCopySameHistory { return }
         // Don't save invalidated clip
-        if let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(data.hash)"), clip.isInvalidated { return }
+        if let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: contentHash), clip.isInvalidated { return }
 
         // Don't save empty string history
         if data.isOnlyStringType && data.stringValue.isEmpty { return }
 
         // Overwrite same history
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
-        let savedHash = (isOverwriteHistory) ? data.hash : Int.random(in: 0..<1000000)
+        let savedHash = isOverwriteHistory ? contentHash : UUID().uuidString
 
         // Saved time and path
         let unixTime = Int(Date().timeIntervalSince1970)
@@ -136,8 +138,8 @@ extension ClipService {
         // Create Realm object
         let clip = CPYClip()
         clip.dataPath = savedPath
-        clip.title = data.stringValue[0...10000]
-        clip.dataHash = "\(savedHash)"
+        clip.title = data.preferredTitle[0...10000]
+        clip.dataHash = savedHash
         clip.updateTime = unixTime
         clip.primaryType = data.primaryType?.rawValue ?? ""
 

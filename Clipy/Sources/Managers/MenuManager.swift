@@ -501,31 +501,69 @@ private extension MenuManager {
 
 private struct ClipboardHistoryEntry: Equatable {
     let primaryKey: String
-    let title: String
     let displayTitle: String
+    let searchText: String
+    let toolTip: String
 
     init(clip: CPYClip) {
         primaryKey = clip.dataHash
-        title = clip.title
-        displayTitle = ClipboardHistoryEntry.makeDisplayTitle(for: clip)
+        let clipTitle = ClipboardHistoryEntry.sanitizedStoredTitle(clip.title)
+        let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath)
+        let preferredTitle = clipData?.preferredTitle.trimmingCharacters(in: .whitespacesAndNewlines) ?? clipTitle
+
+        let rawTitle: String
+        if preferredTitle.isEmpty {
+            rawTitle = ClipboardHistoryEntry.fallbackTitle(for: clip)
+        } else {
+            rawTitle = preferredTitle
+        }
+        // Collapse whitespace/newlines into single line and limit length for display
+        let singleLine = rawTitle.components(separatedBy: .newlines)
+            .joined(separator: " ")
+            .components(separatedBy: .whitespaces)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        displayTitle = String(singleLine.prefix(500))
+
+        let searchableText = clipData?.searchableText.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if searchableText.isEmpty {
+            searchText = [displayTitle, clipTitle]
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: "\n")
+        } else {
+            searchText = searchableText
+        }
+
+        let toolTipText = clipData?.toolTipText.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let fullToolTip = toolTipText.isEmpty ? displayTitle : toolTipText
+        toolTip = String(fullToolTip.prefix(2000))
     }
 
-    private static func makeDisplayTitle(for clip: CPYClip) -> String {
-        let trimmedTitle = clip.title.trimmingCharacters(in: .whitespacesAndNewlines)
+    private static func fallbackTitle(for clip: CPYClip) -> String {
         let primaryPboardType = NSPasteboard.PasteboardType(rawValue: clip.primaryType)
+        let clipTitle = sanitizedStoredTitle(clip.title)
+        if !clipTitle.isEmpty {
+            return clipTitle
+        }
 
-        if primaryPboardType == .deprecatedTIFF {
+        switch primaryPboardType {
+        case .deprecatedTIFF, .tiff, .png:
             return "(Image)"
-        }
-        if primaryPboardType == .deprecatedPDF {
+        case .deprecatedPDF, .pdf:
             return "(PDF)"
+        case .deprecatedFilenames, .fileURL:
+            return "(File)"
+        case .deprecatedURL, .URL:
+            return "(URL)"
+        default:
+            return ""
         }
-        if primaryPboardType == .deprecatedFilenames && trimmedTitle.isEmpty {
-            return "(Filenames)"
-        }
-        if trimmedTitle.isEmpty {
-            return "(Text)"
-        }
+    }
+
+    private static func sanitizedStoredTitle(_ title: String) -> String {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !["(Text)", "(Filenames)"].contains(trimmedTitle) else { return "" }
         return trimmedTitle
     }
 }
@@ -533,6 +571,17 @@ private struct ClipboardHistoryEntry: Equatable {
 private final class ClipboardHistoryTableView: NSTableView {
     var confirmHandler: (() -> Void)?
     var cancelHandler: (() -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        let clickedRow = row(at: point)
+
+        super.mouseDown(with: event)
+
+        guard event.clickCount == 1 else { return }
+        guard clickedRow >= 0, selectedRow == clickedRow else { return }
+        confirmHandler?()
+    }
 
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
@@ -584,7 +633,7 @@ private final class ClipboardHistoryCellView: NSTableCellView {
 
     func configure(with entry: ClipboardHistoryEntry) {
         titleField.stringValue = entry.displayTitle
-        titleField.toolTip = entry.title
+        titleField.toolTip = entry.toolTip
     }
 }
 
@@ -756,7 +805,7 @@ private extension CPYClipboardHistoryWindowController {
             filteredEntries = entries
         } else {
             filteredEntries = entries.filter {
-                $0.title.localizedCaseInsensitiveContains(trimmedQuery)
+                $0.searchText.localizedCaseInsensitiveContains(trimmedQuery)
             }
         }
 
@@ -800,24 +849,14 @@ private extension CPYClipboardHistoryWindowController {
             return
         }
 
-        let primaryKey = entry.primaryKey
-        let returnApplication = self.returnApplication
+        let realm = try! Realm()
+        guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: entry.primaryKey) else {
+            NSSound.beep()
+            return
+        }
+        AppEnvironment.current.pasteService.copyToPasteboard(with: clip)
 
         close()
-
-        if let returnApplication = returnApplication {
-            returnApplication.activate(options: [.activateIgnoringOtherApps])
-        }
-
-        // Give the previously active app a moment to regain focus before sending Cmd+V.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            let realm = try! Realm()
-            guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else {
-                NSSound.beep()
-                return
-            }
-            AppEnvironment.current.pasteService.paste(with: clip)
-        }
     }
 }
 

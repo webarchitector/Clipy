@@ -35,7 +35,7 @@ extension CPYFolder {
         let folder = CPYFolder(value: self)
         var snippets = [CPYSnippet]()
         if realm == nil {
-            snippets.forEach {
+            self.snippets.forEach {
                 let snippet = CPYSnippet(value: $0)
                 snippets.append(snippet)
             }

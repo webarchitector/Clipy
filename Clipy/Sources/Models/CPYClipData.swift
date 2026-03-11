@@ -11,6 +11,7 @@
 //
 
 import Cocoa
+import CryptoKit
 import SwiftHEXColors
 
 final class CPYClipData: NSObject {
@@ -32,30 +33,61 @@ final class CPYClipData: NSObject {
     var PDF: Data?
     var image: NSImage?
 
-    override var hash: Int {
-        var hash = types.map { $0.rawValue }.joined().hash
-        if let image = self.image {
-            hash ^= image.hash
-        }
-        if !fileNames.isEmpty {
-            fileNames.forEach { hash ^= $0.hash }
-        } else if !self.URLs.isEmpty {
-            URLs.forEach { hash ^= $0.hash }
-        } else if let pdf = PDF {
-            hash ^= pdf.count
-        } else if !stringValue.isEmpty {
-            hash ^= stringValue.hash
-        }
-        if let data = RTFData {
-            hash ^= data.count
-        }
-        return hash
+    var contentHash: String {
+        var payload = StableClipPayload()
+        payload.append(types.map { $0.rawValue })
+        payload.append(stringValue)
+        payload.append(RTFData)
+        payload.append(PDF)
+        payload.append(fileNames)
+        payload.append(URLs)
+        payload.append(image?.tiffRepresentation)
+
+        let digest = SHA256.hash(data: payload.data)
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
     var primaryType: NSPasteboard.PasteboardType? {
         return types.first
     }
     var isOnlyStringType: Bool {
         return types == [.deprecatedString] || types == [.string]
+    }
+    var preferredTitle: String {
+        if !trimmedStringValue.isEmpty {
+            return trimmedStringValue
+        }
+        if let fileName = fileDisplayNames.first {
+            return fileName
+        }
+        if let urlString = URLs.first?.trimmingCharacters(in: .whitespacesAndNewlines), !urlString.isEmpty {
+            if let url = URL(string: urlString) {
+                if !url.lastPathComponent.isEmpty {
+                    return url.lastPathComponent
+                }
+                if let host = url.host, !host.isEmpty {
+                    return host
+                }
+                return url.absoluteString
+            }
+            return urlString
+        }
+
+        switch primaryType {
+        case .deprecatedTIFF?, .tiff?, .png?:
+            return "(Image)"
+        case .deprecatedPDF?, .pdf?:
+            return "(PDF)"
+        default:
+            return ""
+        }
+    }
+    var searchableText: String {
+        let values = [trimmedStringValue, preferredTitle] + fileNames + fileDisplayNames + URLs
+        return normalizedValues(values).joined(separator: "\n")
+    }
+    var toolTipText: String {
+        let values = [trimmedStringValue] + fileNames + URLs + [preferredTitle]
+        return normalizedValues(values).joined(separator: "\n")
     }
     var thumbnailImage: NSImage? {
         let defaults = UserDefaults.standard
@@ -65,14 +97,6 @@ final class CPYClipData: NSObject {
         if let image = image, fileNames.isEmpty {
             // Image only data
             return image.resizeImage(CGFloat(width), CGFloat(height))
-        } else if let fileName = fileNames.first {
-             // In the case of the local file correct data is not included in the image variable
-             // Judge the image from the path and create a thumbnail
-            switch (fileName as NSString).pathExtension.lowercased() {
-            case "jpg", "jpeg", "png", "bmp", "tiff":
-                return NSImage(contentsOfFile: fileName)?.resizeImage(CGFloat(width), CGFloat(height))
-            default: break
-            }
         }
         return nil
     }
@@ -191,5 +215,62 @@ final class CPYClipData: NSObject {
         PDF = aDecoder.decodeObject(forKey: kPDFKey) as? Data
         image = aDecoder.decodeObject(forKey: kImageKey) as? NSImage
         super.init()
+    }
+}
+
+private struct StableClipPayload {
+    private(set) var data = Data()
+
+    mutating func append(_ strings: [String]) {
+        append(UInt64(strings.count))
+        strings.forEach { append($0) }
+    }
+
+    mutating func append(_ string: String) {
+        append(string.data(using: .utf8) ?? Data())
+    }
+
+    mutating func append(_ value: Data?) {
+        guard let value = value else {
+            append(UInt64.max)
+            return
+        }
+        append(value)
+    }
+
+    private mutating func append(_ value: Data) {
+        append(UInt64(value.count))
+        data.append(value)
+    }
+
+    private mutating func append(_ value: UInt64) {
+        var bigEndianValue = value.bigEndian
+        withUnsafeBytes(of: &bigEndianValue) { bytes in
+            data.append(contentsOf: bytes)
+        }
+    }
+}
+
+private extension CPYClipData {
+    var trimmedStringValue: String {
+        stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var fileDisplayNames: [String] {
+        fileNames.map { URL(fileURLWithPath: $0).lastPathComponent }
+    }
+
+    func normalizedValues(_ values: [String]) -> [String] {
+        var uniqueValues = [String]()
+        var seenValues = Set<String>()
+
+        values.forEach { value in
+            let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedValue.isEmpty else { return }
+            guard seenValues.insert(trimmedValue).inserted else { return }
+            uniqueValues.append(trimmedValue)
+        }
+
+        return uniqueValues
     }
 }

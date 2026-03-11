@@ -29,3 +29,7 @@ DerivedData/
 
 # Swift Package Manager local artifacts
 .build/
+
+# Claude
+.claude/
+CLAUDE.md
