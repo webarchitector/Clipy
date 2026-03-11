@@ -47,16 +47,4 @@ extension NSPasteboard.PasteboardType {
         return NSPasteboard.PasteboardType(rawValue: "NSTIFFPboardType")
     }
 
-    // MARK: - Modern UTI equivalents
-    // On modern macOS, pasteboard.types returns UTI strings (e.g. "public.tiff")
-    // instead of the legacy names (e.g. "NSTIFFPboardType").
-    // These aliases use the system-provided PasteboardType constants.
-    static var modernTIFF: NSPasteboard.PasteboardType { return .tiff }       // "public.tiff"
-    static var modernPNG: NSPasteboard.PasteboardType { return .png }         // "public.png"
-    static var modernString: NSPasteboard.PasteboardType { return .string }   // "public.utf8-plain-text"
-    static var modernRTF: NSPasteboard.PasteboardType { return .rtf }         // "public.rtf"
-    static var modernPDF: NSPasteboard.PasteboardType { return .pdf }         // "com.adobe.pdf"
-    static var modernURL: NSPasteboard.PasteboardType { return .URL }         // "public.url"
-    static var modernFileURL: NSPasteboard.PasteboardType { return .fileURL } // "public.file-url"
-
 }

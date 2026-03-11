@@ -31,7 +31,7 @@ final class ClipService {
         disposeBag = DisposeBag()
         cachedChangeCount.accept(NSPasteboard.general.changeCount)
         // Pasteboard observe timer
-        Observable<Int>.interval(.milliseconds(250), scheduler: scheduler)
+        Observable<Int>.interval(.milliseconds(500), scheduler: scheduler)
             .map { _ in NSPasteboard.general.changeCount }
             .withLatestFrom(cachedChangeCount.asObservable()) { ($0, $1) }
             .filter { $0 != $1 }

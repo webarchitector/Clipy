@@ -236,7 +236,7 @@ private extension MenuManager {
             clipMenu?.addItem(NSMenuItem(title: L10n.clearHistory, action: #selector(AppDelegate.clearAllHistory)))
         }
 
-        clipMenu?.addItem(NSMenuItem(title: NSLocalizedString("Search History", comment: "Menu item title for searchable clipboard history") + "...",
+        clipMenu?.addItem(NSMenuItem(title: L10n.searchHistory + "...",
                                      action: #selector(AppDelegate.showClipboardHistoryWindow)))
         clipMenu?.addItem(NSMenuItem(title: L10n.editSnippets, action: #selector(AppDelegate.showSnippetEditorWindow)))
         clipMenu?.addItem(NSMenuItem(title: L10n.preferences, action: #selector(AppDelegate.showPreferenceWindow)))
@@ -248,6 +248,26 @@ private extension MenuManager {
 
     func menuItemTitle(_ title: String, listNumber: NSInteger, isMarkWithNumber: Bool) -> String {
         return (isMarkWithNumber) ? "\(listNumber). \(title)" : title
+    }
+
+    static func setInlineImage(_ image: NSImage, on menuItem: NSMenuItem, listNumber: Int, isMarkWithNumber: Bool, imageHeight: CGFloat = 32) {
+        let font = menuItem.menu?.font ?? NSFont.menuFont(ofSize: 0)
+        let result = NSMutableAttributedString()
+        if isMarkWithNumber {
+            result.append(NSAttributedString(string: "\(listNumber). ", attributes: [.font: font]))
+        }
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        // Scale proportionally to requested height
+        let aspect = image.size.width > 0 ? image.size.height / image.size.width : 1
+        let imageWidth = aspect > 0 ? imageHeight / aspect : imageHeight
+        attachment.bounds = CGRect(x: 0, y: font.descender, width: imageWidth, height: imageHeight)
+        result.append(NSAttributedString(attachment: attachment))
+        result.append(NSAttributedString(string: " ", attributes: [.font: font]))
+        let prefix = "\(listNumber). "
+        let titleOnly = menuItem.title.hasPrefix(prefix) ? String(menuItem.title.dropFirst(prefix.count)) : menuItem.title
+        result.append(NSAttributedString(string: titleOnly, attributes: [.font: font]))
+        menuItem.attributedTitle = result
     }
 
     func makeSubmenuItem(_ count: Int, start: Int, end: Int, numberOfItems: Int) -> NSMenuItem {
@@ -388,18 +408,21 @@ private extension MenuManager {
             menuItem.title = menuItemTitle("(Filenames)", listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber)
         }
 
-        if !clip.thumbnailPath.isEmpty && !clip.isColorCode && settings.isShowImage {
+        let showThumbnail = !clip.thumbnailPath.isEmpty &&
+            ((!clip.isColorCode && settings.isShowImage) || (clip.isColorCode && settings.isShowColorCode))
+        if showThumbnail {
             PINCache.shared.object(forKeyAsync: clip.thumbnailPath) { [weak menuItem] _, _, object in
                 DispatchQueue.main.async {
-                    menuItem?.image = object as? NSImage
+                    guard let menuItem = menuItem, let image = object as? NSImage else { return }
+                    MenuManager.setInlineImage(image, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 32)
                 }
             }
-        }
-        if !clip.thumbnailPath.isEmpty && clip.isColorCode && settings.isShowColorCode {
-            PINCache.shared.object(forKeyAsync: clip.thumbnailPath) { [weak menuItem] _, _, object in
-                DispatchQueue.main.async {
-                    menuItem?.image = object as? NSImage
-                }
+        } else if settings.isShowIcon && (primaryPboardType == .deprecatedFilenames || primaryPboardType == .fileURL) {
+            // Show system file icon for copied files without image thumbnail
+            let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath)
+            if let filePath = clipData?.fileNames.first {
+                let icon = NSWorkspace.shared.icon(forFile: filePath)
+                MenuManager.setInlineImage(icon, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 16)
             }
         }
 
@@ -504,11 +527,17 @@ private struct ClipboardHistoryEntry: Equatable {
     let displayTitle: String
     let searchText: String
     let toolTip: String
+    let thumbnailPath: String
+    let isColorCode: Bool
+    let filePaths: [String]
 
     init(clip: CPYClip) {
         primaryKey = clip.dataHash
+        thumbnailPath = clip.thumbnailPath
+        isColorCode = clip.isColorCode
         let clipTitle = ClipboardHistoryEntry.sanitizedStoredTitle(clip.title)
         let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath)
+        filePaths = clipData?.fileNames ?? []
         let preferredTitle = clipData?.preferredTitle.trimmingCharacters(in: .whitespacesAndNewlines) ?? clipTitle
 
         let rawTitle: String
@@ -598,7 +627,18 @@ private final class ClipboardHistoryTableView: NSTableView {
 private final class ClipboardHistoryCellView: NSTableCellView {
     static let reuseIdentifier = NSUserInterfaceItemIdentifier("ClipboardHistoryCellView")
 
+    private let thumbnailView: NSImageView = {
+        let iv = NSImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.imageScaling = .scaleProportionallyUpOrDown
+        iv.wantsLayer = true
+        iv.layer?.cornerRadius = 4
+        iv.layer?.masksToBounds = true
+        return iv
+    }()
     private let titleField = NSTextField(labelWithString: "")
+    private var titleLeadingWithImage: NSLayoutConstraint!
+    private var titleLeadingWithoutImage: NSLayoutConstraint!
 
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet {
@@ -618,10 +658,18 @@ private final class ClipboardHistoryCellView: NSTableCellView {
         titleField.font = NSFont.systemFont(ofSize: 13)
         titleField.textColor = .labelColor
 
+        addSubview(thumbnailView)
         addSubview(titleField)
 
+        titleLeadingWithImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
+        titleLeadingWithoutImage = titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12)
+
         NSLayoutConstraint.activate([
-            titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            thumbnailView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            thumbnailView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            thumbnailView.widthAnchor.constraint(equalToConstant: 64),
+            thumbnailView.heightAnchor.constraint(equalToConstant: 64),
+            titleLeadingWithoutImage,
             titleField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             titleField.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
@@ -634,6 +682,42 @@ private final class ClipboardHistoryCellView: NSTableCellView {
     func configure(with entry: ClipboardHistoryEntry) {
         titleField.stringValue = entry.displayTitle
         titleField.toolTip = entry.toolTip
+
+        if !entry.thumbnailPath.isEmpty {
+            // Show cached thumbnail (image preview or color code)
+            PINCache.shared.object(forKeyAsync: entry.thumbnailPath) { [weak self] _, _, object in
+                DispatchQueue.main.async {
+                    guard let self = self, let image = object as? NSImage else { return }
+                    self.showThumbnail(image)
+                }
+            }
+        } else if let filePath = entry.filePaths.first {
+            // Show system file icon for copied files
+            let icon = NSWorkspace.shared.icon(forFile: filePath)
+            icon.size = NSSize(width: 32, height: 32)
+            showThumbnail(icon)
+        } else {
+            hideThumbnail()
+        }
+    }
+
+    private func showThumbnail(_ image: NSImage) {
+        thumbnailView.image = image
+        thumbnailView.isHidden = false
+        titleLeadingWithoutImage.isActive = false
+        titleLeadingWithImage.isActive = true
+    }
+
+    private func hideThumbnail() {
+        thumbnailView.image = nil
+        thumbnailView.isHidden = true
+        titleLeadingWithImage.isActive = false
+        titleLeadingWithoutImage.isActive = true
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        hideThumbnail()
     }
 }
 
@@ -643,8 +727,7 @@ private final class CPYClipboardHistoryWindowController: NSWindowController {
     private let searchField = NSSearchField()
     private let scrollView = NSScrollView()
     private let tableView = ClipboardHistoryTableView()
-    private let emptyStateLabel = NSTextField(labelWithString: NSLocalizedString("No matching history items",
-                                                                                 comment: "Empty state when no history search results match"))
+    private let emptyStateLabel = NSTextField(labelWithString: L10n.noMatchingHistoryItems)
     private let realm = try! Realm()
 
     private var clipToken: NotificationToken?
@@ -706,8 +789,7 @@ private extension CPYClipboardHistoryWindowController {
         contentView.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
 
         searchField.translatesAutoresizingMaskIntoConstraints = false
-        searchField.placeholderString = NSLocalizedString("Search History",
-                                                          comment: "Placeholder and title for clipboard history search")
+        searchField.placeholderString = L10n.searchHistory
         searchField.delegate = self
 
         let tableColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("history"))
@@ -718,7 +800,7 @@ private extension CPYClipboardHistoryWindowController {
         tableView.addTableColumn(tableColumn)
         tableView.headerView = nil
         tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
-        tableView.rowHeight = 32
+        tableView.rowHeight = 72
         tableView.intercellSpacing = .zero
         tableView.backgroundColor = .controlBackgroundColor
         tableView.focusRingType = .none

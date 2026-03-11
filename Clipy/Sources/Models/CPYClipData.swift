@@ -93,12 +93,35 @@ final class CPYClipData: NSObject {
         let defaults = UserDefaults.standard
         let width = defaults.integer(forKey: Constants.UserDefaults.thumbnailWidth)
         let height = defaults.integer(forKey: Constants.UserDefaults.thumbnailHeight)
+        let maxPixel = max(width, height)
 
+        // Try loading a downsampled thumbnail from file path (for copied image files)
+        if !fileNames.isEmpty {
+            for path in fileNames {
+                if let thumbnail = CPYClipData.downsampledImage(at: path, maxPixelSize: maxPixel) {
+                    return thumbnail
+                }
+            }
+        }
+
+        // Fall back to pasteboard image (for direct image paste)
         if let image = image, fileNames.isEmpty {
-            // Image only data
             return image.resizeImage(CGFloat(width), CGFloat(height))
         }
         return nil
+    }
+
+    private static func downsampledImage(at path: String, maxPixelSize: Int) -> NSImage? {
+        let url = URL(fileURLWithPath: path) as CFURL
+        guard let source = CGImageSourceCreateWithURL(url, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
     }
     var colorCodeImage: NSImage? {
         guard let color = NSColor(hexString: stringValue) else { return nil }

@@ -61,7 +61,7 @@ private final class RemoteNetworkBlockerURLProtocol: URLProtocol {
 class AppDelegate: NSObject, NSMenuItemValidation {
 
     // MARK: - Properties
-    let screenshotObserver = ScreenShotObserver()
+    private var screenshotObserver: ScreenShotObserver?
     let disposeBag = DisposeBag()
     private var isSyncingLoginItemPreference = false
 
@@ -136,15 +136,12 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     }
 
     @objc func selectClipMenuItem(_ sender: NSMenuItem) {
-        CPYUtilities.sendCustomLog(with: "selectClipMenuItem")
         guard let primaryKey = sender.representedObject as? String else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch clip primary key")
             NSSound.beep()
             return
         }
         let realm = try! Realm()
         guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch clip data")
             NSSound.beep()
             return
         }
@@ -153,15 +150,12 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     }
 
     @objc func selectSnippetMenuItem(_ sender: AnyObject) {
-        CPYUtilities.sendCustomLog(with: "selectSnippetMenuItem")
         guard let primaryKey = sender.representedObject as? String else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch snippet primary key")
             NSSound.beep()
             return
         }
         let realm = try! Realm()
         guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey) else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch snippet data")
             NSSound.beep()
             return
         }
@@ -231,7 +225,6 @@ class AppDelegate: NSObject, NSMenuItemValidation {
                 if error.code == kSMErrorJobNotFound {
                     return removedLegacy
                 }
-                CPYUtilities.sendCustomLog(with: "Failed to unregister main app login item: \(error)")
                 return false
             }
         }
@@ -249,7 +242,6 @@ class AppDelegate: NSObject, NSMenuItemValidation {
                 return updateLegacyLoginItemState(to: true)
             }
 
-            CPYUtilities.sendCustomLog(with: "Failed to register main app login item: \(error)")
             if service.status == .requiresApproval || error.code == kSMErrorLaunchDeniedByUser {
                 showLoginItemApprovalAlert()
             }
@@ -350,26 +342,26 @@ private extension AppDelegate {
                 self.reflectLoginItemState()
             })
             .disposed(by: disposeBag)
-        // Observe Screenshot
-        let observerScreenshot = AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.Beta.observerScreenshot, retainSelf: false)
+        // Observe Screenshot — create observer lazily to avoid Desktop access prompt
+        AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.Beta.observerScreenshot, retainSelf: false)
             .compactMap { $0 }
-            .share(replay: 1)
-        observerScreenshot
             .subscribe(onNext: { [weak self] enabled in
-                self?.screenshotObserver.isEnabled = enabled
-            })
-            .disposed(by: disposeBag)
-        observerScreenshot
-            .filter { $0 }
-            .take(1)
-            .subscribe(onNext: { [weak self] _ in
-                self?.screenshotObserver.start()
-            })
-            .disposed(by: disposeBag)
-        // Observe Screenshot image
-        screenshotObserver.rx.addedImage
-            .subscribe(onNext: { image in
-                AppEnvironment.current.clipService.create(with: image)
+                guard let self = self else { return }
+                if enabled {
+                    if self.screenshotObserver == nil {
+                        let observer = ScreenShotObserver()
+                        observer.rx.addedImage
+                            .subscribe(onNext: { image in
+                                AppEnvironment.current.clipService.create(with: image)
+                            })
+                            .disposed(by: self.disposeBag)
+                        observer.start()
+                        self.screenshotObserver = observer
+                    }
+                    self.screenshotObserver?.isEnabled = true
+                } else {
+                    self.screenshotObserver?.isEnabled = false
+                }
             })
             .disposed(by: disposeBag)
     }

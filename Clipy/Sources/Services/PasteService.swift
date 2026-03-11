@@ -128,16 +128,15 @@ extension PasteService {
                 let fileNames = data.fileNames
                 pasteboard.setPropertyList(fileNames, forType: .deprecatedFilenames)
             case .fileURL:
-                let urls = data.fileNames.compactMap { URL(fileURLWithPath: $0) as NSURL }
-                guard !urls.isEmpty else { return }
-                pasteboard.writeObjects(urls)
+                guard let firstPath = data.fileNames.first else { return }
+                let url = URL(fileURLWithPath: firstPath)
+                pasteboard.setString(url.absoluteString, forType: .fileURL)
             case .deprecatedURL:
                 let url = data.URLs
                 pasteboard.setPropertyList(url, forType: .deprecatedURL)
             case .URL:
-                let urls = data.URLs.compactMap { URL(string: $0) as NSURL? }
-                guard !urls.isEmpty else { return }
-                pasteboard.writeObjects(urls)
+                guard let firstURL = data.URLs.first else { return }
+                pasteboard.setString(firstURL, forType: .URL)
             case .deprecatedTIFF, .tiff, .png:
                 guard let imageData = cachedTIFFData else { return }
                 pasteboard.setData(imageData, forType: type)

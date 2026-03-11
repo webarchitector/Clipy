@@ -54,8 +54,8 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showToolTipOnMenuItem)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showImageInTheMenu)
         defaultValues.updateValue(NSNumber(value: 200), forKey: Constants.UserDefaults.maxLengthOfToolTip)
-        defaultValues.updateValue(NSNumber(value: 100), forKey: Constants.UserDefaults.thumbnailWidth)
-        defaultValues.updateValue(NSNumber(value: 32), forKey: Constants.UserDefaults.thumbnailHeight)
+        defaultValues.updateValue(NSNumber(value: 196), forKey: Constants.UserDefaults.thumbnailWidth)
+        defaultValues.updateValue(NSNumber(value: 196), forKey: Constants.UserDefaults.thumbnailHeight)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.overwriteSameHistory)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.copySameHistory)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showColorPreviewInTheMenu)
@@ -99,10 +99,6 @@ final class CPYUtilities {
                 try? fileManager.removeItem(atPath: path)
             }
         }
-    }
-
-    static func sendCustomLog(with name: String) {
-        _ = name
     }
 
     static func presentPreferencesWindow(_ window: NSWindow?) {
