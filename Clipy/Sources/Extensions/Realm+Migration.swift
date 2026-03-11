@@ -19,40 +19,45 @@ extension Realm {
             if oldSchemaVersion <= 2 {
                 // Add identifier in CPYSnippet
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
-                    newObject!["identifier"] = UUID().uuidString
+                    guard let newObject = newObject else { return }
+                    newObject["identifier"] = UUID().uuidString
                 }
             }
             if oldSchemaVersion <= 4 {
                 // Add identifier in CPYFolder
                 migration.enumerateObjects(ofType: CPYFolder.className()) { _, newObject in
-                    newObject!["identifier"] = UUID().uuidString
+                    guard let newObject = newObject else { return }
+                    newObject["identifier"] = UUID().uuidString
                 }
             }
             if oldSchemaVersion <= 5 {
                 // Update RealmObjc to RealmSwift
                 migration.enumerateObjects(ofType: CPYClip.className(), { oldObject, newObject in
-                    newObject!["dataPath"] = oldObject!["dataPath"]
-                    newObject!["title"] = oldObject!["title"]
-                    newObject!["dataHash"] = oldObject!["dataHash"]
-                    newObject!["primaryType"] = oldObject!["primaryType"]
-                    newObject!["updateTime"] = oldObject!["updateTime"]
-                    newObject!["thumbnailPath"] = oldObject!["thumbnailPath"]
+                    guard let oldObject = oldObject, let newObject = newObject else { return }
+                    newObject["dataPath"] = oldObject["dataPath"]
+                    newObject["title"] = oldObject["title"]
+                    newObject["dataHash"] = oldObject["dataHash"]
+                    newObject["primaryType"] = oldObject["primaryType"]
+                    newObject["updateTime"] = oldObject["updateTime"]
+                    newObject["thumbnailPath"] = oldObject["thumbnailPath"]
                 })
                 migration.enumerateObjects(ofType: CPYSnippet.className(), { oldObject, newObject in
-                    newObject!["index"] = oldObject!["index"]
-                    newObject!["enable"] = oldObject!["enable"]
-                    newObject!["title"] = oldObject!["title"]
-                    newObject!["content"] = oldObject!["content"]
+                    guard let oldObject = oldObject, let newObject = newObject else { return }
+                    newObject["index"] = oldObject["index"]
+                    newObject["enable"] = oldObject["enable"]
+                    newObject["title"] = oldObject["title"]
+                    newObject["content"] = oldObject["content"]
                     if oldSchemaVersion >= 3 {
-                        newObject!["identifier"] = oldObject!["identifier"]
+                        newObject["identifier"] = oldObject["identifier"]
                     }
                 })
                 migration.enumerateObjects(ofType: CPYFolder.className(), { oldObject, newObject in
-                    newObject!["index"] = oldObject!["index"]
-                    newObject!["enable"] = oldObject!["enable"]
-                    newObject!["title"] = oldObject!["title"]
+                    guard let oldObject = oldObject, let newObject = newObject else { return }
+                    newObject["index"] = oldObject["index"]
+                    newObject["enable"] = oldObject["enable"]
+                    newObject["title"] = oldObject["title"]
                     if oldSchemaVersion >= 5 {
-                        newObject!["identifier"] = oldObject!["identifier"]
+                        newObject["identifier"] = oldObject["identifier"]
                     }
                 })
             }

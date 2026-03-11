@@ -30,6 +30,12 @@ DerivedData/
 # Swift Package Manager local artifacts
 .build/
 
+# Vendored dependencies (large binary frameworks)
+vendor/
+
+# Scripts
+Scripts/
+
 # Claude
 .claude/
 CLAUDE.md

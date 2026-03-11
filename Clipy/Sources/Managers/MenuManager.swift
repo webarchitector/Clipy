@@ -215,11 +215,13 @@ private extension MenuManager {
 
         let settings = MenuSettings()
 
-        addHistoryItems(clipMenu!, settings: settings)
-        addHistoryItems(historyMenu!, settings: settings)
+        guard let clipMenu = clipMenu, let historyMenu = historyMenu, let snippetMenu = snippetMenu else { return }
 
-        addSnippetItems(clipMenu!, separateMenu: true, settings: settings)
-        addSnippetItems(snippetMenu!, separateMenu: false, settings: settings)
+        addHistoryItems(clipMenu, settings: settings)
+        addHistoryItems(historyMenu, settings: settings)
+
+        addSnippetItems(clipMenu, separateMenu: true, settings: settings)
+        addSnippetItems(snippetMenu, separateMenu: false, settings: settings)
 
         clipMenu?.addItem(NSMenuItem.separator())
 
