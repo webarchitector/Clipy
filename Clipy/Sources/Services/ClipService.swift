@@ -46,7 +46,10 @@ final class ClipService {
             .compactMap { $0 }
             .asDriver(onErrorDriveWith: .empty())
             .drive(onNext: { [weak self] in
-                self?.storeTypes = $0
+                guard let self = self else { return }
+                self.lock.lock()
+                self.storeTypes = $0
+                self.lock.unlock()
             })
             .disposed(by: disposeBag)
     }
@@ -132,37 +135,39 @@ extension ClipService {
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
         let savedHash = isOverwriteHistory ? contentHash : UUID().uuidString
 
-        // Saved time and path
+        // Capture immutable values before dispatch
         let unixTime = Int(Date().timeIntervalSince1970)
-        let savedPath = CPYUtilities.applicationSupportFolder() + "/\(NSUUID().uuidString).data"
-        // Create Realm object
-        let clip = CPYClip()
-        clip.dataPath = savedPath
-        clip.title = data.preferredTitle[0...10000]
-        clip.dataHash = savedHash
-        clip.updateTime = unixTime
-        clip.primaryType = data.primaryType?.rawValue ?? ""
+        let savedPath = CPYUtilities.applicationSupportFolder() + "/\(UUID().uuidString).data"
+        let title = data.preferredTitle[0...10000]
+        let primaryType = data.primaryType?.rawValue ?? ""
 
         DispatchQueue.global(qos: .userInitiated).async {
-            // Save thumbnail image
+            var thumbnailPath = ""
+            var isColorCode = false
             if let thumbnailImage = data.thumbnailImage {
                 PINCache.shared.setObjectAsync(thumbnailImage, forKey: "\(unixTime)", completion: nil)
-                clip.thumbnailPath = "\(unixTime)"
+                thumbnailPath = "\(unixTime)"
             }
             if let colorCodeImage = data.colorCodeImage {
                 PINCache.shared.setObjectAsync(colorCodeImage, forKey: "\(unixTime)", completion: nil)
-                clip.thumbnailPath = "\(unixTime)"
-                clip.isColorCode = true
+                thumbnailPath = "\(unixTime)"
+                isColorCode = true
             }
             // Save .data file on background thread
             guard CPYUtilities.prepareSaveToPath(CPYUtilities.applicationSupportFolder()) else { return }
             guard LegacyKeyedArchive.archiveRootObject(data, toFile: savedPath) else { return }
-            // Realm write must happen on main thread
+            // Build CPYClip entirely on main thread
             DispatchQueue.main.async {
+                let clip = CPYClip()
+                clip.dataPath = savedPath
+                clip.title = title
+                clip.dataHash = savedHash
+                clip.updateTime = unixTime
+                clip.primaryType = primaryType
+                clip.thumbnailPath = thumbnailPath
+                clip.isColorCode = isColorCode
                 guard let dispatchRealm = Realm.safeInstance() else { return }
-                dispatchRealm.transaction {
-                    dispatchRealm.add(clip, update: .all)
-                }
+                dispatchRealm.transaction { dispatchRealm.add(clip, update: .all) }
             }
         }
     }

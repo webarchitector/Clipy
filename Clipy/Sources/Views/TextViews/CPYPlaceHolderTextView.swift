@@ -40,14 +40,13 @@ class CPYPlaceHolderTextView: NSTextView {
         if placeHolderText.isEmpty { return }
         if !string.isEmpty { return }
 
-        let text = placeHolderText as NSString
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineBreakMode = .byTruncatingTail
         paragraphStyle.baseWritingDirection = .leftToRight
         let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 14),
                                                          .foregroundColor: placeHolderColor,
                                                          .paragraphStyle: paragraphStyle]
-        text.draw(at: NSPoint(x: 5, y: 5), withAttributes: attributes)
+        placeHolderText.draw(at: NSPoint(x: 5, y: 5), withAttributes: attributes)
     }
 
 }

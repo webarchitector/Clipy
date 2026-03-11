@@ -55,9 +55,7 @@ final class CPYPreferencesWindowController: NSWindowController {
         super.windowDidLoad()
         self.window?.collectionBehavior = .canJoinAllSpaces
         self.window?.backgroundColor = .windowBackgroundColor
-        if #available(OSX 10.10, *) {
-            self.window?.titlebarAppearsTransparent = true
-        }
+        self.window?.titlebarAppearsTransparent = true
         CPYUtilities.applyAdaptiveAppearance(to: toolBar)
         toolBarItemTapped(generalButton)
         generalButton.sendAction(on: .leftMouseDown)
@@ -155,13 +153,14 @@ private extension CPYPreferencesWindowController {
             }
         }
         // Resize view
-        let frame = window!.frame
-        var newFrame = window!.frameRect(forContentRect: newView.frame)
+        guard let window = window else { return }
+        let frame = window.frame
+        var newFrame = window.frameRect(forContentRect: newView.frame)
         newFrame.origin = frame.origin
         newFrame.origin.y += frame.height - newFrame.height - toolBar.frame.height
         newFrame.size.height += toolBar.frame.height
-        window?.setFrame(newFrame, display: true)
-        window?.contentView?.addSubview(newView)
+        window.setFrame(newFrame, display: true)
+        window.contentView?.addSubview(newView)
         CPYUtilities.applyAdaptiveAppearance(to: newView)
     }
 }

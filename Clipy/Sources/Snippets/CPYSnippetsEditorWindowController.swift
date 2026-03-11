@@ -64,9 +64,7 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         super.windowDidLoad()
         self.window?.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces
         self.window?.backgroundColor = .windowBackgroundColor
-        if #available(OSX 10.10, *) {
-            self.window?.titlebarAppearsTransparent = true
-        }
+        self.window?.titlebarAppearsTransparent = true
         splitView.separatorColor = .separatorColor
         outlineView.backgroundColor = .controlBackgroundColor
         textView.textColor = .textColor

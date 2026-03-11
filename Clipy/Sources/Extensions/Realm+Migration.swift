@@ -19,13 +19,13 @@ extension Realm {
             if oldSchemaVersion <= 2 {
                 // Add identifier in CPYSnippet
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
-                    newObject!["identifier"] = NSUUID().uuidString
+                    newObject!["identifier"] = UUID().uuidString
                 }
             }
             if oldSchemaVersion <= 4 {
                 // Add identifier in CPYFolder
                 migration.enumerateObjects(ofType: CPYFolder.className()) { _, newObject in
-                    newObject!["identifier"] = NSUUID().uuidString
+                    newObject!["identifier"] = UUID().uuidString
                 }
             }
             if oldSchemaVersion <= 5 {

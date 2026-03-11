@@ -75,7 +75,7 @@ final class CPYUtilities {
     static func applicationSupportFolder() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true)
         let basePath: String = paths.first ?? NSTemporaryDirectory()
-        return (basePath as NSString).appendingPathComponent(Constants.Application.name)
+        return URL(fileURLWithPath: basePath).appendingPathComponent(Constants.Application.name).path
     }
 
     static func prepareSaveToPath(_ path: String) -> Bool {

@@ -18,6 +18,7 @@ final class ExcludeAppService {
 
     // MARK: - Properties
     fileprivate(set) var applications = [CPYAppInfo]()
+    private let lock = NSLock()
     fileprivate var frontApplication = BehaviorRelay<NSRunningApplication?>(value: nil)
     fileprivate var disposeBag = DisposeBag()
 
@@ -43,10 +44,13 @@ extension ExcludeAppService {
 // MARK: - Exclude
 extension ExcludeAppService {
     func frontProcessIsExcludedApplication() -> Bool {
-        if applications.isEmpty { return false }
+        lock.lock()
+        let apps = applications
+        lock.unlock()
+        if apps.isEmpty { return false }
         guard let frontApplicationIdentifier = frontApplication.value?.bundleIdentifier else { return false }
 
-        for app in applications where app.identifier == frontApplicationIdentifier {
+        for app in apps where app.identifier == frontApplicationIdentifier {
             return true
         }
         return false
@@ -56,24 +60,31 @@ extension ExcludeAppService {
 // MARK: - Add or Delete
 extension ExcludeAppService {
     func add(with appInfo: CPYAppInfo) {
-        if applications.contains(appInfo) { return }
+        lock.lock()
+        if applications.contains(appInfo) { lock.unlock(); return }
         applications.append(appInfo)
-        save()
+        let data = applications.archive()
+        lock.unlock()
+        if let data = data {
+            AppEnvironment.current.defaults.set(data, forKey: Constants.UserDefaults.excludeApplications)
+        }
     }
 
     func delete(with appInfo: CPYAppInfo) {
+        lock.lock()
         applications = applications.filter { $0 != appInfo }
-        save()
+        let data = applications.archive()
+        lock.unlock()
+        if let data = data {
+            AppEnvironment.current.defaults.set(data, forKey: Constants.UserDefaults.excludeApplications)
+        }
     }
 
     func delete(with index: Int) {
-        delete(with: applications[index])
-    }
-
-    private func save() {
-        if let data = applications.archive() {
-            AppEnvironment.current.defaults.set(data, forKey: Constants.UserDefaults.excludeApplications)
-        }
+        lock.lock()
+        let appInfo = applications[index]
+        lock.unlock()
+        delete(with: appInfo)
     }
 }
 
@@ -107,6 +118,9 @@ extension ExcludeAppService {
     func copiedProcessIsExcludedApplications(pasteboard: NSPasteboard) -> Bool {
         guard let types = pasteboard.types else { return false }
         guard let application = types.compactMap({ Application(rawValue: $0.rawValue) }).first else { return false }
-        return application.isExcluded(applications: applications)
+        lock.lock()
+        let apps = applications
+        lock.unlock()
+        return application.isExcluded(applications: apps)
     }
 }

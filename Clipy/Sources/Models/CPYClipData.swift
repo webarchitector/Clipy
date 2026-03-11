@@ -81,14 +81,6 @@ final class CPYClipData: NSObject {
             return ""
         }
     }
-    var searchableText: String {
-        let values = [trimmedStringValue, preferredTitle] + fileNames + fileDisplayNames + URLs
-        return normalizedValues(values).joined(separator: "\n")
-    }
-    var toolTipText: String {
-        let values = [trimmedStringValue] + fileNames + URLs + [preferredTitle]
-        return normalizedValues(values).joined(separator: "\n")
-    }
     var thumbnailImage: NSImage? {
         let defaults = UserDefaults.standard
         let width = defaults.integer(forKey: Constants.UserDefaults.thumbnailWidth)
@@ -212,8 +204,6 @@ final class CPYClipData: NSObject {
         self.image = image
     }
 
-    deinit {}
-
     // MARK: - NSCoding
     @objc func encodeWithCoder(_ aCoder: NSCoder) {
         aCoder.encode(types.map { $0.rawValue }, forKey: kTypesKey)
@@ -277,19 +267,5 @@ private extension CPYClipData {
 
     var fileDisplayNames: [String] {
         fileNames.map { URL(fileURLWithPath: $0).lastPathComponent }
-    }
-
-    func normalizedValues(_ values: [String]) -> [String] {
-        var uniqueValues = [String]()
-        var seenValues = Set<String>()
-
-        values.forEach { value in
-            let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmedValue.isEmpty else { return }
-            guard seenValues.insert(trimmedValue).inserted else { return }
-            uniqueValues.append(trimmedValue)
-        }
-
-        return uniqueValues
     }
 }
