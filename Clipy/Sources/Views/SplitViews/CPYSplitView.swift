@@ -21,6 +21,11 @@ class CPYSplitView: NSSplitView {
         }
     }
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
     // MARK: - Draw
     override func drawDivider(in rect: NSRect) {
         separatorColor.setFill()

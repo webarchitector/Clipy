@@ -54,10 +54,11 @@ final class CPYPreferencesWindowController: NSWindowController {
     override func windowDidLoad() {
         super.windowDidLoad()
         self.window?.collectionBehavior = .canJoinAllSpaces
-        self.window?.backgroundColor = NSColor(white: 0.99, alpha: 1)
+        self.window?.backgroundColor = .windowBackgroundColor
         if #available(OSX 10.10, *) {
             self.window?.titlebarAppearsTransparent = true
         }
+        CPYUtilities.applyAdaptiveAppearance(to: toolBar)
         toolBarItemTapped(generalButton)
         generalButton.sendAction(on: .leftMouseDown)
         menuButton.sendAction(on: .leftMouseDown)
@@ -70,7 +71,8 @@ final class CPYPreferencesWindowController: NSWindowController {
 
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
-        window?.makeKeyAndOrderFront(self)
+        window?.backgroundColor = .windowBackgroundColor
+        CPYUtilities.presentPreferencesWindow(window)
     }
 }
 
@@ -91,7 +93,7 @@ extension CPYPreferencesWindowController: NSWindowDelegate {
         if let window = window, !window.makeFirstResponder(window) {
             window.endEditing(for: nil)
         }
-        NSApp.deactivate()
+        CPYUtilities.closePreferencesWindow()
     }
 }
 
@@ -106,13 +108,13 @@ private extension CPYPreferencesWindowController {
         updatesImageView.image = Asset.prefUpdate.image
         betaImageView.image = Asset.prefBeta.image
 
-        generalTextField.textColor = ColorName.tabTitle.color
-        menuTextField.textColor = ColorName.tabTitle.color
-        typeTextField.textColor = ColorName.tabTitle.color
-        excludeTextField.textColor = ColorName.tabTitle.color
-        shortcutsTextField.textColor = ColorName.tabTitle.color
-        updatesTextField.textColor = ColorName.tabTitle.color
-        betaTextField.textColor = ColorName.tabTitle.color
+        generalTextField.textColor = .secondaryLabelColor
+        menuTextField.textColor = .secondaryLabelColor
+        typeTextField.textColor = .secondaryLabelColor
+        excludeTextField.textColor = .secondaryLabelColor
+        shortcutsTextField.textColor = .secondaryLabelColor
+        updatesTextField.textColor = .secondaryLabelColor
+        betaTextField.textColor = .secondaryLabelColor
     }
 
     func selectedTab(_ index: Int) {
@@ -121,25 +123,25 @@ private extension CPYPreferencesWindowController {
         switch index {
         case 0:
             generalImageView.image = Asset.prefGeneralOn.image
-            generalTextField.textColor = ColorName.clipy.color
+            generalTextField.textColor = .controlAccentColor
         case 1:
             menuImageView.image = Asset.prefMenuOn.image
-            menuTextField.textColor = ColorName.clipy.color
+            menuTextField.textColor = .controlAccentColor
         case 2:
             typeImageView.image = Asset.prefTypeOn.image
-            typeTextField.textColor = ColorName.clipy.color
+            typeTextField.textColor = .controlAccentColor
         case 3:
             excludeImageView.image = Asset.prefExcludedOn.image
-            excludeTextField.textColor = ColorName.clipy.color
+            excludeTextField.textColor = .controlAccentColor
         case 4:
             shortcutsImageView.image = Asset.prefShortcutOn.image
-            shortcutsTextField.textColor = ColorName.clipy.color
+            shortcutsTextField.textColor = .controlAccentColor
         case 5:
             updatesImageView.image = Asset.prefUpdateOn.image
-            updatesTextField.textColor = ColorName.clipy.color
+            updatesTextField.textColor = .controlAccentColor
         case 6:
             betaImageView.image = Asset.prefBetaOn.image
-            betaTextField.textColor = ColorName.clipy.color
+            betaTextField.textColor = .controlAccentColor
         default: break
         }
     }
@@ -160,5 +162,6 @@ private extension CPYPreferencesWindowController {
         newFrame.size.height += toolBar.frame.height
         window?.setFrame(newFrame, display: true)
         window?.contentView?.addSubview(newView)
+        CPYUtilities.applyAdaptiveAppearance(to: newView)
     }
 }

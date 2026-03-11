@@ -4,6 +4,8 @@
 
 # Clipy
 
+> Before making changes, read [AGENTS.md](./AGENTS.md) first. It contains project-specific instructions for contributors and coding agents.
+
 Clipboard extension for macOS.
 
 Clipy is a clipboard extension for macOS that lives in the menu bar and keeps a searchable history of copied text and snippets. It is designed to make repeated copy/paste work faster: you can recall previous clipboard entries, organize snippets, and paste saved content without leaving your current app.
@@ -24,7 +26,7 @@ Main Clipy interface:
 ## What Changed
 
 - The build toolchain no longer requires Ruby, Bundler, Fastlane, Danger, or CocoaPods.
-- Dependencies are vendored locally in `Vendor/Dependencies/`.
+- Dependencies are vendored locally in `vendor/Dependencies/`.
 
 ## Install
 

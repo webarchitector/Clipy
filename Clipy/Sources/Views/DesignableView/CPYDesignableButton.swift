@@ -14,7 +14,16 @@ import Cocoa
 
 class CPYDesignableButton: NSButton {
 
-    @IBInspectable var textColor: NSColor = ColorName.title.color
+    @IBInspectable var textColor: NSColor = .labelColor {
+        didSet {
+            updateAttributedTitle()
+        }
+    }
+    override var title: String {
+        didSet {
+            updateAttributedTitle()
+        }
+    }
 
     // MARK: - Initialize
     override init(frame frameRect: NSRect) {
@@ -27,7 +36,21 @@ class CPYDesignableButton: NSButton {
         initView()
     }
 
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        updateAttributedTitle()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAttributedTitle()
+    }
+
     private func initView() {
+        updateAttributedTitle()
+    }
+
+    private func updateAttributedTitle() {
         let attributedString = NSAttributedString(string: title, attributes: [.foregroundColor: textColor])
         attributedTitle = attributedString
     }

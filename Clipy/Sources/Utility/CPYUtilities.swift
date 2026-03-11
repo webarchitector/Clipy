@@ -11,9 +11,16 @@
 //
 
 import Cocoa
+import KeyHolder
 import RealmSwift
 
 final class CPYUtilities {
+    private enum InteractiveWindow: String {
+        case preferences
+        case snippets
+    }
+
+    private static var interactiveWindows = Set<String>()
 
     static func initSDKs() {
         AppEnvironment.current.defaults.register(defaults: ["NSApplicationCrashOnExceptions": true])
@@ -95,5 +102,138 @@ final class CPYUtilities {
 
     static func sendCustomLog(with name: String) {
         _ = name
+    }
+
+    static func presentPreferencesWindow(_ window: NSWindow?) {
+        presentInteractiveWindow(.preferences, window: window)
+    }
+
+    static func presentSnippetsWindow(_ window: NSWindow?) {
+        presentInteractiveWindow(.snippets, window: window)
+    }
+
+    static func closePreferencesWindow() {
+        closeInteractiveWindow(.preferences)
+    }
+
+    static func closeSnippetsWindow() {
+        closeInteractiveWindow(.snippets)
+    }
+
+    static func applyAdaptiveAppearance(to view: NSView?) {
+        guard let view = view else { return }
+
+        style(view)
+        view.subviews.forEach { applyAdaptiveAppearance(to: $0) }
+    }
+}
+
+private extension CPYUtilities {
+    private static func presentInteractiveWindow(_ interactiveWindow: InteractiveWindow, window: NSWindow?) {
+        interactiveWindows.insert(interactiveWindow.rawValue)
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
+    }
+
+    private static func closeInteractiveWindow(_ interactiveWindow: InteractiveWindow) {
+        interactiveWindows.remove(interactiveWindow.rawValue)
+
+        guard interactiveWindows.isEmpty else { return }
+
+        NSApp.setActivationPolicy(.accessory)
+        NSApp.deactivate()
+    }
+
+    private static func style(_ view: NSView) {
+        switch view {
+        case let textField as NSTextField:
+            style(textField)
+        case let textView as CPYPlaceHolderTextView:
+            textView.textColor = .textColor
+            textView.insertionPointColor = .textColor
+            textView.backgroundColor = .textBackgroundColor
+            textView.placeHolderColor = .placeholderTextColor
+        case let textView as NSTextView:
+            textView.textColor = .textColor
+            textView.insertionPointColor = .textColor
+            textView.backgroundColor = .textBackgroundColor
+        case let scrollView as NSScrollView:
+            style(scrollView)
+        case let outlineView as NSOutlineView:
+            outlineView.backgroundColor = .controlBackgroundColor
+            outlineView.gridColor = .separatorColor
+        case let tableView as NSTableView:
+            tableView.backgroundColor = .controlBackgroundColor
+            tableView.gridColor = .separatorColor
+        case let recordView as RecordView:
+            style(recordView)
+        case let button as CPYDesignableButton:
+            button.textColor = .labelColor
+        case let designableView as CPYDesignableView:
+            style(designableView)
+        case let splitView as CPYSplitView:
+            splitView.separatorColor = .separatorColor
+        default:
+            break
+        }
+    }
+
+    private static func style(_ textField: NSTextField) {
+        if textField.isEditable {
+            textField.textColor = .textColor
+            if textField.drawsBackground {
+                textField.backgroundColor = .textBackgroundColor
+            }
+            return
+        }
+
+        textField.textColor = textField.isEnabled ? .labelColor : .secondaryLabelColor
+    }
+
+    private static func style(_ scrollView: NSScrollView) {
+        switch scrollView.documentView {
+        case is NSTextView:
+            scrollView.drawsBackground = true
+            scrollView.backgroundColor = .textBackgroundColor
+        case is NSTableView:
+            scrollView.drawsBackground = true
+            scrollView.backgroundColor = .controlBackgroundColor
+        default:
+            break
+        }
+    }
+
+    private static func style(_ recordView: RecordView) {
+        recordView.backgroundColor = .textBackgroundColor
+        recordView.borderColor = .separatorColor
+        recordView.tintColor = .controlAccentColor
+    }
+
+    private static func style(_ designableView: CPYDesignableView) {
+        if designableView.borderWidth > 0, shouldUseAdaptiveNeutralColor(designableView.borderColor) {
+            designableView.borderColor = .separatorColor
+        }
+
+        if designableView.bounds.height <= 1 || designableView.bounds.width <= 1 {
+            if shouldUseAdaptiveNeutralColor(designableView.backgroundColor) {
+                designableView.backgroundColor = .separatorColor
+            }
+            return
+        }
+
+        guard designableView.backgroundColor.alphaComponent > 0 else { return }
+        guard shouldUseAdaptiveNeutralColor(designableView.backgroundColor) else { return }
+        designableView.backgroundColor = .windowBackgroundColor
+    }
+
+    private static func shouldUseAdaptiveNeutralColor(_ color: NSColor) -> Bool {
+        guard let rgbColor = color.usingColorSpace(.deviceRGB) else { return false }
+        guard rgbColor.alphaComponent > 0 else { return false }
+
+        let maxComponent = max(rgbColor.redComponent, rgbColor.greenComponent, rgbColor.blueComponent)
+        let minComponent = min(rgbColor.redComponent, rgbColor.greenComponent, rgbColor.blueComponent)
+
+        return (maxComponent - minComponent) < 0.08
     }
 }

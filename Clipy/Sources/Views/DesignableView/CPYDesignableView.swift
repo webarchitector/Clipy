@@ -49,6 +49,11 @@ import Cocoa
         super.init(coder: coder)
     }
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
     // MARK: - Update
     override func draw(_ dirtyRect: NSRect) {
         // Background

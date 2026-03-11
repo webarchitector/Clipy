@@ -11,6 +11,7 @@
                 <outlet property="folderShortcutRecordView" destination="zjO-0c-pwM" id="x7o-Yz-Zpe"/>
                 <outlet property="folderTitleTextField" destination="xGQ-1B-r34" id="mgO-58-c6u"/>
                 <outlet property="outlineView" destination="F5g-cX-Wqm" id="k1K-Pb-XxG"/>
+                <outlet property="splitView" destination="BiM-Ll-CfO" id="UoP-Rf-q9x"/>
                 <outlet property="textView" destination="Sg6-q3-8Kx" id="UKr-6H-tfo"/>
                 <outlet property="window" destination="QvC-M9-y7g" id="euv-Gb-Dbb"/>
             </connections>

@@ -29,6 +29,11 @@ class CPYPlaceHolderTextView: NSTextView {
         return NSPoint(x: 0, y: 7)
     }
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
     // MARK: - Draw
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)

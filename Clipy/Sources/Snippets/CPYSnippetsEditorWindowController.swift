@@ -63,10 +63,19 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
     override func windowDidLoad() {
         super.windowDidLoad()
         self.window?.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces
-        self.window?.backgroundColor = NSColor(white: 0.99, alpha: 1)
+        self.window?.backgroundColor = .windowBackgroundColor
         if #available(OSX 10.10, *) {
             self.window?.titlebarAppearsTransparent = true
         }
+        splitView.separatorColor = .separatorColor
+        outlineView.backgroundColor = .controlBackgroundColor
+        textView.textColor = .textColor
+        textView.insertionPointColor = .textColor
+        textView.backgroundColor = .textBackgroundColor
+        textView.placeHolderColor = .placeholderTextColor
+        folderShortcutRecordView.tintColor = .controlAccentColor
+        folderShortcutRecordView.borderColor = .separatorColor
+        CPYUtilities.applyAdaptiveAppearance(to: window?.contentView)
         // HACK: Copy as an object that does not put under Realm management.
         // https://github.com/realm/realm-cocoa/issues/1734
         let realm = try! Realm()
@@ -83,7 +92,12 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
 
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
-        window?.makeKeyAndOrderFront(self)
+        window?.backgroundColor = .windowBackgroundColor
+        splitView.separatorColor = .separatorColor
+        folderShortcutRecordView.tintColor = .controlAccentColor
+        folderShortcutRecordView.borderColor = .separatorColor
+        CPYUtilities.applyAdaptiveAppearance(to: window?.contentView)
+        CPYUtilities.presentSnippetsWindow(window)
     }
 }
 
@@ -460,6 +474,13 @@ extension CPYSnippetsEditorWindowController: NSTextViewDelegate {
         snippet.content = string
         snippet.merge()
         return true
+    }
+}
+
+// MARK: - NSWindow Delegate
+extension CPYSnippetsEditorWindowController: NSWindowDelegate {
+    func windowWillClose(_ notification: Notification) {
+        CPYUtilities.closeSnippetsWindow()
     }
 }
 
