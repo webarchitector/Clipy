@@ -78,7 +78,7 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         CPYUtilities.applyAdaptiveAppearance(to: window?.contentView)
         // HACK: Copy as an object that does not put under Realm management.
         // https://github.com/realm/realm-cocoa/issues/1734
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         folders = realm.objects(CPYFolder.self)
                     .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
                     .map { $0.deepCopy() }
@@ -183,7 +183,7 @@ extension CPYSnippetsEditorWindowController {
         guard let data = try? Data(contentsOf: url) else { return }
 
         do {
-            let realm = try! Realm()
+            guard let realm = Realm.safeInstance() else { return }
             let lastFolder = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true).last
             var folderIndex = (lastFolder?.index ?? -1) + 1
             // Create Document
@@ -231,7 +231,7 @@ extension CPYSnippetsEditorWindowController {
         let xmlDocument = AEXMLDocument()
         let rootElement = xmlDocument.addChild(name: Constants.Xml.rootElement)
 
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         let folders = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
         folders.forEach { folder in
             let folderElement = rootElement.addChild(name: Constants.Xml.folderElement)
@@ -470,7 +470,9 @@ extension CPYSnippetsEditorWindowController: NSTextViewDelegate {
         guard let replacementString = replacementString else { return false }
         let text = textView.string
         guard let snippet = selectedSnippet else { return false }
-        let string = (text as NSString).replacingCharacters(in: affectedCharRange, with: replacementString)
+        guard let range = Range(affectedCharRange, in: text) else { return false }
+        var string = text
+        string.replaceSubrange(range, with: replacementString)
         snippet.content = string
         snippet.merge()
         return true

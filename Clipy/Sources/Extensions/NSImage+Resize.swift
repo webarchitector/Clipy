@@ -26,12 +26,10 @@ extension NSImage {
             }
         }
 
-        if bitmapRep == nil {
-            return nil
-        }
+        guard let bitmapRep = bitmapRep else { return nil }
 
-        let origWidth = CGFloat(bitmapRep!.pixelsWide)
-        let origHeight = CGFloat(bitmapRep!.pixelsHigh)
+        let origWidth = CGFloat(bitmapRep.pixelsWide)
+        let origHeight = CGFloat(bitmapRep.pixelsHigh)
 
         let aspect = CGFloat(origWidth) / CGFloat(origHeight)
 
@@ -65,13 +63,12 @@ extension NSImage {
             newHeight = origHeight
         }
 
-        let newImageRep = self.bestRepresentation(for: NSRect(x: 0, y: 0, width: newWidth, height: newHeight), context: nil, hints: nil)
-        if newImageRep == nil {
+        guard let newImageRep = self.bestRepresentation(for: NSRect(x: 0, y: 0, width: newWidth, height: newHeight), context: nil, hints: nil) else {
             return nil
         }
 
         let thumbnail = NSImage(size: NSSize(width: newWidth, height: newHeight))
-        thumbnail.addRepresentation(newImageRep!)
+        thumbnail.addRepresentation(newImageRep)
 
         return thumbnail
     }

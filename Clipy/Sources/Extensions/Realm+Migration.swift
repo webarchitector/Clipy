@@ -58,6 +58,6 @@ extension Realm {
             }
         })
         Realm.Configuration.defaultConfiguration = config
-        _ = try! Realm()
+        _ = try? Realm()
     }
 }

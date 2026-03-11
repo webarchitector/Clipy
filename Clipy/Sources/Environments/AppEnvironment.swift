@@ -15,45 +15,12 @@ import Foundation
 struct AppEnvironment {
 
     // MARK: - Properties
-    private static var stack = [Environment()]
+    private static var _current = Environment()
 
-    static var current: Environment {
-        return stack.last ?? Environment()
-    }
-
-    // MARK: - Stacks
-    static func push(environment: Environment) {
-        stack.append(environment)
-    }
-
-    @discardableResult
-    static func popLast() -> Environment? {
-        return stack.popLast()
-    }
+    static var current: Environment { _current }
 
     static func replaceCurrent(environment: Environment) {
-        push(environment: environment)
-        stack.remove(at: stack.count - 2)
-    }
-
-    static func push(clipService: ClipService = current.clipService,
-                     hotKeyService: HotKeyService = current.hotKeyService,
-                     dataCleanService: DataCleanService = current.dataCleanService,
-                     pasteService: PasteService = current.pasteService,
-                     excludeAppService: ExcludeAppService = current.excludeAppService,
-                     accessibilityService: AccessibilityService = current.accessibilityService,
-                     updateService: UpdateService = current.updateService,
-                     menuManager: MenuManager = current.menuManager,
-                     defaults: UserDefaults = current.defaults) {
-        push(environment: Environment(clipService: clipService,
-                                      hotKeyService: hotKeyService,
-                                      dataCleanService: dataCleanService,
-                                      pasteService: pasteService,
-                                      excludeAppService: excludeAppService,
-                                      accessibilityService: accessibilityService,
-                                      updateService: updateService,
-                                      menuManager: menuManager,
-                                      defaults: defaults))
+        _current = environment
     }
 
     static func replaceCurrent(clipService: ClipService = current.clipService,

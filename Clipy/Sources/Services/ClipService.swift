@@ -52,7 +52,7 @@ final class ClipService {
     }
 
     func clearAll() {
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         let clips = realm.objects(CPYClip.self)
 
         // Delete saved images
@@ -67,7 +67,7 @@ final class ClipService {
     }
 
     func delete(with clip: CPYClip) {
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         // Delete saved images
         let path = clip.thumbnailPath
         if !path.isEmpty {
@@ -117,7 +117,7 @@ extension ClipService {
     }
 
     fileprivate func save(with data: CPYClipData) {
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         let contentHash = data.contentHash
         // Copy already copied history
         let isCopySameHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
@@ -159,7 +159,7 @@ extension ClipService {
             guard LegacyKeyedArchive.archiveRootObject(data, toFile: savedPath) else { return }
             // Realm write must happen on main thread
             DispatchQueue.main.async {
-                let dispatchRealm = try! Realm()
+                guard let dispatchRealm = Realm.safeInstance() else { return }
                 dispatchRealm.transaction {
                     dispatchRealm.add(clip, update: .all)
                 }

@@ -34,7 +34,7 @@ final class DataCleanService {
 
     // MARK: - Delete Data
     func cleanDatas() {
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         let flowHistories = overflowingClips(with: realm)
         flowHistories
             .filter { !$0.isInvalidated && !$0.thumbnailPath.isEmpty }
@@ -67,7 +67,7 @@ final class DataCleanService {
 
         let allClipPaths = Set(realm.objects(CPYClip.self)
             .filter { !$0.isInvalidated }
-            .compactMap { ($0.dataPath as NSString).lastPathComponent })
+            .compactMap { URL(fileURLWithPath: $0.dataPath).lastPathComponent })
 
         // Delete orphaned files not referenced by any clip
         DispatchQueue.global(qos: .utility).async {

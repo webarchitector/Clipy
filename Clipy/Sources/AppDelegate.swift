@@ -80,7 +80,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     // MARK: - NSMenuItem Validation
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(AppDelegate.clearAllHistory) {
-            let realm = try! Realm()
+            guard let realm = Realm.safeInstance() else { return false }
             return !realm.objects(CPYClip.self).isEmpty
         }
         return true
@@ -140,7 +140,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             NSSound.beep()
             return
         }
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else {
             NSSound.beep()
             return
@@ -154,7 +154,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             NSSound.beep()
             return
         }
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey) else {
             NSSound.beep()
             return

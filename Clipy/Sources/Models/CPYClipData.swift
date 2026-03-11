@@ -212,11 +212,7 @@ final class CPYClipData: NSObject {
         self.image = image
     }
 
-    deinit {
-        self.RTFData = nil
-        self.PDF = nil
-        self.image = nil
-    }
+    deinit {}
 
     // MARK: - NSCoding
     @objc func encodeWithCoder(_ aCoder: NSCoder) {

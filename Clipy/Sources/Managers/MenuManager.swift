@@ -35,7 +35,7 @@ final class MenuManager: NSObject {
     fileprivate let shortenSymbol = "..."
     fileprivate let menuRebuildSubject = PublishSubject<Void>()
     // Realm
-    fileprivate let realm = try! Realm()
+    fileprivate var realm: Realm? = Realm.safeInstance()
     fileprivate var clipToken: NotificationToken?
     fileprivate var snippetToken: NotificationToken?
 
@@ -102,6 +102,7 @@ extension MenuManager {
 private extension MenuManager {
     func bind() {
         // Realm Notification (debounced to avoid repeated menu rebuilds)
+        guard let realm = realm else { return }
         clipToken = realm.objects(CPYClip.self)
                         .observe { [weak self] _ in
                             self?.menuRebuildSubject.onNext(())
@@ -124,15 +125,6 @@ private extension MenuManager {
                 self?.changeStatusItem(StatusType(rawValue: key) ?? .black)
             })
             .disposed(by: disposeBag)
-        // Sort clips
-        AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.UserDefaults.reorderClipsAfterPasting, options: [.new], retainSelf: false)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] _ in
-                guard let wSelf = self else { return }
-                wSelf.createClipMenu()
-            })
-            .disposed(by: disposeBag)
         // Edit snippets
         notificationCenter.rx.notification(Notification.Name(rawValue: Constants.Notification.closeSnippetEditor))
             .asDriver(onErrorDriveWith: .empty())
@@ -140,36 +132,35 @@ private extension MenuManager {
                 self?.createClipMenu()
             })
             .disposed(by: disposeBag)
-        // Observe change preference settings
+        // Observe change preference settings (consolidated)
         let defaults = AppEnvironment.current.defaults
-        var menuChangedObservables = [Observable<Void>]()
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.addClearHistoryMenuItem, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Int.self, Constants.UserDefaults.maxHistorySize, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.showIconInTheMenu, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Int.self, Constants.UserDefaults.numberOfItemsPlaceInline, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Int.self, Constants.UserDefaults.numberOfItemsPlaceInsideFolder, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Int.self, Constants.UserDefaults.maxMenuItemTitleLength, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.menuItemsTitleStartWithZero, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.menuItemsAreMarkedWithNumbers, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.showToolTipOnMenuItem, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.showImageInTheMenu, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.addNumericKeyEquivalents, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Int.self, Constants.UserDefaults.maxLengthOfToolTip, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        menuChangedObservables.append(defaults.rx.observe(Bool.self, Constants.UserDefaults.showColorPreviewInTheMenu, options: [.new], retainSelf: false)
-                                        .compactMap { $0 }.distinctUntilChanged().map { _ in })
-        Observable.merge(menuChangedObservables)
+        let boolKeys: [String] = [
+            Constants.UserDefaults.addClearHistoryMenuItem,
+            Constants.UserDefaults.showIconInTheMenu,
+            Constants.UserDefaults.menuItemsTitleStartWithZero,
+            Constants.UserDefaults.menuItemsAreMarkedWithNumbers,
+            Constants.UserDefaults.showToolTipOnMenuItem,
+            Constants.UserDefaults.showImageInTheMenu,
+            Constants.UserDefaults.addNumericKeyEquivalents,
+            Constants.UserDefaults.showColorPreviewInTheMenu,
+            Constants.UserDefaults.reorderClipsAfterPasting
+        ]
+        let intKeys: [String] = [
+            Constants.UserDefaults.maxHistorySize,
+            Constants.UserDefaults.numberOfItemsPlaceInline,
+            Constants.UserDefaults.numberOfItemsPlaceInsideFolder,
+            Constants.UserDefaults.maxMenuItemTitleLength,
+            Constants.UserDefaults.maxLengthOfToolTip
+        ]
+        let boolObservables = boolKeys.map { key in
+            defaults.rx.observe(Bool.self, key, options: [.new], retainSelf: false)
+                .compactMap { $0 }.distinctUntilChanged().map { _ in }
+        }
+        let intObservables = intKeys.map { key in
+            defaults.rx.observe(Int.self, key, options: [.new], retainSelf: false)
+                .compactMap { $0 }.distinctUntilChanged().map { _ in }
+        }
+        Observable.merge(boolObservables + intObservables)
             .throttle(.seconds(1), scheduler: MainScheduler.instance)
             .asDriver(onErrorDriveWith: .empty())
             .drive(onNext: { [weak self] in
@@ -301,25 +292,19 @@ private extension MenuManager {
     }
 
     func trimTitle(_ title: String?, maxLength: Int? = nil) -> String {
-        if title == nil { return "" }
-        let theString = title!.trimmingCharacters(in: .whitespacesAndNewlines) as NSString
+        guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return "" }
 
-        let aRange = NSRange(location: 0, length: 0)
-        var lineStart = 0, lineEnd = 0, contentsEnd = 0
-        theString.getLineStart(&lineStart, end: &lineEnd, contentsEnd: &contentsEnd, for: aRange)
+        let firstLine = title.prefix(while: { !$0.isNewline })
+        var titleString = String(firstLine)
 
-        var titleString = (lineEnd == theString.length) ? theString as String : theString.substring(to: contentsEnd)
+        var maxLen = maxLength ?? AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxMenuItemTitleLength)
+        if maxLen < shortenSymbol.count { maxLen = shortenSymbol.count }
 
-        var maxMenuItemTitleLength = maxLength ?? AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxMenuItemTitleLength)
-        if maxMenuItemTitleLength < shortenSymbol.count {
-            maxMenuItemTitleLength = shortenSymbol.count
+        if titleString.count > maxLen {
+            titleString = String(titleString.prefix(maxLen - shortenSymbol.count)) + shortenSymbol
         }
 
-        if titleString.utf16.count > maxMenuItemTitleLength {
-            titleString = (titleString as NSString).substring(to: maxMenuItemTitleLength - shortenSymbol.count) + shortenSymbol
-        }
-
-        return titleString as String
+        return titleString
     }
 }
 
@@ -341,6 +326,7 @@ private extension MenuManager {
         var subMenuIndex = 1 + placeInLine
 
         let ascending = !settings.reorderClipsAfterPasting
+        guard let realm = realm else { return }
         let clipResults = realm.objects(CPYClip.self).sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
         let currentSize = Int(clipResults.count)
         var i = 0
@@ -396,8 +382,7 @@ private extension MenuManager {
         menuItem.representedObject = clip.dataHash
 
         if settings.isShowToolTip {
-            let toIndex = (clipString.count < settings.maxLengthOfToolTip) ? clipString.count : settings.maxLengthOfToolTip
-            menuItem.toolTip = (clipString as NSString).substring(to: toIndex)
+            menuItem.toolTip = String(clipString.prefix(settings.maxLengthOfToolTip))
         }
 
         if primaryPboardType == .deprecatedTIFF {
@@ -433,6 +418,7 @@ private extension MenuManager {
 // MARK: - Snippets
 private extension MenuManager {
     func addSnippetItems(_ menu: NSMenu, separateMenu: Bool, settings: MenuSettings) {
+        guard let realm = realm else { return }
         let folderResults = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
         guard !folderResults.isEmpty else { return }
         if separateMenu {
@@ -529,22 +515,24 @@ private struct ClipboardHistoryEntry: Equatable {
     let toolTip: String
     let thumbnailPath: String
     let isColorCode: Bool
-    let filePaths: [String]
+    let dataPath: String
+    let primaryType: String
 
     init(clip: CPYClip) {
         primaryKey = clip.dataHash
         thumbnailPath = clip.thumbnailPath
         isColorCode = clip.isColorCode
+        dataPath = clip.dataPath
+        primaryType = clip.primaryType
+
+        // Use title stored in Realm (already contains preferredTitle from ClipService.save)
         let clipTitle = ClipboardHistoryEntry.sanitizedStoredTitle(clip.title)
-        let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath)
-        filePaths = clipData?.fileNames ?? []
-        let preferredTitle = clipData?.preferredTitle.trimmingCharacters(in: .whitespacesAndNewlines) ?? clipTitle
 
         let rawTitle: String
-        if preferredTitle.isEmpty {
+        if clipTitle.isEmpty {
             rawTitle = ClipboardHistoryEntry.fallbackTitle(for: clip)
         } else {
-            rawTitle = preferredTitle
+            rawTitle = clipTitle
         }
         // Collapse whitespace/newlines into single line and limit length for display
         let singleLine = rawTitle.components(separatedBy: .newlines)
@@ -554,19 +542,8 @@ private struct ClipboardHistoryEntry: Equatable {
             .joined(separator: " ")
         displayTitle = String(singleLine.prefix(500))
 
-        let searchableText = clipData?.searchableText.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if searchableText.isEmpty {
-            searchText = [displayTitle, clipTitle]
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-                .joined(separator: "\n")
-        } else {
-            searchText = searchableText
-        }
-
-        let toolTipText = clipData?.toolTipText.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let fullToolTip = toolTipText.isEmpty ? displayTitle : toolTipText
-        toolTip = String(fullToolTip.prefix(2000))
+        searchText = displayTitle
+        toolTip = String(displayTitle.prefix(2000))
     }
 
     private static func fallbackTitle(for clip: CPYClip) -> String {
@@ -691,7 +668,7 @@ private final class ClipboardHistoryCellView: NSTableCellView {
                     self.showThumbnail(image)
                 }
             }
-        } else if let filePath = entry.filePaths.first {
+        } else if let filePath = ClipboardHistoryCellView.firstFilePath(from: entry) {
             // Show system file icon for copied files
             let icon = NSWorkspace.shared.icon(forFile: filePath)
             icon.size = NSSize(width: 32, height: 32)
@@ -715,6 +692,13 @@ private final class ClipboardHistoryCellView: NSTableCellView {
         titleLeadingWithoutImage.isActive = true
     }
 
+    static func firstFilePath(from entry: ClipboardHistoryEntry) -> String? {
+        let ptype = NSPasteboard.PasteboardType(rawValue: entry.primaryType)
+        guard ptype == .deprecatedFilenames || ptype == .fileURL else { return nil }
+        let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: entry.dataPath)
+        return clipData?.fileNames.first
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         hideThumbnail()
@@ -728,7 +712,7 @@ private final class CPYClipboardHistoryWindowController: NSWindowController {
     private let scrollView = NSScrollView()
     private let tableView = ClipboardHistoryTableView()
     private let emptyStateLabel = NSTextField(labelWithString: L10n.noMatchingHistoryItems)
-    private let realm = try! Realm()
+    private var realm: Realm? = Realm.safeInstance()
 
     private var clipToken: NotificationToken?
     private var workspaceObserver: NSObjectProtocol?
@@ -851,6 +835,7 @@ private extension CPYClipboardHistoryWindowController {
     }
 
     func observeClips() {
+        guard let realm = realm else { return }
         clipToken = realm.objects(CPYClip.self).observe { [weak self] _ in
             self?.reloadEntries()
         }
@@ -872,6 +857,7 @@ private extension CPYClipboardHistoryWindowController {
     }
 
     func reloadEntries() {
+        guard let realm = realm else { return }
         let ascending = !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
         entries = realm.objects(CPYClip.self)
             .sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
@@ -931,7 +917,7 @@ private extension CPYClipboardHistoryWindowController {
             return
         }
 
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: entry.primaryKey) else {
             NSSound.beep()
             return

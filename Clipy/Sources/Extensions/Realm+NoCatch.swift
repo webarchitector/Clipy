@@ -14,6 +14,15 @@ import Foundation
 import RealmSwift
 
 extension Realm {
+    static func safeInstance() -> Realm? {
+        do {
+            return try Realm()
+        } catch {
+            NSLog("Realm initialization failed: %@", "\(error)")
+            return nil
+        }
+    }
+
     func transaction(_ block: (() throws -> Void)) {
         do {
             try write(block)
