@@ -56,12 +56,22 @@ extension ExcludeAppService {
 
 // MARK: - Exclude
 extension ExcludeAppService {
+    // Password managers that are always excluded from clipboard history
+    private static let alwaysExcludedBundleIDs: Set<String> = [
+        "com.apple.Passwords",
+        "com.apple.keychainaccess",
+    ]
+
     func frontProcessIsExcludedApplication() -> Bool {
+        guard let frontApplicationIdentifier = frontApplication.value?.bundleIdentifier else { return false }
+
+        // Always exclude known password managers
+        if ExcludeAppService.alwaysExcludedBundleIDs.contains(frontApplicationIdentifier) { return true }
+
         lock.lock()
         let apps = applications
         lock.unlock()
         if apps.isEmpty { return false }
-        guard let frontApplicationIdentifier = frontApplication.value?.bundleIdentifier else { return false }
 
         for app in apps where app.identifier == frontApplicationIdentifier {
             return true

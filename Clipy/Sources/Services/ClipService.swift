@@ -25,6 +25,7 @@ final class ClipService {
     fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
     fileprivate var disposeBag = DisposeBag()
+    fileprivate var lastContentHash: String?
 
     // MARK: - Clips
     func startMonitoring() {
@@ -100,16 +101,33 @@ extension ClipService {
         let types = self.types(with: pasteboard)
         if types.isEmpty { return }
 
+        // Concealed (password managers, Apple Passwords, etc.)
+        let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+        if pasteboard.types?.contains(concealedType) == true { return }
+
         // Excluded application
         guard !AppEnvironment.current.excludeAppService.frontProcessIsExcludedApplication() else { return }
         // Special applications
         guard !AppEnvironment.current.excludeAppService.copiedProcessIsExcludedApplications(pasteboard: pasteboard) else { return }
+
+        // Skip strings that look like passwords (mixed case + digits + special chars, no spaces)
+        if let string = pasteboard.string(forType: .string), Self.looksLikePassword(string) { return }
 
         // Create data
         let data = CPYClipData(pasteboard: pasteboard, types: types)
         save(with: data)
     }
     // swiftlint:enable empty_enum_arguments
+
+    private static func looksLikePassword(_ string: String) -> Bool {
+        guard !string.isEmpty && string.count <= 128 else { return false }
+        guard !string.contains(" ") else { return false }
+        let hasUpper = string.rangeOfCharacter(from: .uppercaseLetters) != nil
+        let hasLower = string.rangeOfCharacter(from: .lowercaseLetters) != nil
+        let hasDigit = string.rangeOfCharacter(from: .decimalDigits) != nil
+        let hasSpecial = string.rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) != nil
+        return hasUpper && hasLower && hasDigit && hasSpecial
+    }
 
     func create(with image: NSImage) {
         lock.lock(); defer { lock.unlock() }
@@ -122,6 +140,10 @@ extension ClipService {
     fileprivate func save(with data: CPYClipData) {
         guard let realm = Realm.safeInstance() else { return }
         let contentHash = data.contentHash
+
+        // Skip if identical to the most recent clip
+        if contentHash == lastContentHash { return }
+
         // Copy already copied history
         let isCopySameHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
         if realm.object(ofType: CPYClip.self, forPrimaryKey: contentHash) != nil, !isCopySameHistory { return }
@@ -134,6 +156,8 @@ extension ClipService {
         // Overwrite same history
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
         let savedHash = isOverwriteHistory ? contentHash : UUID().uuidString
+
+        lastContentHash = contentHash
 
         // Capture immutable values before dispatch
         let unixTime = Int(Date().timeIntervalSince1970)
