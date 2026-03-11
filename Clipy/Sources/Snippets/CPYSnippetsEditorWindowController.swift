@@ -143,7 +143,7 @@ extension CPYSnippetsEditorWindowController {
             folders.removeObject(folder)
             folder.remove()
             AppEnvironment.current.hotKeyService.unregisterSnippetHotKey(with: folder.identifier)
-        } else if let snippet = item as? CPYSnippet, let folder = outlineView.parent(forItem: item) as? CPYFolder, let index = folder.snippets.index(of: snippet) {
+        } else if let snippet = item as? CPYSnippet, let folder = outlineView.parent(forItem: item) as? CPYFolder, let index = folder.snippets.firstIndex(of: snippet) {
             folder.snippets.remove(at: index)
             snippet.remove()
         }
@@ -351,7 +351,7 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
             guard let data = LegacyKeyedArchive.archivedData(withRootObject: draggedData) else { return nil }
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))
         } else if let snippet = item as? CPYSnippet, let folder = outlineView.parent(forItem: snippet) as? CPYFolder {
-            guard let index = folder.snippets.index(of: snippet) else { return nil }
+            guard let index = folder.snippets.firstIndex(of: snippet) else { return nil }
             let draggedData = CPYDraggedData(type: .snippet, folderIdentifier: folder.identifier, snippetIdentifier: snippet.identifier, index: Int(index))
             guard let data = LegacyKeyedArchive.archivedData(withRootObject: draggedData) else { return nil }
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))

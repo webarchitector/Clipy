@@ -78,7 +78,7 @@ extension CPYFolder {
     func removeSnippet(_ snippet: CPYSnippet) {
         guard let realm = Realm.safeInstance() else { return }
         guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: identifier) else { return }
-        guard let savedSnippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier), let index = folder.snippets.index(of: savedSnippet) else { return }
+        guard let savedSnippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier), let index = folder.snippets.firstIndex(of: savedSnippet) else { return }
         folder.realm?.transaction { folder.snippets.remove(at: index) }
         folder.rearrangesSnippetIndex()
     }

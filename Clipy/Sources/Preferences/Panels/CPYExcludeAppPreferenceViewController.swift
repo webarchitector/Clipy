@@ -55,10 +55,10 @@ extension CPYExcludeAppPreferenceViewController {
 // MARK: - NSTableView DataSource
 extension CPYExcludeAppPreferenceViewController: NSTableViewDataSource {
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return AppEnvironment.current.excludeAppService.applications.count
+        return AppEnvironment.current.excludeAppService.applicationCount
     }
 
     func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
-        return AppEnvironment.current.excludeAppService.applications[safe: row]?.name
+        return AppEnvironment.current.excludeAppService.application(at: row)?.name
     }
 }

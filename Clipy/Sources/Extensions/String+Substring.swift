@@ -13,7 +13,7 @@
 import Foundation
 
 extension String {
-    subscript (range: CountableClosedRange<Int>) -> String {
+    subscript (range: ClosedRange<Int>) -> String {
         let startIndex = self.index(self.startIndex, offsetBy: range.lowerBound, limitedBy: self.endIndex) ?? self.startIndex
         let endIndex = self.index(self.startIndex, offsetBy: range.upperBound, limitedBy: self.endIndex) ?? self.endIndex
 

@@ -17,8 +17,21 @@ import RxCocoa
 final class ExcludeAppService {
 
     // MARK: - Properties
-    fileprivate(set) var applications = [CPYAppInfo]()
+    private var applications = [CPYAppInfo]()
     private let lock = NSLock()
+
+    var applicationCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return applications.count
+    }
+
+    func application(at index: Int) -> CPYAppInfo? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard index >= 0 && index < applications.count else { return nil }
+        return applications[index]
+    }
     fileprivate var frontApplication = BehaviorRelay<NSRunningApplication?>(value: nil)
     fileprivate var disposeBag = DisposeBag()
 
@@ -81,9 +94,7 @@ extension ExcludeAppService {
     }
 
     func delete(with index: Int) {
-        lock.lock()
-        let appInfo = applications[index]
-        lock.unlock()
+        guard let appInfo = application(at: index) else { return }
         delete(with: appInfo)
     }
 }

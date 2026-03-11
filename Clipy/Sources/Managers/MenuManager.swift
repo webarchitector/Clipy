@@ -223,18 +223,18 @@ private extension MenuManager {
         addSnippetItems(clipMenu, separateMenu: true, settings: settings)
         addSnippetItems(snippetMenu, separateMenu: false, settings: settings)
 
-        clipMenu?.addItem(NSMenuItem.separator())
+        clipMenu.addItem(NSMenuItem.separator())
 
         if settings.addClearHistoryMenuItem {
-            clipMenu?.addItem(NSMenuItem(title: L10n.clearHistory, action: #selector(AppDelegate.clearAllHistory)))
+            clipMenu.addItem(NSMenuItem(title: L10n.clearHistory, action: #selector(AppDelegate.clearAllHistory)))
         }
 
-        clipMenu?.addItem(NSMenuItem(title: L10n.searchHistory + "...",
+        clipMenu.addItem(NSMenuItem(title: L10n.searchHistory + "...",
                                      action: #selector(AppDelegate.showClipboardHistoryWindow)))
-        clipMenu?.addItem(NSMenuItem(title: L10n.editSnippets, action: #selector(AppDelegate.showSnippetEditorWindow)))
-        clipMenu?.addItem(NSMenuItem(title: L10n.preferences, action: #selector(AppDelegate.showPreferenceWindow)))
-        clipMenu?.addItem(NSMenuItem.separator())
-        clipMenu?.addItem(NSMenuItem(title: L10n.quitClipy, action: #selector(AppDelegate.terminate)))
+        clipMenu.addItem(NSMenuItem(title: L10n.editSnippets, action: #selector(AppDelegate.showSnippetEditorWindow)))
+        clipMenu.addItem(NSMenuItem(title: L10n.preferences, action: #selector(AppDelegate.showPreferenceWindow)))
+        clipMenu.addItem(NSMenuItem.separator())
+        clipMenu.addItem(NSMenuItem(title: L10n.quitClipy, action: #selector(AppDelegate.terminate)))
 
         statusItem?.menu = clipMenu
     }
@@ -616,8 +616,8 @@ private final class ClipboardHistoryCellView: NSTableCellView {
         return iv
     }()
     private let titleField = NSTextField(labelWithString: "")
-    private var titleLeadingWithImage: NSLayoutConstraint!
-    private var titleLeadingWithoutImage: NSLayoutConstraint!
+    private var titleLeadingWithImage: NSLayoutConstraint?
+    private var titleLeadingWithoutImage: NSLayoutConstraint?
 
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet {
@@ -640,15 +640,17 @@ private final class ClipboardHistoryCellView: NSTableCellView {
         addSubview(thumbnailView)
         addSubview(titleField)
 
-        titleLeadingWithImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
-        titleLeadingWithoutImage = titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12)
+        let withImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
+        let withoutImage = titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12)
+        titleLeadingWithImage = withImage
+        titleLeadingWithoutImage = withoutImage
 
         NSLayoutConstraint.activate([
             thumbnailView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             thumbnailView.centerYAnchor.constraint(equalTo: centerYAnchor),
             thumbnailView.widthAnchor.constraint(equalToConstant: 64),
             thumbnailView.heightAnchor.constraint(equalToConstant: 64),
-            titleLeadingWithoutImage,
+            withoutImage,
             titleField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             titleField.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
@@ -683,15 +685,15 @@ private final class ClipboardHistoryCellView: NSTableCellView {
     private func showThumbnail(_ image: NSImage) {
         thumbnailView.image = image
         thumbnailView.isHidden = false
-        titleLeadingWithoutImage.isActive = false
-        titleLeadingWithImage.isActive = true
+        titleLeadingWithoutImage?.isActive = false
+        titleLeadingWithImage?.isActive = true
     }
 
     private func hideThumbnail() {
         thumbnailView.image = nil
         thumbnailView.isHidden = true
-        titleLeadingWithImage.isActive = false
-        titleLeadingWithoutImage.isActive = true
+        titleLeadingWithImage?.isActive = false
+        titleLeadingWithoutImage?.isActive = true
     }
 
     static func firstFilePath(from entry: ClipboardHistoryEntry) -> String? {
