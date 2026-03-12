@@ -64,12 +64,23 @@ xcodebuild \
   -workspace Clipy.xcworkspace \
   -scheme Clipy \
   -configuration Release \
-  -derivedDataPath build/DerivedData \
-  CODE_SIGNING_ALLOWED=NO \
-  build
+  build \
+  SYMROOT=$(pwd)/build
 ```
 
-The resulting app bundle will be created at `build/DerivedData/Build/Products/Release/Clipy.app`.
+The resulting app bundle will be at `build/Release/Clipy.app`.
+
+To do a full clean rebuild:
+
+```sh
+rm -rf build/Release/Clipy.app
+xcodebuild \
+  -workspace Clipy.xcworkspace \
+  -scheme Clipy \
+  -configuration Release \
+  build \
+  SYMROOT=$(pwd)/build
+```
 
 For distribution outside your machine, archive and sign the app in Xcode with your own team and signing settings.
 
