@@ -41,7 +41,11 @@ final class CPYClipData: NSObject {
         payload.append(PDF)
         payload.append(fileNames)
         payload.append(URLs)
-        payload.append(image?.tiffRepresentation)
+        // Wrap tiffRepresentation in autoreleasepool so the temporary copy
+        // is freed immediately after hashing instead of lingering in memory.
+        autoreleasepool {
+            payload.append(image?.tiffRepresentation)
+        }
 
         let digest = SHA256.hash(data: payload.data)
         return digest.map { String(format: "%02x", $0) }.joined()

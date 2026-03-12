@@ -19,7 +19,7 @@ final class DataCleanService {
 
     // MARK: - Properties
     fileprivate var disposeBag = DisposeBag()
-    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
+    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .background)
 
     // MARK: - Monitoring
     func startMonitoring() {

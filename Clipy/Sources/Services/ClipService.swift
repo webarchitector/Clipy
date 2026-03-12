@@ -26,14 +26,34 @@ final class ClipService {
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
     fileprivate var disposeBag = DisposeBag()
     fileprivate var lastContentHash: String?
+    fileprivate var eventMonitor: Any?
+    fileprivate let checkSubject = PublishSubject<Void>()
 
     // MARK: - Clips
     func startMonitoring() {
         disposeBag = DisposeBag()
+        stopEventMonitor()
         cachedChangeCount.accept(NSPasteboard.general.changeCount)
-        // Pasteboard observe timer
-        Observable<Int>.interval(.milliseconds(500), scheduler: scheduler)
-            .map { _ in NSPasteboard.general.changeCount }
+
+        // Event-driven: global key monitor for Cmd+C / Cmd+X (zero wake-ups)
+        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard event.modifierFlags.contains(.command) else { return }
+            // C = 8, X = 7 (virtual key codes)
+            if event.keyCode == 8 || event.keyCode == 7 {
+                self?.checkSubject.onNext(())
+            }
+        }
+
+        // Slow fallback poll for programmatic copies (apps that copy without Cmd+C)
+        let slowPoll = Observable<Int>.interval(.seconds(5), scheduler: scheduler).map { _ in }
+
+        // Merge event-driven checks with slow poll, then check changeCount
+        Observable.merge(
+            checkSubject.asObservable()
+                .delay(.milliseconds(100), scheduler: scheduler),
+            slowPoll
+        )
+            .map { NSPasteboard.general.changeCount }
             .withLatestFrom(cachedChangeCount.asObservable()) { ($0, $1) }
             .filter { $0 != $1 }
             .subscribe(onNext: { [weak self] changeCount, _ in
@@ -41,6 +61,7 @@ final class ClipService {
                 self?.create()
             })
             .disposed(by: disposeBag)
+
         // Store types
         AppEnvironment.current.defaults.rx
             .observe([String: NSNumber].self, Constants.UserDefaults.storeTypes)
@@ -53,6 +74,13 @@ final class ClipService {
                 self.lock.unlock()
             })
             .disposed(by: disposeBag)
+    }
+
+    private func stopEventMonitor() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
     }
 
     func clearAll() {
@@ -165,22 +193,28 @@ extension ClipService {
         let title = data.preferredTitle[0...10000]
         let primaryType = data.primaryType?.rawValue ?? ""
 
-        DispatchQueue.global(qos: .userInitiated).async {
+        // Extract thumbnail/color images on the calling thread so we can
+        // release the heavy CPYClipData (with RTF, PDF, full image) early.
+        let thumbnailImage = data.thumbnailImage
+        let colorCodeImage = data.colorCodeImage
+
+        DispatchQueue.global(qos: .userInitiated).async { [data] in
             var thumbnailPath = ""
             var isColorCode = false
-            if let thumbnailImage = data.thumbnailImage {
+            if let thumbnailImage = thumbnailImage {
                 PINCache.shared.setObjectAsync(thumbnailImage, forKey: "\(unixTime)", completion: nil)
                 thumbnailPath = "\(unixTime)"
             }
-            if let colorCodeImage = data.colorCodeImage {
+            if let colorCodeImage = colorCodeImage {
                 PINCache.shared.setObjectAsync(colorCodeImage, forKey: "\(unixTime)", completion: nil)
                 thumbnailPath = "\(unixTime)"
                 isColorCode = true
             }
-            // Save .data file on background thread
+            // Save .data file and release the heavy CPYClipData immediately after
             guard CPYUtilities.prepareSaveToPath(CPYUtilities.applicationSupportFolder()) else { return }
-            guard LegacyKeyedArchive.archiveRootObject(data, toFile: savedPath) else { return }
-            // Build CPYClip entirely on main thread
+            let archived = autoreleasepool { LegacyKeyedArchive.archiveRootObject(data, toFile: savedPath) }
+            guard archived else { return }
+            // Build CPYClip entirely on main thread (data is no longer referenced)
             DispatchQueue.main.async {
                 let clip = CPYClip()
                 clip.dataPath = savedPath

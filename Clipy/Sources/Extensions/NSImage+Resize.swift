@@ -15,61 +15,54 @@ import Cocoa
 
 extension NSImage {
     func resizeImage(_ width: CGFloat, _ height: CGFloat) -> NSImage? {
+        guard let tiffData = self.tiffRepresentation,
+              let source = CGImageSourceCreateWithData(tiffData as CFData, nil),
+              let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
 
-        let representations = self.representations
-        var bitmapRep: NSBitmapImageRep?
+        let origWidth = CGFloat(cgImage.width)
+        let origHeight = CGFloat(cgImage.height)
+        guard origWidth > 0, origHeight > 0 else { return nil }
 
-        for rep in representations {
-            if let rep = rep as? NSBitmapImageRep {
-                bitmapRep = rep
-                break
-            }
-        }
+        let aspect = origWidth / origHeight
 
-        guard let bitmapRep = bitmapRep else { return nil }
-
-        let origWidth = CGFloat(bitmapRep.pixelsWide)
-        let origHeight = CGFloat(bitmapRep.pixelsHigh)
-
-        let aspect = CGFloat(origWidth) / CGFloat(origHeight)
-
-        let targetWidth = width
-        let targetHeight = height
         var newWidth: CGFloat
         var newHeight: CGFloat
 
         if aspect >= 1 {
-            newWidth = targetWidth
+            newWidth = width
             newHeight = newWidth / aspect
-
-            if targetHeight < newHeight {
-                newHeight = targetHeight
-                newWidth = targetHeight * aspect
+            if height < newHeight {
+                newHeight = height
+                newWidth = height * aspect
             }
         } else {
-            newHeight = targetHeight
-            newWidth = targetHeight * aspect
-
-            if targetWidth < newWidth {
-                newWidth = targetWidth
-                newHeight = targetWidth / aspect
+            newHeight = height
+            newWidth = height * aspect
+            if width < newWidth {
+                newWidth = width
+                newHeight = width / aspect
             }
         }
 
-        if origWidth < newWidth {
-            newWidth = origWidth
-        }
-        if origHeight < newHeight {
-            newHeight = origHeight
-        }
+        newWidth = min(newWidth, origWidth)
+        newHeight = min(newHeight, origHeight)
 
-        guard let newImageRep = self.bestRepresentation(for: NSRect(x: 0, y: 0, width: newWidth, height: newHeight), context: nil, hints: nil) else {
-            return nil
-        }
+        let intWidth = Int(newWidth.rounded())
+        let intHeight = Int(newHeight.rounded())
+        guard intWidth > 0, intHeight > 0 else { return nil }
 
-        let thumbnail = NSImage(size: NSSize(width: newWidth, height: newHeight))
-        thumbnail.addRepresentation(newImageRep)
+        guard let context = CGContext(data: nil,
+                                      width: intWidth,
+                                      height: intHeight,
+                                      bitsPerComponent: 8,
+                                      bytesPerRow: 0,
+                                      space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
 
-        return thumbnail
+        context.interpolationQuality = .high
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: intWidth, height: intHeight))
+
+        guard let resizedCG = context.makeImage() else { return nil }
+        return NSImage(cgImage: resizedCG, size: NSSize(width: intWidth, height: intHeight))
     }
 }

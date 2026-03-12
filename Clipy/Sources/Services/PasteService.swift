@@ -18,6 +18,11 @@ final class PasteService {
 
     // MARK: - Properties
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.Pastable")
+    fileprivate let clipDataCache: NSCache<NSString, CPYClipData> = {
+        let cache = NSCache<NSString, CPYClipData>()
+        cache.countLimit = 30
+        return cache
+    }()
     fileprivate var isPastePlainText: Bool {
         guard AppEnvironment.current.defaults.bool(forKey: Constants.Beta.pastePlainText) else { return false }
 
@@ -35,6 +40,17 @@ final class PasteService {
 
         let modifierSetting = AppEnvironment.current.defaults.integer(forKey: Constants.Beta.pasteAndDeleteHistoryModifier)
         return isPressedModifier(modifierSetting)
+    }
+
+    // MARK: - Cache
+    func cachedClipData(for clip: CPYClip) -> CPYClipData? {
+        let key = clip.dataPath as NSString
+        if let cached = clipDataCache.object(forKey: key) {
+            return cached
+        }
+        guard let data = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath) else { return nil }
+        clipDataCache.setObject(data, forKey: key)
+        return data
     }
 
     // MARK: - Modifiers
@@ -57,7 +73,6 @@ final class PasteService {
 extension PasteService {
     func paste(with clip: CPYClip) {
         guard !clip.isInvalidated else { return }
-        guard let data = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath) else { return }
 
         // Handling modifier actions
         let isPastePlainText = self.isPastePlainText
@@ -68,6 +83,8 @@ extension PasteService {
             paste()
             return
         }
+
+        guard let data = cachedClipData(for: clip) else { return }
 
         // Increment change count for don't copy paste item
         if isPasteAndDeleteHistory {
@@ -98,7 +115,7 @@ extension PasteService {
     func copyToPasteboard(with clip: CPYClip) {
         lock.lock(); defer { lock.unlock() }
 
-        guard let data = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: clip.dataPath) else { return }
+        guard let data = cachedClipData(for: clip) else { return }
 
         if isPastePlainText {
             copyToPasteboard(with: data.stringValue)
