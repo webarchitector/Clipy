@@ -25,7 +25,8 @@ final class ClipService {
     fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
     fileprivate var disposeBag = DisposeBag()
-    fileprivate var lastContentHash: String?
+    fileprivate var recentContentHashes = [String]()
+    fileprivate let maxRecentHashes = 5
     fileprivate var eventMonitor: Any?
     fileprivate let checkSubject = PublishSubject<Void>()
 
@@ -169,8 +170,8 @@ extension ClipService {
         guard let realm = Realm.safeInstance() else { return }
         let contentHash = data.contentHash
 
-        // Skip if identical to the most recent clip
-        if contentHash == lastContentHash { return }
+        // Skip if identical to any of the last 5 clips
+        if recentContentHashes.contains(contentHash) { return }
 
         // Copy already copied history
         let isCopySameHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
@@ -185,7 +186,10 @@ extension ClipService {
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
         let savedHash = isOverwriteHistory ? contentHash : UUID().uuidString
 
-        lastContentHash = contentHash
+        recentContentHashes.append(contentHash)
+        if recentContentHashes.count > maxRecentHashes {
+            recentContentHashes.removeFirst()
+        }
 
         // Capture immutable values before dispatch
         let unixTime = Int(Date().timeIntervalSince1970)

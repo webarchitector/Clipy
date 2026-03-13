@@ -10,7 +10,9 @@
 //  Copyright © 2015-2018 Clipy Project.
 //
 
+import Carbon
 import Cocoa
+import Magnet
 import PINCache
 import RealmSwift
 import RxCocoa
@@ -34,6 +36,12 @@ final class MenuManager: NSObject {
     fileprivate let kMaxKeyEquivalents = 10
     fileprivate let shortenSymbol = "..."
     fileprivate let menuRebuildSubject = PublishSubject<Void>()
+    // Track currently open popup menu for dismissal on hotkey switch
+    fileprivate weak var currentPopupMenu: NSMenu?
+    fileprivate var pendingMenuType: MenuType?
+    fileprivate var eventTap: CFMachPort?
+    fileprivate var eventTapSource: CFRunLoopSource?
+    fileprivate var currentMenuType: MenuType?
     // Realm
     fileprivate var realm: Realm? = Realm.safeInstance()
     fileprivate var clipToken: NotificationToken?
@@ -60,8 +68,96 @@ final class MenuManager: NSObject {
 
 }
 
+// MARK: - Event Tap Callback
+private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent, refcon: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
+    guard let refcon = refcon else { return Unmanaged.passUnretained(event) }
+    let manager = Unmanaged<MenuManager>.fromOpaque(refcon).takeUnretainedValue()
+
+    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+        if let tap = manager.eventTap {
+            CGEvent.tapEnable(tap: tap, enable: true)
+        }
+        return Unmanaged.passUnretained(event)
+    }
+
+    guard type == .keyDown else { return Unmanaged.passUnretained(event) }
+    guard manager.currentPopupMenu != nil else { return Unmanaged.passUnretained(event) }
+
+    let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+    let flags = event.flags
+
+    if let targetType = manager.menuTypeForCGEvent(keyCode: keyCode, flags: flags),
+       targetType != manager.currentMenuType {
+        manager.pendingMenuType = targetType
+        manager.currentPopupMenu?.cancelTrackingWithoutAnimation()
+        return nil
+    }
+
+    return Unmanaged.passUnretained(event)
+}
+
 // MARK: - Popup Menu
 extension MenuManager {
+    fileprivate func menuTypeForCGEvent(keyCode: Int64, flags: CGEventFlags) -> MenuType? {
+        let hotKeyService = AppEnvironment.current.hotKeyService
+        if matchesCGEvent(keyCode: keyCode, flags: flags, keyCombo: hotKeyService.mainKeyCombo) { return .main }
+        if matchesCGEvent(keyCode: keyCode, flags: flags, keyCombo: hotKeyService.historyKeyCombo) { return .history }
+        if matchesCGEvent(keyCode: keyCode, flags: flags, keyCombo: hotKeyService.snippetKeyCombo) { return .snippet }
+        return nil
+    }
+
+    fileprivate func matchesCGEvent(keyCode: Int64, flags: CGEventFlags, keyCombo: KeyCombo?) -> Bool {
+        guard let kc = keyCombo else { return false }
+        guard keyCode == Int64(kc.currentKeyCode) else { return false }
+        var carbonMods = 0
+        if flags.contains(.maskCommand) { carbonMods |= cmdKey }
+        if flags.contains(.maskAlternate) { carbonMods |= optionKey }
+        if flags.contains(.maskControl) { carbonMods |= controlKey }
+        if flags.contains(.maskShift) { carbonMods |= shiftKey }
+        return carbonMods == kc.modifiers
+    }
+
+    private func installEventTap(for menuType: MenuType) {
+        removeEventTap()
+        currentMenuType = menuType
+        let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        guard let tap = CGEvent.tapCreate(
+            tap: .cghidEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
+            callback: menuManagerEventTapCallback,
+            userInfo: refcon
+        ) else { return }
+        eventTap = tap
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        eventTapSource = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+    }
+
+    private func removeEventTap() {
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            if let source = eventTapSource {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            }
+            eventTap = nil
+            eventTapSource = nil
+        }
+        currentMenuType = nil
+    }
+
+    private func handlePendingMenu() {
+        guard let next = pendingMenuType else { return }
+        pendingMenuType = nil
+        if next == .history {
+            showClipboardHistoryWindow()
+        } else {
+            popUpMenu(next)
+        }
+    }
+
     func popUpMenu(_ type: MenuType) {
         let menu: NSMenu?
         switch type {
@@ -72,20 +168,28 @@ extension MenuManager {
         case .snippet:
             menu = buildSnippetMenu()
         }
+        currentPopupMenu = menu
+        pendingMenuType = nil
+        installEventTap(for: type)
         menu?.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+        currentPopupMenu = nil
+        removeEventTap()
+        handlePendingMenu()
     }
 
     func showClipboardHistoryWindow() {
+        currentPopupMenu?.cancelTrackingWithoutAnimation()
+        currentPopupMenu = nil
+        removeEventTap()
+        pendingMenuType = nil
         CPYClipboardHistoryWindowController.sharedController.showWindow(self)
     }
 
     func popUpSnippetFolder(_ folder: CPYFolder) {
         let folderMenu = NSMenu(title: folder.title)
-        // Folder title
         let labelItem = NSMenuItem(title: folder.title, action: nil)
         labelItem.isEnabled = false
         folderMenu.addItem(labelItem)
-        // Snippets
         var index = firstIndexOfMenuItems()
         folder.snippets
             .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
@@ -95,7 +199,13 @@ extension MenuManager {
                 folderMenu.addItem(subMenuItem)
                 index += 1
             }
+        currentPopupMenu = folderMenu
+        pendingMenuType = nil
+        installEventTap(for: .snippet)
         folderMenu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+        currentPopupMenu = nil
+        removeEventTap()
+        handlePendingMenu()
     }
 }
 
