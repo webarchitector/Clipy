@@ -244,6 +244,8 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
     private var entries = [ClipboardHistoryEntry]()
     private var filteredEntries = [ClipboardHistoryEntry]()
     private var returnApplication: NSRunningApplication?
+    private var isWindowVisible = false
+    private var pendingReload = false
 
     init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640),
@@ -255,7 +257,6 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         configureContentView()
         observeWorkspace()
         observeClips()
-        reloadEntries()
     }
 
     required init?(coder: NSCoder) {
@@ -272,6 +273,8 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
     override func showWindow(_ sender: Any?) {
         rememberReturnApplication(NSWorkspace.shared.frontmostApplication)
         searchField.stringValue = ""
+        isWindowVisible = true
+        pendingReload = false
         reloadEntries()
         super.showWindow(sender)
         window?.backgroundColor = .windowBackgroundColor
@@ -365,7 +368,12 @@ private extension CPYClipboardHistoryWindowController {
     func observeClips() {
         guard let realm = realm else { return }
         clipToken = realm.objects(CPYClip.self).observe { [weak self] _ in
-            self?.reloadEntries()
+            guard let self = self else { return }
+            if self.isWindowVisible {
+                self.reloadEntries()
+            } else {
+                self.pendingReload = true
+            }
         }
     }
 
@@ -462,6 +470,7 @@ private extension CPYClipboardHistoryWindowController {
 
 extension CPYClipboardHistoryWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
+        isWindowVisible = false
         searchField.stringValue = ""
         returnApplication = nil
         entries.removeAll()
