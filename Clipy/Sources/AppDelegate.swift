@@ -80,8 +80,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     // MARK: - NSMenuItem Validation
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(AppDelegate.clearAllHistory) {
-            guard let realm = Realm.safeInstance() else { return false }
-            return !realm.objects(CPYClip.self).isEmpty
+            return AppEnvironment.current.menuManager.hasClips
         }
         return true
     }

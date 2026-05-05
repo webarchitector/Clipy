@@ -48,6 +48,8 @@ final class MenuManager: NSObject {
     fileprivate var snippetToken: NotificationToken?
     // Cached defaults snapshot used during menu builds — invalidated when an observed key changes
     fileprivate var cachedSettings: MenuSettings?
+    // Cached clip-emptiness flag for cheap menu validation (avoids per-validate Realm query)
+    private(set) var hasClips: Bool = false
 
     // MARK: - Enum Values
     enum StatusType: Int {
@@ -225,10 +227,18 @@ private extension MenuManager {
     func bind() {
         // Realm Notification (debounced to avoid repeated menu rebuilds)
         guard let realm = realm else { return }
-        clipToken = realm.objects(CPYClip.self)
-                        .observe { [weak self] _ in
-                            self?.menuRebuildSubject.onNext(())
-                        }
+        let clips = realm.objects(CPYClip.self)
+        hasClips = !clips.isEmpty
+        clipToken = clips.observe { [weak self] change in
+            guard let self = self else { return }
+            switch change {
+            case .initial(let results), .update(let results, _, _, _):
+                self.hasClips = !results.isEmpty
+            case .error:
+                break
+            }
+            self.menuRebuildSubject.onNext(())
+        }
         snippetToken = realm.objects(CPYFolder.self)
                         .observe { [weak self] _ in
                             self?.menuRebuildSubject.onNext(())
