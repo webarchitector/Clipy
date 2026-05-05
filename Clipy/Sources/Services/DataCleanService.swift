@@ -13,7 +13,6 @@
 import Foundation
 import RxSwift
 import RealmSwift
-import PINCache
 
 final class DataCleanService {
 
@@ -39,7 +38,7 @@ final class DataCleanService {
         flowHistories
             .filter { !$0.isInvalidated && !$0.thumbnailPath.isEmpty }
             .map { $0.thumbnailPath }
-            .forEach { PINCache.shared.removeObject(forKey: $0) }
+            .forEach { ThumbnailCache.shared.removeObject(forKey: $0) }
         realm.transaction { realm.delete(flowHistories) }
         cleanFiles(with: realm)
     }

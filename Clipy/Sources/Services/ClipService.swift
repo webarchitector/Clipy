@@ -13,7 +13,6 @@
 import Foundation
 import Cocoa
 import RealmSwift
-import PINCache
 import RxSwift
 import RxCocoa
 
@@ -121,7 +120,7 @@ final class ClipService {
         clips
             .filter { !$0.thumbnailPath.isEmpty }
             .map { $0.thumbnailPath }
-            .forEach { PINCache.shared.removeObject(forKey: $0) }
+            .forEach { ThumbnailCache.shared.removeObject(forKey: $0) }
         // Delete Realm
         realm.transaction { realm.delete(clips) }
         // Delete writed datas
@@ -133,7 +132,7 @@ final class ClipService {
         // Delete saved images
         let path = clip.thumbnailPath
         if !path.isEmpty {
-            PINCache.shared.removeObject(forKey: path)
+            ThumbnailCache.shared.removeObject(forKey: path)
         }
         // Delete Realm
         realm.transaction { realm.delete(clip) }
@@ -244,11 +243,11 @@ extension ClipService {
             var thumbnailPath = ""
             var isColorCode = false
             if let thumbnailImage = thumbnailImage {
-                PINCache.shared.setObjectAsync(thumbnailImage, forKey: "\(unixTime)", completion: nil)
+                ThumbnailCache.shared.setObjectAsync(thumbnailImage, forKey: "\(unixTime)")
                 thumbnailPath = "\(unixTime)"
             }
             if let colorCodeImage = colorCodeImage {
-                PINCache.shared.setObjectAsync(colorCodeImage, forKey: "\(unixTime)", completion: nil)
+                ThumbnailCache.shared.setObjectAsync(colorCodeImage, forKey: "\(unixTime)")
                 thumbnailPath = "\(unixTime)"
                 isColorCode = true
             }

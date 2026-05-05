@@ -13,7 +13,6 @@
 import Carbon
 import Cocoa
 import Magnet
-import PINCache
 import RealmSwift
 import RxCocoa
 import RxSwift
@@ -541,9 +540,9 @@ private extension MenuManager {
         let showThumbnail = !clip.thumbnailPath.isEmpty &&
             ((!clip.isColorCode && settings.isShowImage) || (clip.isColorCode && settings.isShowColorCode))
         if showThumbnail {
-            PINCache.shared.object(forKeyAsync: clip.thumbnailPath) { [weak menuItem] _, _, object in
+            ThumbnailCache.shared.object(forKeyAsync: clip.thumbnailPath) { [weak menuItem] image in
                 DispatchQueue.main.async {
-                    guard let menuItem = menuItem, let image = object as? NSImage else { return }
+                    guard let menuItem = menuItem, let image = image else { return }
                     MenuManager.setInlineImage(image, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 32)
                 }
             }

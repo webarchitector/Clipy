@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import PINCache
 import RealmSwift
 
 // MARK: - Data Model
@@ -172,9 +171,9 @@ final class ClipboardHistoryCellView: NSTableCellView {
 
         if !entry.thumbnailPath.isEmpty {
             // Show cached thumbnail (image preview or color code)
-            PINCache.shared.object(forKeyAsync: entry.thumbnailPath) { [weak self] _, _, object in
+            ThumbnailCache.shared.object(forKeyAsync: entry.thumbnailPath) { [weak self] image in
                 DispatchQueue.main.async {
-                    guard let self = self, let image = object as? NSImage else { return }
+                    guard let self = self, let image = image else { return }
                     self.showThumbnail(image)
                 }
             }

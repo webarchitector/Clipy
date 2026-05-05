@@ -16,7 +16,6 @@ import RxCocoa
 import RxSwift
 import LoginServiceKit
 import Magnet
-import PINCache
 import Screeen
 import RxScreeen
 import RealmSwift
@@ -308,9 +307,6 @@ extension AppDelegate: NSApplicationDelegate {
         // UserDefaults
         CPYUtilities.registerUserDefaultKeys()
         syncStoredLoginItemState()
-        // Limit PINCache memory usage (10 MB in-memory, 50 MB on disk)
-        PINCache.shared.memoryCache.costLimit = 10 * 1024 * 1024
-        PINCache.shared.diskCache.byteLimit = 50 * 1024 * 1024
         // SDKs
         CPYUtilities.initSDKs()
         // Check Accessibility Permission
