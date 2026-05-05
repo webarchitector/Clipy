@@ -15,7 +15,7 @@ import RealmSwift
 
 extension Realm {
     static func migration() {
-        let config = Realm.Configuration(schemaVersion: 7, migrationBlock: { migration, oldSchemaVersion in
+        var config = Realm.Configuration(schemaVersion: 7, migrationBlock: { migration, oldSchemaVersion in
             if oldSchemaVersion <= 2 {
                 // Add identifier in CPYSnippet
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
@@ -62,6 +62,11 @@ extension Realm {
                 })
             }
         })
+        // Compact the realm file when at least 100 MB on disk and less than 50% used.
+        config.shouldCompactOnLaunch = { totalBytes, usedBytes in
+            let oneHundredMB = 100 * 1024 * 1024
+            return totalBytes > oneHundredMB && Double(usedBytes) / Double(totalBytes) < 0.5
+        }
         Realm.Configuration.defaultConfiguration = config
         _ = try? Realm()
     }
