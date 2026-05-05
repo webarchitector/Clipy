@@ -22,6 +22,8 @@ final class ClipService {
     // MARK: - Properties
     fileprivate var cachedChangeCount = BehaviorRelay<Int>(value: 0)
     fileprivate var storeTypes = [String: NSNumber]()
+    fileprivate var isCopySameHistory = false
+    fileprivate var isOverwriteSameHistory = false
     fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
     fileprivate var disposeBag = DisposeBag()
@@ -64,7 +66,8 @@ final class ClipService {
             .disposed(by: disposeBag)
 
         // Store types
-        AppEnvironment.current.defaults.rx
+        let defaults = AppEnvironment.current.defaults
+        defaults.rx
             .observe([String: NSNumber].self, Constants.UserDefaults.storeTypes)
             .compactMap { $0 }
             .asDriver(onErrorDriveWith: .empty())
@@ -72,6 +75,32 @@ final class ClipService {
                 guard let self = self else { return }
                 self.lock.lock()
                 self.storeTypes = $0
+                self.lock.unlock()
+            })
+            .disposed(by: disposeBag)
+
+        // Cached settings used in save() — avoid UserDefaults reads on every clip
+        lock.lock()
+        isCopySameHistory = defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
+        isOverwriteSameHistory = defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
+        lock.unlock()
+        defaults.rx.observe(Bool.self, Constants.UserDefaults.copySameHistory)
+            .compactMap { $0 }
+            .asDriver(onErrorDriveWith: .empty())
+            .drive(onNext: { [weak self] in
+                guard let self = self else { return }
+                self.lock.lock()
+                self.isCopySameHistory = $0
+                self.lock.unlock()
+            })
+            .disposed(by: disposeBag)
+        defaults.rx.observe(Bool.self, Constants.UserDefaults.overwriteSameHistory)
+            .compactMap { $0 }
+            .asDriver(onErrorDriveWith: .empty())
+            .drive(onNext: { [weak self] in
+                guard let self = self else { return }
+                self.lock.lock()
+                self.isOverwriteSameHistory = $0
                 self.lock.unlock()
             })
             .disposed(by: disposeBag)
@@ -149,12 +178,22 @@ extension ClipService {
     // swiftlint:enable empty_enum_arguments
 
     private static func looksLikePassword(_ string: String) -> Bool {
-        guard !string.isEmpty && string.count <= 128 else { return false }
-        guard !string.contains(" ") else { return false }
-        let hasUpper = string.rangeOfCharacter(from: .uppercaseLetters) != nil
-        let hasLower = string.rangeOfCharacter(from: .lowercaseLetters) != nil
-        let hasDigit = string.rangeOfCharacter(from: .decimalDigits) != nil
-        let hasSpecial = string.rangeOfCharacter(from: CharacterSet.alphanumerics.inverted) != nil
+        if string.isEmpty { return false }
+        let upper = CharacterSet.uppercaseLetters
+        let lower = CharacterSet.lowercaseLetters
+        let digit = CharacterSet.decimalDigits
+        let alnum = CharacterSet.alphanumerics
+        var hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false
+        var count = 0
+        for scalar in string.unicodeScalars {
+            count += 1
+            if count > 128 { return false }
+            if scalar == " " { return false }
+            if !hasUpper && upper.contains(scalar) { hasUpper = true; continue }
+            if !hasLower && lower.contains(scalar) { hasLower = true; continue }
+            if !hasDigit && digit.contains(scalar) { hasDigit = true; continue }
+            if !hasSpecial && !alnum.contains(scalar) { hasSpecial = true }
+        }
         return hasUpper && hasLower && hasDigit && hasSpecial
     }
 
@@ -173,18 +212,17 @@ extension ClipService {
         // Skip if identical to any of the last 5 clips
         if recentContentHashes.contains(contentHash) { return }
 
-        // Copy already copied history
-        let isCopySameHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
-        if realm.object(ofType: CPYClip.self, forPrimaryKey: contentHash) != nil, !isCopySameHistory { return }
-        // Don't save invalidated clip
-        if let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: contentHash), clip.isInvalidated { return }
+        // Copy already copied history / invalidated clip — single Realm lookup
+        if let existing = realm.object(ofType: CPYClip.self, forPrimaryKey: contentHash),
+           !isCopySameHistory || existing.isInvalidated {
+            return
+        }
 
         // Don't save empty string history
         if data.isOnlyStringType && data.stringValue.isEmpty { return }
 
         // Overwrite same history
-        let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
-        let savedHash = isOverwriteHistory ? contentHash : UUID().uuidString
+        let savedHash = isOverwriteSameHistory ? contentHash : UUID().uuidString
 
         recentContentHashes.append(contentHash)
         if recentContentHashes.count > maxRecentHashes {
