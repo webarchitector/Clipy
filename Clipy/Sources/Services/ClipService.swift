@@ -48,7 +48,7 @@ final class ClipService {
         }
 
         // Slow fallback poll for programmatic copies (apps that copy without Cmd+C)
-        let slowPoll = Observable<Int>.interval(.seconds(5), scheduler: scheduler).map { _ in }
+        let slowPoll = Observable<Int>.interval(.seconds(15), scheduler: scheduler).map { _ in }
 
         // Merge event-driven checks with slow poll, then check changeCount
         Observable.merge(
