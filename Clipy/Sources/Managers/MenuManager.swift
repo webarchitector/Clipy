@@ -553,7 +553,7 @@ private extension MenuManager {
             ThumbnailCache.shared.object(forKeyAsync: clip.thumbnailPath) { [weak menuItem] image in
                 DispatchQueue.main.async {
                     guard let menuItem = menuItem, let image = image else { return }
-                    MenuManager.setInlineImage(image, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 96)
+                    MenuManager.setInlineImage(image, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 288)
                 }
             }
         } else if settings.isShowIcon && (primaryPboardType == .deprecatedFilenames || primaryPboardType == .fileURL) {
