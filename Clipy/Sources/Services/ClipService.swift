@@ -30,6 +30,7 @@ final class ClipService {
     fileprivate let maxRecentHashes = 5
     fileprivate var eventMonitor: Any?
     fileprivate let checkSubject = PublishSubject<Void>()
+    fileprivate let realmWriteQueue = DispatchQueue(label: "com.clipy-app.Clipy.RealmWrite", qos: .utility)
 
     // MARK: - Clips
     func startMonitoring() {
@@ -239,6 +240,7 @@ extension ClipService {
         let thumbnailImage = data.thumbnailImage
         let colorCodeImage = data.colorCodeImage
 
+        let writeQueue = realmWriteQueue
         DispatchQueue.global(qos: .userInitiated).async { [data] in
             var thumbnailPath = ""
             var isColorCode = false
@@ -255,8 +257,8 @@ extension ClipService {
             guard CPYUtilities.prepareSaveToPath(CPYUtilities.applicationSupportFolder()) else { return }
             let archived = autoreleasepool { LegacyKeyedArchive.archiveRootObject(data, toFile: savedPath) }
             guard archived else { return }
-            // Build CPYClip entirely on main thread (data is no longer referenced)
-            DispatchQueue.main.async {
+            // Persist on a dedicated background queue so writes don't block main.
+            writeQueue.async {
                 let clip = CPYClip()
                 clip.dataPath = savedPath
                 clip.title = title
@@ -265,8 +267,8 @@ extension ClipService {
                 clip.primaryType = primaryType
                 clip.thumbnailPath = thumbnailPath
                 clip.isColorCode = isColorCode
-                guard let dispatchRealm = Realm.safeInstance() else { return }
-                dispatchRealm.transaction { dispatchRealm.add(clip, update: .all) }
+                guard let writeRealm = Realm.safeInstance() else { return }
+                writeRealm.transaction { writeRealm.add(clip, update: .all) }
             }
         }
     }
