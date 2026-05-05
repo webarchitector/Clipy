@@ -323,6 +323,7 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.current.clipService.startMonitoring()
         AppEnvironment.current.dataCleanService.startMonitoring()
         AppEnvironment.current.excludeAppService.startMonitoring()
+        AppEnvironment.current.pasteService.startMonitoring()
         AppEnvironment.current.hotKeyService.setupDefaultHotKeys()
 
         // Managers

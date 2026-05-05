@@ -12,6 +12,8 @@
 
 import Foundation
 import Cocoa
+import RxSwift
+import RxCocoa
 import Sauce
 
 final class PasteService {
@@ -23,23 +25,62 @@ final class PasteService {
         cache.countLimit = 30
         return cache
     }()
+    fileprivate var disposeBag = DisposeBag()
+    // Cached preference values — refreshed via rx.observe to avoid UserDefaults reads on every paste.
+    fileprivate var isPastePlainTextEnabled = false
+    fileprivate var pastePlainTextModifier = 0
+    fileprivate var isDeleteHistoryEnabled = false
+    fileprivate var deleteHistoryModifier = 0
+    fileprivate var isPasteAndDeleteHistoryEnabled = false
+    fileprivate var pasteAndDeleteHistoryModifier = 0
+    fileprivate var inputPasteCommandEnabled = true
     fileprivate var isPastePlainText: Bool {
-        guard AppEnvironment.current.defaults.bool(forKey: Constants.Beta.pastePlainText) else { return false }
-
-        let modifierSetting = AppEnvironment.current.defaults.integer(forKey: Constants.Beta.pastePlainTextModifier)
-        return isPressedModifier(modifierSetting)
+        guard isPastePlainTextEnabled else { return false }
+        return isPressedModifier(pastePlainTextModifier)
     }
     fileprivate var isDeleteHistory: Bool {
-        guard AppEnvironment.current.defaults.bool(forKey: Constants.Beta.deleteHistory) else { return false }
-
-        let modifierSetting = AppEnvironment.current.defaults.integer(forKey: Constants.Beta.deleteHistoryModifier)
-        return isPressedModifier(modifierSetting)
+        guard isDeleteHistoryEnabled else { return false }
+        return isPressedModifier(deleteHistoryModifier)
     }
     fileprivate var isPasteAndDeleteHistory: Bool {
-        guard AppEnvironment.current.defaults.bool(forKey: Constants.Beta.pasteAndDeleteHistory) else { return false }
+        guard isPasteAndDeleteHistoryEnabled else { return false }
+        return isPressedModifier(pasteAndDeleteHistoryModifier)
+    }
 
-        let modifierSetting = AppEnvironment.current.defaults.integer(forKey: Constants.Beta.pasteAndDeleteHistoryModifier)
-        return isPressedModifier(modifierSetting)
+    func startMonitoring() {
+        disposeBag = DisposeBag()
+        let defaults = AppEnvironment.current.defaults
+        isPastePlainTextEnabled = defaults.bool(forKey: Constants.Beta.pastePlainText)
+        pastePlainTextModifier = defaults.integer(forKey: Constants.Beta.pastePlainTextModifier)
+        isDeleteHistoryEnabled = defaults.bool(forKey: Constants.Beta.deleteHistory)
+        deleteHistoryModifier = defaults.integer(forKey: Constants.Beta.deleteHistoryModifier)
+        isPasteAndDeleteHistoryEnabled = defaults.bool(forKey: Constants.Beta.pasteAndDeleteHistory)
+        pasteAndDeleteHistoryModifier = defaults.integer(forKey: Constants.Beta.pasteAndDeleteHistoryModifier)
+        inputPasteCommandEnabled = defaults.bool(forKey: Constants.UserDefaults.inputPasteCommand)
+
+        bindBool(defaults, Constants.Beta.pastePlainText) { [weak self] in self?.isPastePlainTextEnabled = $0 }
+        bindInt(defaults, Constants.Beta.pastePlainTextModifier) { [weak self] in self?.pastePlainTextModifier = $0 }
+        bindBool(defaults, Constants.Beta.deleteHistory) { [weak self] in self?.isDeleteHistoryEnabled = $0 }
+        bindInt(defaults, Constants.Beta.deleteHistoryModifier) { [weak self] in self?.deleteHistoryModifier = $0 }
+        bindBool(defaults, Constants.Beta.pasteAndDeleteHistory) { [weak self] in self?.isPasteAndDeleteHistoryEnabled = $0 }
+        bindInt(defaults, Constants.Beta.pasteAndDeleteHistoryModifier) { [weak self] in self?.pasteAndDeleteHistoryModifier = $0 }
+        bindBool(defaults, Constants.UserDefaults.inputPasteCommand) { [weak self] in self?.inputPasteCommandEnabled = $0 }
+    }
+
+    private func bindBool(_ defaults: UserDefaults, _ key: String, _ assign: @escaping (Bool) -> Void) {
+        defaults.rx.observe(Bool.self, key)
+            .compactMap { $0 }
+            .asDriver(onErrorDriveWith: .empty())
+            .drive(onNext: assign)
+            .disposed(by: disposeBag)
+    }
+
+    private func bindInt(_ defaults: UserDefaults, _ key: String, _ assign: @escaping (Int) -> Void) {
+        defaults.rx.observe(Int.self, key)
+            .compactMap { $0 }
+            .asDriver(onErrorDriveWith: .empty())
+            .drive(onNext: assign)
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Cache
@@ -166,7 +207,7 @@ extension PasteService {
 // MARK: - Paste
 extension PasteService {
     func paste() {
-        guard AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.inputPasteCommand) else { return }
+        guard inputPasteCommandEnabled else { return }
         // Check Accessibility Permission
         guard AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: false) else {
             AppEnvironment.current.accessibilityService.showAccessibilityAuthenticationAlert()
