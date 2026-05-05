@@ -39,6 +39,7 @@ final class MenuManager: NSObject {
     // Track currently open popup menu for dismissal on hotkey switch
     fileprivate weak var currentPopupMenu: NSMenu?
     fileprivate var pendingMenuType: MenuType?
+    fileprivate var pendingRebuild = false
     fileprivate var eventTap: CFMachPort?
     fileprivate var eventTapSource: CFRunLoopSource?
     fileprivate var currentMenuType: MenuType?
@@ -158,6 +159,12 @@ extension MenuManager {
         }
     }
 
+    private func flushPendingRebuildIfNeeded() {
+        guard pendingRebuild, currentPopupMenu == nil else { return }
+        pendingRebuild = false
+        createClipMenu()
+    }
+
     func popUpMenu(_ type: MenuType) {
         let menu: NSMenu?
         switch type {
@@ -175,6 +182,7 @@ extension MenuManager {
         currentPopupMenu = nil
         removeEventTap()
         handlePendingMenu()
+        flushPendingRebuildIfNeeded()
     }
 
     func showClipboardHistoryWindow() {
@@ -190,12 +198,13 @@ extension MenuManager {
         let labelItem = NSMenuItem(title: folder.title, action: nil)
         labelItem.isEnabled = false
         folderMenu.addItem(labelItem)
-        var index = firstIndexOfMenuItems()
+        let settings = MenuSettings()
+        var index = settings.isStartFromZero ? 0 : 1
         folder.snippets
             .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
             .filter { $0.enable }
             .forEach { snippet in
-                let subMenuItem = makeSnippetMenuItem(snippet, listNumber: index)
+                let subMenuItem = makeSnippetMenuItem(snippet, listNumber: index, settings: settings)
                 folderMenu.addItem(subMenuItem)
                 index += 1
             }
@@ -206,6 +215,7 @@ extension MenuManager {
         currentPopupMenu = nil
         removeEventTap()
         handlePendingMenu()
+        flushPendingRebuildIfNeeded()
     }
 }
 
@@ -225,7 +235,12 @@ private extension MenuManager {
         menuRebuildSubject
             .debounce(.milliseconds(300), scheduler: MainScheduler.instance)
             .subscribe(onNext: { [weak self] in
-                self?.createClipMenu()
+                guard let self = self else { return }
+                if self.currentPopupMenu != nil {
+                    self.pendingRebuild = true
+                    return
+                }
+                self.createClipMenu()
             })
             .disposed(by: disposeBag)
         // Menu icon
