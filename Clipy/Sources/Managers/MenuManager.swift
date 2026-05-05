@@ -47,6 +47,8 @@ final class MenuManager: NSObject {
     fileprivate var realm: Realm? = Realm.safeInstance()
     fileprivate var clipToken: NotificationToken?
     fileprivate var snippetToken: NotificationToken?
+    // Cached defaults snapshot used during menu builds — invalidated when an observed key changes
+    fileprivate var cachedSettings: MenuSettings?
 
     // MARK: - Enum Values
     enum StatusType: Int {
@@ -198,7 +200,7 @@ extension MenuManager {
         let labelItem = NSMenuItem(title: folder.title, action: nil)
         labelItem.isEnabled = false
         folderMenu.addItem(labelItem)
-        let settings = MenuSettings()
+        let settings = currentSettings()
         var index = settings.isStartFromZero ? 0 : 1
         folder.snippets
             .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
@@ -290,6 +292,7 @@ private extension MenuManager {
             .throttle(.seconds(1), scheduler: MainScheduler.instance)
             .asDriver(onErrorDriveWith: .empty())
             .drive(onNext: { [weak self] in
+                self?.cachedSettings = nil
                 self?.createClipMenu()
             })
             .disposed(by: disposeBag)
@@ -334,10 +337,17 @@ private struct MenuSettings {
 
 // MARK: - Menus
 private extension MenuManager {
+    func currentSettings() -> MenuSettings {
+        if let cached = cachedSettings { return cached }
+        let settings = MenuSettings()
+        cachedSettings = settings
+        return settings
+    }
+
      func createClipMenu() {
         clipMenu = NSMenu(title: Constants.Application.name)
 
-        let settings = MenuSettings()
+        let settings = currentSettings()
 
         guard let clipMenu = clipMenu else { return }
 
@@ -362,13 +372,13 @@ private extension MenuManager {
 
     func buildHistoryMenu() -> NSMenu {
         let menu = NSMenu(title: Constants.Menu.history)
-        addHistoryItems(menu, settings: MenuSettings())
+        addHistoryItems(menu, settings: currentSettings())
         return menu
     }
 
     func buildSnippetMenu() -> NSMenu {
         let menu = NSMenu(title: Constants.Menu.snippet)
-        addSnippetItems(menu, separateMenu: false, settings: MenuSettings())
+        addSnippetItems(menu, separateMenu: false, settings: currentSettings())
         return menu
     }
 
