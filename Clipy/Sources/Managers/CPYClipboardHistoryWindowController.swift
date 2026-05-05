@@ -37,16 +37,37 @@ struct ClipboardHistoryEntry: Equatable {
         } else {
             rawTitle = clipTitle
         }
-        // Collapse whitespace/newlines into single line and limit length for display
-        let singleLine = rawTitle.components(separatedBy: .newlines)
-            .joined(separator: " ")
-            .components(separatedBy: .whitespaces)
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-        displayTitle = String(singleLine.prefix(500))
+        // Collapse runs of whitespace/newlines into a single space and trim — single pass.
+        displayTitle = ClipboardHistoryEntry.collapseWhitespace(rawTitle, maxScalars: 500)
 
         searchText = displayTitle
-        toolTip = String(displayTitle.prefix(2000))
+        toolTip = displayTitle.count <= 2000 ? displayTitle : String(displayTitle.prefix(2000))
+    }
+
+    private static func collapseWhitespace(_ input: String, maxScalars: Int) -> String {
+        let whitespaceAndNewlines = CharacterSet.whitespacesAndNewlines
+        var output = ""
+        output.reserveCapacity(min(input.utf8.count, maxScalars))
+        var count = 0
+        var lastWasSpace = true
+        for scalar in input.unicodeScalars {
+            if count >= maxScalars { break }
+            if whitespaceAndNewlines.contains(scalar) {
+                if !lastWasSpace {
+                    output.unicodeScalars.append(" ")
+                    count += 1
+                    lastWasSpace = true
+                }
+            } else {
+                output.unicodeScalars.append(scalar)
+                count += 1
+                lastWasSpace = false
+            }
+        }
+        if output.unicodeScalars.last == " " {
+            output.unicodeScalars.removeLast()
+        }
+        return output
     }
 
     private static func fallbackTitle(for clip: CPYClip) -> String {
