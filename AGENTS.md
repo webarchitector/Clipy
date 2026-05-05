@@ -21,6 +21,7 @@ Read this file before changing code in this repository. Use it together with `RE
 - `Clipy/Generated/`: generated SwiftGen output. Do not hand-edit.
 - `ClipyTests/`: Quick/Nimble specs.
 - `Scripts/strip-non-arm64-slices.sh`: post-build cleanup for app bundle architectures.
+- `Scripts/strip-pincache-from-vendor.sh`: post-bootstrap cleanup that removes PINCache/PINOperation linker, header search and embed entries from `vendor/Dependencies/Target Support Files/Pods-{Clipy,ClipyTests}/*.xcconfig` and `Pods-Clipy-frameworks.sh`. PINCache was replaced at runtime by `Clipy/Sources/Services/ThumbnailCache.swift`; this script keeps the unused framework out of the linked/embedded build. Idempotent — run any time `vendor/Dependencies` is regenerated.
 
 ## Working Rules
 
