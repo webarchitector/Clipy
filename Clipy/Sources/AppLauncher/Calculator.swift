@@ -12,6 +12,17 @@ final class Calculator {
 
     static let shared = Calculator()
 
+    // MARK: - Cached regexes
+    //
+    // Compiled once at first use. Each `evaluateMath` / `parseCurrency`
+    // call would otherwise rebuild these for no reason.
+
+    private static let sqrtRegex = try! NSRegularExpression(pattern: #"sqrt\s*\(([^()]*)\)"#)
+    private static let intPromoteRegex = try! NSRegularExpression(pattern: #"(?<![\d.])\d+(?![\d.])"#)
+    private static let currencyRegex = try! NSRegularExpression(
+        pattern: #"^\s*([0-9]+(?:\.[0-9]+)?)\s*([a-zA-Z]{3,4})\s*([a-zA-Z]{3,4})\s*$"#
+    )
+
     // MARK: - Math (pure)
 
     static func evaluateMath(_ expr: String) -> String? {
@@ -19,21 +30,19 @@ final class Calculator {
             .replacingOccurrences(of: "\n", with: "")
             .replacingOccurrences(of: "\t", with: "")
             .replacingOccurrences(of: "^", with: "**")
-        if let r = try? NSRegularExpression(pattern: #"sqrt\s*\(([^()]*)\)"#) {
-            while let m = r.firstMatch(in: normalized,
-                                       range: NSRange(normalized.startIndex..<normalized.endIndex,
-                                                      in: normalized)),
-                  let full = Range(m.range(at: 0), in: normalized),
-                  let arg = Range(m.range(at: 1), in: normalized) {
-                normalized.replaceSubrange(full, with: "((\(normalized[arg]))**0.5)")
-            }
+        while let m = sqrtRegex.firstMatch(in: normalized,
+                                            range: NSRange(normalized.startIndex..<normalized.endIndex,
+                                                           in: normalized)),
+              let full = Range(m.range(at: 0), in: normalized),
+              let arg = Range(m.range(at: 1), in: normalized) {
+            normalized.replaceSubrange(full, with: "((\(normalized[arg]))**0.5)")
         }
         // Promote bare integer literals to doubles so NSExpression performs
         // floating-point division (otherwise "10/4" yields 2 instead of 2.5).
-        if let r = try? NSRegularExpression(pattern: #"(?<![\d.])\d+(?![\d.])"#) {
-            let range = NSRange(normalized.startIndex..<normalized.endIndex, in: normalized)
-            normalized = r.stringByReplacingMatches(in: normalized, range: range, withTemplate: "$0.0")
-        }
+        let promoteRange = NSRange(normalized.startIndex..<normalized.endIndex, in: normalized)
+        normalized = intPromoteRegex.stringByReplacingMatches(in: normalized,
+                                                              range: promoteRange,
+                                                              withTemplate: "$0.0")
         let nsExpr = NSExpression(format: normalized)
         if let value = nsExpr.expressionValue(with: nil, context: nil) as? NSNumber {
             let v = value.doubleValue
@@ -49,10 +58,8 @@ final class Calculator {
     // MARK: - Currency parsing (pure)
 
     static func parseCurrency(_ s: String) -> (amount: Double, from: String, to: String)? {
-        let pattern = #"^\s*([0-9]+(?:\.[0-9]+)?)\s*([a-zA-Z]{3,4})\s*([a-zA-Z]{3,4})\s*$"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
         let range = NSRange(s.startIndex..<s.endIndex, in: s)
-        guard let m = regex.firstMatch(in: s, range: range), m.numberOfRanges == 4,
+        guard let m = currencyRegex.firstMatch(in: s, range: range), m.numberOfRanges == 4,
               let r1 = Range(m.range(at: 1), in: s),
               let r2 = Range(m.range(at: 2), in: s),
               let r3 = Range(m.range(at: 3), in: s),

@@ -86,9 +86,9 @@ private extension CPYShortcutsPreferenceViewController {
             Self.layoutsBottomPadding
 
         // Cap visual height so a user with many layouts doesn't end up with a
-        // window taller than the screen. Beyond the cap, the section becomes
-        // scrollable.
-        let scrollableThreshold: CGFloat = 360
+        // window taller than the screen. ~5 rows fit before we start
+        // truncating; beyond the cap the section becomes scrollable.
+        let scrollableThreshold: CGFloat = 280
         let useScrollView = extraHeight > scrollableThreshold
         let actualExtraHeight = useScrollView ? scrollableThreshold : extraHeight
 

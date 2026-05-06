@@ -10,6 +10,10 @@ import Foundation
 
 struct AppEntry {
     let original: String
+    /// `original.lowercased()` precomputed once at load. Saves an allocation
+    /// per app per filter pass — for ~500 apps × 10 keystrokes/sec = 5k
+    /// fewer string allocations per second.
+    let originalLowercased: String
     let cyr: String
     let lat: String
 }
@@ -36,7 +40,7 @@ final class AppIndex {
     /// Pre-lowered query, contains-match against any of three indexes.
     /// `query` MUST already be lowercased — caller does it once per filter pass.
     static func matches(_ entry: AppEntry, query qlc: String) -> Bool {
-        return entry.original.lowercased().contains(qlc)
+        return entry.originalLowercased.contains(qlc)
             || entry.cyr.contains(qlc)
             || entry.lat.contains(qlc)
     }
@@ -154,7 +158,9 @@ final class AppIndex {
                 if line.hasPrefix("#") { continue }
                 let parts = line.split(separator: "\t", maxSplits: 2, omittingEmptySubsequences: false)
                 if parts.count == 3 {
-                    loaded.append(AppEntry(original: String(parts[0]),
+                    let original = String(parts[0])
+                    loaded.append(AppEntry(original: original,
+                                           originalLowercased: original.lowercased(),
                                            cyr: String(parts[1]),
                                            lat: String(parts[2])))
                 }

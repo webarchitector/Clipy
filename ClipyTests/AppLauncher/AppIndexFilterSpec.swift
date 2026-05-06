@@ -7,11 +7,13 @@ class AppIndexFilterSpec: QuickSpec {
 
         let mail = AppEntry(
             original: "Mail",
+            originalLowercased: "mail",
             cyr: AppIndex.translitLatinToCyrillic("Mail"),
             lat: "mail"
         )
         let terminal = AppEntry(
             original: "Terminal",
+            originalLowercased: "terminal",
             cyr: AppIndex.translitLatinToCyrillic("Terminal"),
             lat: "terminal"
         )

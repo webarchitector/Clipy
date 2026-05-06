@@ -40,6 +40,20 @@ final class InputSource {
 
     func select() {
         TISSelectInputSource(tisInputSource)
+        // Carbon TIS workaround: with complex input sources (CJK/Vietnamese
+        // IMEs that route through ComponentInstance) the first call sometimes
+        // succeeds at the OS level but the active text-input client doesn't
+        // pick up the change until a second nudge. Re-fire after 50ms — for
+        // plain keyboard layouts the second call is a harmless no-op because
+        // the current source already matches.
+        let source = tisInputSource
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            if let current = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
+               current.inputSourceID == source.inputSourceID {
+                return
+            }
+            TISSelectInputSource(source)
+        }
     }
 }
 
