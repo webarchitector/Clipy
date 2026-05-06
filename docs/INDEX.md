@@ -1,6 +1,6 @@
 # Project Index
 
-_Last generated: 2026-05-06._
+_Last generated: 2026-05-06 (refresh)._
 
 Navigation map for Clipy. Read this first to orient yourself; cross-reference `AGENTS.md` for editing rules and `CLAUDE.md` for build/commit rules. After any change that touches source layout, services, hotkey wiring, or external contracts, regenerate this file — see "Reindexing" at the bottom.
 
@@ -17,7 +17,7 @@ Navigation map for Clipy. Read this first to orient yourself; cross-reference `A
 
 ```
 Clipy/                   App source
-├── Sources/             Swift code (~53 files)
+├── Sources/             Swift code (~56 files)
 ├── Generated/           SwiftGen output — DO NOT EDIT
 ├── Resources/           Localized .strings, asset catalog
 └── Xibs/                MainMenu.xib
@@ -38,11 +38,12 @@ build/                   Local artifacts (gitignored)
 | `InputSource/` (3 files) | Per-input-source layout-switch hotkeys. Ported from Selector. |
 | `Services/` (8) | clip / paste / hotkey / cleanup / exclude / update / accessibility / thumbnails |
 | `Models/` (6) | Realm: CPYClip, CPYClipData, CPYFolder, CPYSnippet, CPYAppInfo, CPYDraggedData |
-| `Managers/` (2) | MenuManager, ClipboardHistoryWindowController |
-| `Preferences/` | Preferences window + 5 panes (General, Type, Beta, Exclude, Shortcuts, Updates) |
+| `Managers/` (4) | `MenuManager` + `MenuManager+MenuBuilders` (clip/snippet/menus extensions, `MenuSettings`); `CPYClipboardHistoryWindowController` + `ClipboardHistoryCellView` |
+| `Preferences/` (6) | Preferences window + 5 panes (Type, Beta, Exclude, Shortcuts, Updates) |
 | `Environments/` (2) | `AppEnvironment` (global container), `Environment` (struct) |
-| `Extensions/` (11) | Realm, NSImage, NSMenuItem, NSPasteboard, etc. |
-| `Enums/`, `Snippets/`, `Utility/`, `Views/` | small support |
+| `Extensions/` (11) | Realm, NSImage, NSMenuItem, NSPasteboard, NSCoding+Archive, etc. |
+| `Snippets/` (2) | `CPYSnippetsEditorWindowController` + `+OutlineDataSource` companion |
+| `Enums/`, `Utility/`, `Views/` | small support |
 | (root) | `AppDelegate.swift`, `Constants.swift` |
 
 ## Entry Points
