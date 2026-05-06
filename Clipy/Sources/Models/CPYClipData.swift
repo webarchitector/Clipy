@@ -12,7 +12,44 @@
 
 import Cocoa
 import CryptoKit
-import SwiftHEXColors
+
+private extension NSColor {
+    /// Inline replacement for SwiftHEXColors' `init(hexString:)`. Accepts
+    /// "#RGB", "#RGBA", "#RRGGBB", "#RRGGBBAA" with or without the leading "#".
+    // swiftlint:disable operator_usage_whitespace
+    convenience init?(clipyHexString: String) {
+        var hex = clipyHexString
+        if hex.hasPrefix("#") { hex.removeFirst() }
+        guard let value = UInt64(hex, radix: 16) else { return nil }
+        let red, green, blue, alpha: CGFloat
+        switch hex.count {
+        case 3:
+            red   = CGFloat((value & 0xF00) >> 8) / 15
+            green = CGFloat((value & 0x0F0) >> 4) / 15
+            blue  = CGFloat( value & 0x00F      ) / 15
+            alpha = 1
+        case 4:
+            red   = CGFloat((value & 0xF000) >> 12) / 15
+            green = CGFloat((value & 0x0F00) >> 8 ) / 15
+            blue  = CGFloat((value & 0x00F0) >> 4 ) / 15
+            alpha = CGFloat( value & 0x000F       ) / 15
+        case 6:
+            red   = CGFloat((value & 0xFF0000) >> 16) / 255
+            green = CGFloat((value & 0x00FF00) >> 8 ) / 255
+            blue  = CGFloat( value & 0x0000FF       ) / 255
+            alpha = 1
+        case 8:
+            red   = CGFloat((value & 0xFF000000) >> 24) / 255
+            green = CGFloat((value & 0x00FF0000) >> 16) / 255
+            blue  = CGFloat((value & 0x0000FF00) >> 8 ) / 255
+            alpha = CGFloat( value & 0x000000FF       ) / 255
+        default:
+            return nil
+        }
+        self.init(red: red, green: green, blue: blue, alpha: alpha)
+    }
+    // swiftlint:enable operator_usage_whitespace
+}
 
 final class CPYClipData: NSObject {
 
@@ -171,7 +208,7 @@ final class CPYClipData: NSObject {
     }
 
     var colorCodeImage: NSImage? {
-        guard let color = NSColor(hexString: stringValue) else { return nil }
+        guard let color = NSColor(clipyHexString: stringValue) else { return nil }
         return NSImage.create(with: color, size: NSSize(width: 20, height: 20))
     }
 
