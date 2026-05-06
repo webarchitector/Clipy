@@ -105,7 +105,7 @@ xcodebuild \
 - Did you preserve the offline/network-blocking behavior? (`NetworkIsolation.allowedHosts` should change only on explicit user request.)
 - Did you keep Realm threading and writes safe?
 - Did you update tests, or note why tests were not updated?
-- If a new file landed in `Clipy/Sources/`, did you also add the file reference to `Clipy.xcodeproj/project.pbxproj` so the Xcode target picks it up? The fastest tool is the `xcodeproj` Ruby gem; an example invocation lives in `docs/superpowers/plans/2026-05-06-app-launcher-port.md` (Task 16).
+- If a new file landed in `Clipy/Sources/`, did you also add the file reference to `Clipy.xcodeproj/project.pbxproj` so the Xcode target picks it up? The fastest tool is the `xcodeproj` Ruby gem; an example invocation lives in `docs/archive/2026-05-app-launcher/plans/2026-05-06-app-launcher-port.md` (Task 16).
 - If a new service was added to `AppEnvironment.Environment`, did you update `Environment.init`, `AppEnvironment.replaceCurrent(...)`, AND `AppEnvironment.fromStorage(...)`?
 
 ## App Launcher / Input Sources Editing Guidance
@@ -113,7 +113,7 @@ xcodebuild \
 When editing the launcher or input-source code:
 
 - The launcher and input-source ports cite the Selector source-of-truth at `/Users/ank/dev/selector/selector/ShortcutCellView.swift` (lines 611–1426) and `/Users/ank/dev/selector/selector/InputSourceManager.swift` for ongoing reference. Diverge from those files only with reason — keeping them aligned makes future cherry-picks of fixes from either project trivial.
-- The full design and rationale for the launcher port live in `docs/superpowers/specs/2026-05-06-app-launcher-port-design.md`; the executed task list is in `docs/superpowers/plans/2026-05-06-app-launcher-port.md`. Read them before touching `AppLauncher/`.
+- The full design and rationale for the launcher port live in `docs/archive/2026-05-app-launcher/specs/2026-05-06-app-launcher-port-design.md`; the executed task list is in `docs/archive/2026-05-app-launcher/plans/2026-05-06-app-launcher-port.md`. They are archived as historical reference for future cherry-picks from Selector — read them before touching `AppLauncher/`.
 - `AppLauncher.shared` and `Calculator.shared` and `AppIndex.shared` are singletons by design — multiple instances would fight over the cache file and the panel.
 - `AppLauncher.rebuildDidFinish()` is called from background workers (`AppIndex.buildIndexAsync`, `Calculator.kickOffFetch`) once their main-thread completion lands. It re-applies the current filter only if the panel is visible. Don't change this contract without updating both callers.
 - The `~/.local/share/app-launcher/var/` cache is **shared with an external bash CLI `a`** and (during transition) any pre-existing Selector install. The on-disk `apps.txt` format (`# v4` header, three tab-separated columns: original / Cyrillic-translit / Latin-translit) is a public contract — don't reorder columns or change the header without changing the consumer too.
