@@ -53,6 +53,10 @@ extension ExcludeAppService {
             .sink { [weak self] in self?.frontApplication.send($0) }
             .store(in: &cancellables)
     }
+
+    func stopMonitoring() {
+        cancellables.removeAll()
+    }
 }
 
 // MARK: - Exclude

@@ -66,6 +66,10 @@ final class PasteService {
         bindBool(defaults, Constants.UserDefaults.inputPasteCommand) { [weak self] in self?.inputPasteCommandEnabled = $0 }
     }
 
+    func stopMonitoring() {
+        cancellables.removeAll()
+    }
+
     private func bindBool(_ defaults: UserDefaults, _ key: String, _ assign: @escaping (Bool) -> Void) {
         defaults.boolPublisher(forKey: key)
             .receive(on: DispatchQueue.main)

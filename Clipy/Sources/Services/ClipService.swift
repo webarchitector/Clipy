@@ -120,6 +120,11 @@ final class ClipService {
             .store(in: &cancellables)
     }
 
+    func stopMonitoring() {
+        cancellables.removeAll()
+        stopEventMonitor()
+    }
+
     private func stopEventMonitor() {
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)

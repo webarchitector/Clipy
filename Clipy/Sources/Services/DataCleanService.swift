@@ -33,6 +33,10 @@ final class DataCleanService {
             .store(in: &cancellables)
     }
 
+    func stopMonitoring() {
+        cancellables.removeAll()
+    }
+
     // MARK: - Delete Data
     func cleanDatas() {
         guard let realm = Realm.safeInstance() else { return }
