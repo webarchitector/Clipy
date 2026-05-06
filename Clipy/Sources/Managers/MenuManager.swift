@@ -160,6 +160,13 @@ extension MenuManager {
         // CGEvent tap is the kernel-level fallback; only succeeds when the
         // user has granted Accessibility. Both can coexist — the local
         // monitor short-circuits in-process events first.
+        //
+        // Skip tapCreate when Accessibility is denied: the call still makes
+        // a synchronous roundtrip to WindowServer/TCC before returning nil,
+        // which shows up as visible lag on every popup open. The local
+        // monitor above already covers in-process keyDown during NSMenu
+        // tracking, which is the only thing this tap is used for.
+        guard AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: false) else { return }
         let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         guard let tap = CGEvent.tapCreate(
             tap: .cghidEventTap,
