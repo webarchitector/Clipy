@@ -67,7 +67,6 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: 0), forKey: Constants.Beta.deleteHistoryModifier)
         defaultValues.updateValue(NSNumber(value: false), forKey: Constants.Beta.pasteAndDeleteHistory)
         defaultValues.updateValue(NSNumber(value: 0), forKey: Constants.Beta.pasteAndDeleteHistoryModifier)
-        defaultValues.updateValue(NSNumber(value: false), forKey: Constants.Beta.observerScreenshot)
 
         AppEnvironment.current.defaults.register(defaults: defaultValues)
     }

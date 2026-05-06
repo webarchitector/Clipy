@@ -341,27 +341,5 @@ private extension AppDelegate {
                 self.reflectLoginItemState()
             })
             .disposed(by: disposeBag)
-        // Observe Screenshot — create observer lazily to avoid Desktop access prompt
-        AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.Beta.observerScreenshot, retainSelf: false)
-            .compactMap { $0 }
-            .subscribe(onNext: { [weak self] enabled in
-                guard let self = self else { return }
-                if enabled {
-                    if self.screenshotObserver == nil {
-                        let observer = ScreenShotObserver()
-                        observer.rx.addedImage
-                            .subscribe(onNext: { image in
-                                AppEnvironment.current.clipService.create(with: image)
-                            })
-                            .disposed(by: self.disposeBag)
-                        observer.start()
-                        self.screenshotObserver = observer
-                    }
-                    self.screenshotObserver?.isEnabled = true
-                } else {
-                    self.screenshotObserver?.isEnabled = false
-                }
-            })
-            .disposed(by: disposeBag)
     }
 }
