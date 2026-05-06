@@ -17,4 +17,3 @@ extension Array {
         self = filter { $0 as? T != element }
     }
 }
-

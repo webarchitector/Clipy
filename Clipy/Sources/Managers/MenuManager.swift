@@ -111,14 +111,14 @@ extension MenuManager {
     }
 
     fileprivate func matchesCGEvent(keyCode: Int64, flags: CGEventFlags, keyCombo: KeyCombo?) -> Bool {
-        guard let kc = keyCombo else { return false }
-        guard keyCode == Int64(kc.currentKeyCode) else { return false }
+        guard let combo = keyCombo else { return false }
+        guard keyCode == Int64(combo.currentKeyCode) else { return false }
         var carbonMods = 0
         if flags.contains(.maskCommand) { carbonMods |= cmdKey }
         if flags.contains(.maskAlternate) { carbonMods |= optionKey }
         if flags.contains(.maskControl) { carbonMods |= controlKey }
         if flags.contains(.maskShift) { carbonMods |= shiftKey }
-        return carbonMods == kc.modifiers
+        return carbonMods == combo.modifiers
     }
 
     private func installEventTap(for menuType: MenuType) {
@@ -370,7 +370,7 @@ private extension MenuManager {
         }
 
         clipMenu.addItem(NSMenuItem(title: L10n.searchHistory + "...",
-                                     action: #selector(AppDelegate.showClipboardHistoryWindow)))
+                                    action: #selector(AppDelegate.showClipboardHistoryWindow)))
         clipMenu.addItem(NSMenuItem(title: L10n.editSnippets, action: #selector(AppDelegate.showSnippetEditorWindow)))
         clipMenu.addItem(NSMenuItem(title: L10n.preferences, action: #selector(AppDelegate.showPreferenceWindow)))
         clipMenu.addItem(NSMenuItem.separator())

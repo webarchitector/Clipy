@@ -320,7 +320,6 @@ private extension CPYClipboardHistoryWindowController {
         window?.center()
     }
 
-    // swiftlint:disable:next function_body_length
     func configureContentView() {
         let contentView = NSView()
         contentView.translatesAutoresizingMaskIntoConstraints = false

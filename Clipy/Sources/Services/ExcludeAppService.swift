@@ -32,6 +32,7 @@ final class ExcludeAppService {
         guard index >= 0 && index < applications.count else { return nil }
         return applications[index]
     }
+
     fileprivate var frontApplication = BehaviorRelay<NSRunningApplication?>(value: nil)
     fileprivate var disposeBag = DisposeBag()
 
@@ -59,7 +60,7 @@ extension ExcludeAppService {
     // Password managers that are always excluded from clipboard history
     private static let alwaysExcludedBundleIDs: Set<String> = [
         "com.apple.Passwords",
-        "com.apple.keychainaccess",
+        "com.apple.keychainaccess"
     ]
 
     func frontProcessIsExcludedApplication() -> Bool {
