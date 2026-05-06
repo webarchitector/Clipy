@@ -41,6 +41,7 @@ final class MenuManager: NSObject {
     var pendingRebuild = false
     var eventTap: CFMachPort?
     var eventTapSource: CFRunLoopSource?
+    var localEventMonitor: Any?
     var currentMenuType: MenuType?
     // Realm
     var realm: Realm? = Realm.safeInstance()
@@ -133,6 +134,32 @@ extension MenuManager {
     private func installEventTap(for menuType: MenuType) {
         removeEventTap()
         currentMenuType = menuType
+        // Local monitor — fires for keyDown events within Clipy's own process,
+        // including events delivered to NSMenu popups in tracking mode. Works
+        // without Accessibility (unlike CGEvent.tapCreate).
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self = self, self.currentPopupMenu != nil else { return event }
+            let keyCode = Int64(event.keyCode)
+            let flags = self.cgFlags(from: event.modifierFlags)
+            if let target = self.menuTypeForCGEvent(keyCode: keyCode, flags: flags),
+               target != self.currentMenuType {
+                self.pendingMenuType = target
+                self.pendingAppLauncher = false
+                self.currentPopupMenu?.cancelTrackingWithoutAnimation()
+                return nil
+            }
+            if let launcherCombo = AppEnvironment.current.appLauncherService.currentKeyCombo,
+               self.matchesCGEvent(keyCode: keyCode, flags: flags, keyCombo: launcherCombo) {
+                self.pendingMenuType = nil
+                self.pendingAppLauncher = true
+                self.currentPopupMenu?.cancelTrackingWithoutAnimation()
+                return nil
+            }
+            return event
+        }
+        // CGEvent tap is the kernel-level fallback; only succeeds when the
+        // user has granted Accessibility. Both can coexist — the local
+        // monitor short-circuits in-process events first.
         let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         guard let tap = CGEvent.tapCreate(
             tap: .cghidEventTap,
@@ -149,7 +176,23 @@ extension MenuManager {
         CGEvent.tapEnable(tap: tap, enable: true)
     }
 
+    /// Translate AppKit's `NSEvent.ModifierFlags` to the CGEventFlags shape
+    /// `matchesCGEvent` expects, so the local-monitor and CGEventTap paths
+    /// share the exact same key-combo detection logic.
+    private func cgFlags(from modifiers: NSEvent.ModifierFlags) -> CGEventFlags {
+        var flags = CGEventFlags()
+        if modifiers.contains(.command) { flags.insert(.maskCommand) }
+        if modifiers.contains(.option) { flags.insert(.maskAlternate) }
+        if modifiers.contains(.control) { flags.insert(.maskControl) }
+        if modifiers.contains(.shift) { flags.insert(.maskShift) }
+        return flags
+    }
+
     private func removeEventTap() {
+        if let monitor = localEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            localEventMonitor = nil
+        }
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             if let source = eventTapSource {
