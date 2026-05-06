@@ -23,6 +23,14 @@ import RealmSwift
 private enum NetworkIsolation {
     private static let blockedSchemes = Set(["ftp", "ftps", "http", "https", "ws", "wss"])
 
+    /// App Launcher's currency feature is the only outbound network egress
+    /// in the entire process. Adding a host here is the only sanctioned way
+    /// to pierce the otherwise process-wide URLProtocol block — see
+    /// docs/superpowers/specs/2026-05-06-app-launcher-port-design.md.
+    private static let allowedHosts: Set<String> = [
+        "cdn.jsdelivr.net"
+    ]
+
     static func configureProcess() {
         setenv("REALM_DISABLE_ANALYTICS", "1", 1)
         setenv("REALM_DISABLE_UPDATE_CHECKER", "1", 1)
@@ -34,6 +42,9 @@ private enum NetworkIsolation {
 
     static func shouldBlock(_ url: URL?) -> Bool {
         guard let scheme = url?.scheme?.lowercased() else { return false }
+        if let host = url?.host?.lowercased(), allowedHosts.contains(host) {
+            return false
+        }
         return blockedSchemes.contains(scheme)
     }
 }
