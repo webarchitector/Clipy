@@ -29,6 +29,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     private var visibleItems: [LauncherItem] = []
     private var runningApps: Set<String> = []
     private var lastQuery: String = ""
+    private var pendingFilterWorkItem: DispatchWorkItem?
 
     private static let dotTag = 1001
 
@@ -62,6 +63,8 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         refreshRunningApps()
         searchField.stringValue = ""
         lastQuery = ""
+        pendingFilterWorkItem?.cancel()
+        pendingFilterWorkItem = nil
         applyFilter("")
 
         let screen = panel.screen ?? NSScreen.main
@@ -79,6 +82,8 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
 
     func hide() {
         panel?.orderOut(nil)
+        pendingFilterWorkItem?.cancel()
+        pendingFilterWorkItem = nil
         Calculator.shared.cancelPendingFetch()
     }
 
@@ -251,21 +256,43 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     // MARK: - NSSearchFieldDelegate
 
     func controlTextDidChange(_ obj: Notification) {
+        // Coalesce keystrokes: O(n) match across ~500 apps + table reload + potential
+        // currency fetch shouldn't run on every character. Flushed eagerly on Enter /
+        // arrow-key navigation so the visible selection always matches the query.
+        let query = searchField.stringValue
+        pendingFilterWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.pendingFilterWorkItem = nil
+            self?.applyFilter(query)
+        }
+        pendingFilterWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(60), execute: work)
+    }
+
+    private func flushPendingFilter() {
+        guard let work = pendingFilterWorkItem else { return }
+        work.cancel()
+        pendingFilterWorkItem = nil
         applyFilter(searchField.stringValue)
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         switch commandSelector {
         case #selector(NSResponder.insertNewline(_:)):
+            flushPendingFilter()
             activateSelection()
             return true
         case #selector(NSResponder.cancelOperation(_:)):
+            pendingFilterWorkItem?.cancel()
+            pendingFilterWorkItem = nil
             hide()
             return true
         case #selector(NSResponder.moveDown(_:)):
+            flushPendingFilter()
             moveSelection(by: 1)
             return true
         case #selector(NSResponder.moveUp(_:)):
+            flushPendingFilter()
             moveSelection(by: -1)
             return true
         default:
