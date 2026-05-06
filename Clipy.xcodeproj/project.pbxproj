@@ -14,6 +14,7 @@
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
 		50DAEC64393A19CC019A7181 /* CPYClipboardHistoryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 352DCDE5F4B5B5DD15B72C9D /* CPYClipboardHistoryWindowController.swift */; };
 		5E2CDE20A8E4498F1790A3DB /* LauncherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */; };
+		649C3E8C5B875EABDF3D5636 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD037ABF98B968BBAF6D9C9 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift */; };
 		74421B9C63AAB6648DF10A7E /* AppIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F762C0B202FBAA80E7A0EAA5 /* AppIndex.swift */; };
 		8EE81CDBD64E7A9D8D3361DF /* AppLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */; };
 		A191E67DF15E40E758ECD23F /* CPYClipDataSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */; };
@@ -155,6 +156,7 @@
 		66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLauncher.swift; sourceTree = "<group>"; };
 		73A92F6DEE6CFF50A567CFEF /* Pods_Clipy.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Clipy.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7FCD4CA2D2997016DE6E24BF /* InputSourceService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputSourceService.swift; sourceTree = "<group>"; };
+		7FD037ABF98B968BBAF6D9C9 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CPYSnippetsEditorWindowController+OutlineDataSource.swift"; sourceTree = "<group>"; };
 		846004961FD5511800BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYPreferencesWindowController.strings; sourceTree = "<group>"; };
 		846004971FD5511900BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYBetaPreferenceViewController.strings; sourceTree = "<group>"; };
 		846004981FD5511900BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYExcludeAppPreferenceViewController.strings; sourceTree = "<group>"; };
@@ -539,6 +541,7 @@
 			children = (
 				FA1DB50D1DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.swift */,
 				FA1DB50F1DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.xib */,
+				7FD037ABF98B968BBAF6D9C9 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift */,
 			);
 			path = Snippets;
 			sourceTree = "<group>";
@@ -898,6 +901,7 @@
 				CCD1044872DE40055D2625E5 /* TISInputSource+Additions.swift in Sources */,
 				B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */,
 				1F077973EC8AEA1CD7B2DED8 /* InputSourceService.swift in Sources */,
+				649C3E8C5B875EABDF3D5636 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
