@@ -107,10 +107,7 @@ final class CPYClipData: NSObject {
             return ""
         }
     }
-    var thumbnailImage: NSImage? {
-        let defaults = UserDefaults.standard
-        let width = defaults.integer(forKey: Constants.UserDefaults.thumbnailWidth)
-        let height = defaults.integer(forKey: Constants.UserDefaults.thumbnailHeight)
+    func thumbnailImage(width: Int, height: Int) -> NSImage? {
         let maxPixel = max(width, height)
 
         // Try loading a downsampled thumbnail from file path (for copied image files)

@@ -23,6 +23,8 @@ final class ClipService {
     fileprivate var storeTypes = [String: NSNumber]()
     fileprivate var isCopySameHistory = false
     fileprivate var isOverwriteSameHistory = false
+    fileprivate var cachedThumbnailWidth = 0
+    fileprivate var cachedThumbnailHeight = 0
     fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
     fileprivate var disposeBag = DisposeBag()
@@ -83,6 +85,8 @@ final class ClipService {
         lock.lock()
         isCopySameHistory = defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
         isOverwriteSameHistory = defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
+        cachedThumbnailWidth = defaults.integer(forKey: Constants.UserDefaults.thumbnailWidth)
+        cachedThumbnailHeight = defaults.integer(forKey: Constants.UserDefaults.thumbnailHeight)
         lock.unlock()
         defaults.rx.observe(Bool.self, Constants.UserDefaults.copySameHistory)
             .compactMap { $0 }
@@ -101,6 +105,26 @@ final class ClipService {
                 guard let self = self else { return }
                 self.lock.lock()
                 self.isOverwriteSameHistory = $0
+                self.lock.unlock()
+            })
+            .disposed(by: disposeBag)
+        defaults.rx.observe(Int.self, Constants.UserDefaults.thumbnailWidth)
+            .compactMap { $0 }
+            .asDriver(onErrorDriveWith: .empty())
+            .drive(onNext: { [weak self] in
+                guard let self = self else { return }
+                self.lock.lock()
+                self.cachedThumbnailWidth = $0
+                self.lock.unlock()
+            })
+            .disposed(by: disposeBag)
+        defaults.rx.observe(Int.self, Constants.UserDefaults.thumbnailHeight)
+            .compactMap { $0 }
+            .asDriver(onErrorDriveWith: .empty())
+            .drive(onNext: { [weak self] in
+                guard let self = self else { return }
+                self.lock.lock()
+                self.cachedThumbnailHeight = $0
                 self.lock.unlock()
             })
             .disposed(by: disposeBag)
@@ -242,7 +266,8 @@ extension ClipService {
 
         // Extract thumbnail/color images on the calling thread so we can
         // release the heavy CPYClipData (with RTF, PDF, full image) early.
-        let thumbnailImage = data.thumbnailImage
+        let thumbnailImage = data.thumbnailImage(width: cachedThumbnailWidth,
+                                                 height: cachedThumbnailHeight)
         let colorCodeImage = data.colorCodeImage
 
         let writeQueue = realmWriteQueue
