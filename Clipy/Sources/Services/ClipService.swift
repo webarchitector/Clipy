@@ -229,6 +229,11 @@ extension ClipService {
             recentContentHashes.removeFirst()
         }
 
+        // Cap the stored image to 4K on the long side. Dedup hash above already
+        // committed to the *original* content, so this only affects what gets
+        // archived to disk and reconstituted on paste.
+        data.image = CPYClipData.cappedForStorage(data.image)
+
         // Capture immutable values before dispatch
         let unixTime = Int(Date().timeIntervalSince1970)
         let savedPath = CPYUtilities.applicationSupportFolder() + "/\(UUID().uuidString).data"

@@ -141,6 +141,35 @@ final class CPYClipData: NSObject {
         guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
         return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
     }
+
+    /// Cap a pasteboard image to `maxStoredImageDimension` on the long side before
+    /// it gets archived. A 5K screenshot's TIFF is ~30 MB; archiving it for every
+    /// copy bloats Application Support and slows down the save path. Pastes within
+    /// the history will be at the capped resolution — fine for any practical use.
+    static let maxStoredImageDimension: Int = 4096
+
+    static func cappedForStorage(_ image: NSImage?) -> NSImage? {
+        guard let image = image else { return nil }
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return image }
+        let largest = max(cg.width, cg.height)
+        if largest <= maxStoredImageDimension { return image }
+        let scale = Double(maxStoredImageDimension) / Double(largest)
+        let newW = max(1, Int((Double(cg.width) * scale).rounded()))
+        let newH = max(1, Int((Double(cg.height) * scale).rounded()))
+        guard let context = CGContext(
+            data: nil,
+            width: newW,
+            height: newH,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return image }
+        context.interpolationQuality = .medium
+        context.draw(cg, in: CGRect(x: 0, y: 0, width: newW, height: newH))
+        guard let resized = context.makeImage() else { return image }
+        return NSImage(cgImage: resized, size: NSSize(width: newW, height: newH))
+    }
     var colorCodeImage: NSImage? {
         guard let color = NSColor(hexString: stringValue) else { return nil }
         return NSImage.create(with: color, size: NSSize(width: 20, height: 20))
