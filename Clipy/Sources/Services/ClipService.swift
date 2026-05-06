@@ -12,122 +12,112 @@
 
 import Foundation
 import Cocoa
+import Combine
 import RealmSwift
-import RxSwift
-import RxCocoa
 
 final class ClipService {
 
     // MARK: - Properties
-    fileprivate var cachedChangeCount = BehaviorRelay<Int>(value: 0)
+    fileprivate var cachedChangeCount = CurrentValueSubject<Int, Never>(0)
     fileprivate var storeTypes = [String: NSNumber]()
     fileprivate var isCopySameHistory = false
     fileprivate var isOverwriteSameHistory = false
     fileprivate var cachedThumbnailWidth = 0
     fileprivate var cachedThumbnailHeight = 0
-    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
+    fileprivate let queue = DispatchQueue(label: "com.clipy-app.Clipy.ClipService", qos: .utility)
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
-    fileprivate var disposeBag = DisposeBag()
+    fileprivate var cancellables: Set<AnyCancellable> = []
     fileprivate var recentContentHashes = [String]()
     fileprivate let maxRecentHashes = 5
     fileprivate var eventMonitor: Any?
-    fileprivate let checkSubject = PublishSubject<Void>()
+    fileprivate let checkSubject = PassthroughSubject<Void, Never>()
     fileprivate let realmWriteQueue = DispatchQueue(label: "com.clipy-app.Clipy.RealmWrite", qos: .utility)
 
     // MARK: - Clips
     func startMonitoring() {
-        disposeBag = DisposeBag()
+        cancellables.removeAll()
         stopEventMonitor()
-        cachedChangeCount.accept(NSPasteboard.general.changeCount)
+        cachedChangeCount.send(NSPasteboard.general.changeCount)
 
         // Event-driven: global key monitor for Cmd+C / Cmd+X (zero wake-ups)
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard event.modifierFlags.contains(.command) else { return }
             // C = 8, X = 7 (virtual key codes)
             if event.keyCode == 8 || event.keyCode == 7 {
-                self?.checkSubject.onNext(())
+                self?.checkSubject.send(())
             }
         }
 
         // Slow fallback poll for programmatic copies (apps that copy without Cmd+C)
-        let slowPoll = Observable<Int>.interval(.seconds(15), scheduler: scheduler).map { _ in }
+        let slowPoll = Timer.publish(every: 15, on: .main, in: .default)
+            .autoconnect()
+            .map { _ in () }
+            .eraseToAnyPublisher()
 
         // Merge event-driven checks with slow poll, then check changeCount
-        Observable.merge(
-            checkSubject.asObservable()
-                .delay(.milliseconds(100), scheduler: scheduler),
-            slowPoll
-        )
+        checkSubject
+            .delay(for: .milliseconds(100), scheduler: queue)
+            .merge(with: slowPoll)
+            .receive(on: queue)
             .map { NSPasteboard.general.changeCount }
-            .withLatestFrom(cachedChangeCount.asObservable()) { ($0, $1) }
-            .filter { $0 != $1 }
-            .subscribe(onNext: { [weak self] changeCount, _ in
-                self?.cachedChangeCount.accept(changeCount)
+            .filter { [weak self] count in
+                guard let self = self else { return false }
+                return count != self.cachedChangeCount.value
+            }
+            .sink { [weak self] count in
+                self?.cachedChangeCount.send(count)
                 self?.create()
-            })
-            .disposed(by: disposeBag)
+            }
+            .store(in: &cancellables)
 
         // Store types
         let defaults = AppEnvironment.current.defaults
-        defaults.rx
-            .observe([String: NSNumber].self, Constants.UserDefaults.storeTypes)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] in
+        defaults.dictionaryPublisher(forKey: Constants.UserDefaults.storeTypes)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] types in
                 guard let self = self else { return }
-                self.lock.lock()
-                self.storeTypes = $0
-                self.lock.unlock()
-            })
-            .disposed(by: disposeBag)
+                self.lock.lock(); self.storeTypes = types; self.lock.unlock()
+            }
+            .store(in: &cancellables)
 
-        // Cached settings used in save() — avoid UserDefaults reads on every clip
+        // Cached settings used in save() — avoid UserDefaults reads on every clip.
+        // Initial values are seeded synchronously here so save() sees correct
+        // state even before Combine emits the first prepended value.
         lock.lock()
         isCopySameHistory = defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
         isOverwriteSameHistory = defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
         cachedThumbnailWidth = defaults.integer(forKey: Constants.UserDefaults.thumbnailWidth)
         cachedThumbnailHeight = defaults.integer(forKey: Constants.UserDefaults.thumbnailHeight)
         lock.unlock()
-        defaults.rx.observe(Bool.self, Constants.UserDefaults.copySameHistory)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] in
+
+        defaults.boolPublisher(forKey: Constants.UserDefaults.copySameHistory)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
                 guard let self = self else { return }
-                self.lock.lock()
-                self.isCopySameHistory = $0
-                self.lock.unlock()
-            })
-            .disposed(by: disposeBag)
-        defaults.rx.observe(Bool.self, Constants.UserDefaults.overwriteSameHistory)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] in
+                self.lock.lock(); self.isCopySameHistory = value; self.lock.unlock()
+            }
+            .store(in: &cancellables)
+        defaults.boolPublisher(forKey: Constants.UserDefaults.overwriteSameHistory)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
                 guard let self = self else { return }
-                self.lock.lock()
-                self.isOverwriteSameHistory = $0
-                self.lock.unlock()
-            })
-            .disposed(by: disposeBag)
-        defaults.rx.observe(Int.self, Constants.UserDefaults.thumbnailWidth)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] in
+                self.lock.lock(); self.isOverwriteSameHistory = value; self.lock.unlock()
+            }
+            .store(in: &cancellables)
+        defaults.integerPublisher(forKey: Constants.UserDefaults.thumbnailWidth)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
                 guard let self = self else { return }
-                self.lock.lock()
-                self.cachedThumbnailWidth = $0
-                self.lock.unlock()
-            })
-            .disposed(by: disposeBag)
-        defaults.rx.observe(Int.self, Constants.UserDefaults.thumbnailHeight)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] in
+                self.lock.lock(); self.cachedThumbnailWidth = value; self.lock.unlock()
+            }
+            .store(in: &cancellables)
+        defaults.integerPublisher(forKey: Constants.UserDefaults.thumbnailHeight)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
                 guard let self = self else { return }
-                self.lock.lock()
-                self.cachedThumbnailHeight = $0
-                self.lock.unlock()
-            })
-            .disposed(by: disposeBag)
+                self.lock.lock(); self.cachedThumbnailHeight = value; self.lock.unlock()
+            }
+            .store(in: &cancellables)
     }
 
     private func stopEventMonitor() {
@@ -164,7 +154,7 @@ final class ClipService {
     }
 
     func incrementChangeCount() {
-        cachedChangeCount.accept(cachedChangeCount.value + 1)
+        cachedChangeCount.send(cachedChangeCount.value + 1)
     }
 
 }

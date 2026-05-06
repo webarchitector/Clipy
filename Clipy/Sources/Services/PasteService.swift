@@ -12,8 +12,7 @@
 
 import Foundation
 import Cocoa
-import RxSwift
-import RxCocoa
+import Combine
 import Sauce
 
 final class PasteService {
@@ -25,7 +24,7 @@ final class PasteService {
         cache.countLimit = 30
         return cache
     }()
-    fileprivate var disposeBag = DisposeBag()
+    fileprivate var cancellables: Set<AnyCancellable> = []
     // Cached preference values — refreshed via rx.observe to avoid UserDefaults reads on every paste.
     fileprivate var isPastePlainTextEnabled = false
     fileprivate var pastePlainTextModifier = 0
@@ -48,7 +47,7 @@ final class PasteService {
     }
 
     func startMonitoring() {
-        disposeBag = DisposeBag()
+        cancellables.removeAll()
         let defaults = AppEnvironment.current.defaults
         isPastePlainTextEnabled = defaults.bool(forKey: Constants.Beta.pastePlainText)
         pastePlainTextModifier = defaults.integer(forKey: Constants.Beta.pastePlainTextModifier)
@@ -68,19 +67,17 @@ final class PasteService {
     }
 
     private func bindBool(_ defaults: UserDefaults, _ key: String, _ assign: @escaping (Bool) -> Void) {
-        defaults.rx.observe(Bool.self, key)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: assign)
-            .disposed(by: disposeBag)
+        defaults.boolPublisher(forKey: key)
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: assign)
+            .store(in: &cancellables)
     }
 
     private func bindInt(_ defaults: UserDefaults, _ key: String, _ assign: @escaping (Int) -> Void) {
-        defaults.rx.observe(Int.self, key)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: assign)
-            .disposed(by: disposeBag)
+        defaults.integerPublisher(forKey: key)
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: assign)
+            .store(in: &cancellables)
     }
 
     // MARK: - Cache

@@ -11,24 +11,26 @@
 //
 
 import Foundation
-import RxSwift
+import Combine
 import RealmSwift
 
 final class DataCleanService {
 
     // MARK: - Properties
-    fileprivate var disposeBag = DisposeBag()
-    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .background)
+    fileprivate var cancellables: Set<AnyCancellable> = []
+    fileprivate let queue = DispatchQueue(label: "com.clipy-app.Clipy.DataCleanService", qos: .background)
 
     // MARK: - Monitoring
     func startMonitoring() {
-        disposeBag = DisposeBag()
+        cancellables.removeAll()
         // Clean datas every 30 minutes
-        Observable<Int>.interval(.seconds(60 * 30), scheduler: scheduler)
-            .subscribe(onNext: { [weak self] _ in
+        Timer.publish(every: 60 * 30, on: .main, in: .default)
+            .autoconnect()
+            .receive(on: queue)
+            .sink { [weak self] _ in
                 self?.cleanDatas()
-            })
-            .disposed(by: disposeBag)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Delete Data

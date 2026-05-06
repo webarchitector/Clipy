@@ -14,8 +14,7 @@ import Carbon
 import Cocoa
 import Magnet
 import RealmSwift
-import RxCocoa
-import RxSwift
+import Combine
 
 final class MenuManager: NSObject {
 
@@ -30,14 +29,15 @@ final class MenuManager: NSObject {
     // File path cache to avoid deserializing CPYClipData for file icons
     var filePathCache = NSCache<NSString, NSString>()
     // Other
-    let disposeBag = DisposeBag()
+    var cancellables: Set<AnyCancellable> = []
     let notificationCenter = NotificationCenter.default
     let kMaxKeyEquivalents = 10
     let shortenSymbol = "..."
-    let menuRebuildSubject = PublishSubject<Void>()
+    let menuRebuildSubject = PassthroughSubject<Void, Never>()
     // Track currently open popup menu for dismissal on hotkey switch
     weak var currentPopupMenu: NSMenu?
     var pendingMenuType: MenuType?
+    var pendingAppLauncher = false
     var pendingRebuild = false
     var eventTap: CFMachPort?
     var eventTapSource: CFRunLoopSource?
@@ -93,6 +93,15 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
     if let targetType = manager.menuTypeForCGEvent(keyCode: keyCode, flags: flags),
        targetType != manager.currentMenuType {
         manager.pendingMenuType = targetType
+        manager.pendingAppLauncher = false
+        manager.currentPopupMenu?.cancelTrackingWithoutAnimation()
+        return nil
+    }
+
+    if let launcherCombo = AppEnvironment.current.appLauncherService.currentKeyCombo,
+       manager.matchesCGEvent(keyCode: keyCode, flags: flags, keyCombo: launcherCombo) {
+        manager.pendingMenuType = nil
+        manager.pendingAppLauncher = true
         manager.currentPopupMenu?.cancelTrackingWithoutAnimation()
         return nil
     }
@@ -153,6 +162,11 @@ extension MenuManager {
     }
 
     private func handlePendingMenu() {
+        if pendingAppLauncher {
+            pendingAppLauncher = false
+            AppLauncher.shared.toggle()
+            return
+        }
         guard let next = pendingMenuType else { return }
         pendingMenuType = nil
         if next == .history {
@@ -169,6 +183,14 @@ extension MenuManager {
     }
 
     func popUpMenu(_ type: MenuType) {
+        // If the standalone history window is up, hide it synchronously
+        // (orderOut, not close) so the new popup actually appears as the
+        // focal UI. close() schedules animation that may run after popUp(),
+        // which itself blocks the main runloop.
+        let historyController = CPYClipboardHistoryWindowController.sharedController
+        if historyController.isWindowLoaded, historyController.window?.isVisible == true {
+            historyController.window?.orderOut(nil)
+        }
         let menu: NSMenu?
         switch type {
         case .main:
@@ -194,6 +216,20 @@ extension MenuManager {
         removeEventTap()
         pendingMenuType = nil
         CPYClipboardHistoryWindowController.sharedController.showWindow(self)
+    }
+
+    /// Close any Clipy-driven popup menu or window so a different UI surface
+    /// (e.g. the AppLauncher panel) can take focus cleanly. Called from
+    /// hotkey handlers that own a competing window.
+    func dismissAllPopups() {
+        currentPopupMenu?.cancelTrackingWithoutAnimation()
+        currentPopupMenu = nil
+        removeEventTap()
+        pendingMenuType = nil
+        let history = CPYClipboardHistoryWindowController.sharedController
+        if history.isWindowLoaded, history.window?.isVisible == true {
+            history.close()
+        }
     }
 
     func popUpSnippetFolder(_ folder: CPYFolder) {
@@ -237,41 +273,44 @@ private extension MenuManager {
             case .error:
                 break
             }
-            self.menuRebuildSubject.onNext(())
+            self.menuRebuildSubject.send(())
         }
         snippetToken = realm.objects(CPYFolder.self)
                         .observe { [weak self] _ in
-                            self?.menuRebuildSubject.onNext(())
+                            self?.menuRebuildSubject.send(())
                         }
         menuRebuildSubject
-            .debounce(.milliseconds(300), scheduler: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] in
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+            .sink { [weak self] in
                 guard let self = self else { return }
                 if self.currentPopupMenu != nil {
                     self.pendingRebuild = true
                     return
                 }
                 self.createClipMenu()
-            })
-            .disposed(by: disposeBag)
-        // Menu icon
-        AppEnvironment.current.defaults.rx.observe(Int.self, Constants.UserDefaults.showStatusItem, retainSelf: false)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] key in
-                self?.changeStatusItem(StatusType(rawValue: key) ?? .black)
-            })
-            .disposed(by: disposeBag)
-        // Edit snippets
-        notificationCenter.rx.notification(Notification.Name(rawValue: Constants.Notification.closeSnippetEditor))
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] _ in
-                self?.createClipMenu()
-            })
-            .disposed(by: disposeBag)
-        // Observe change preference settings (consolidated)
+            }
+            .store(in: &cancellables)
+        // Menu icon — boolean/integer publisher emits initial value via prepend
+        // so the icon shows up at launch (matches RxSwift KVO semantics).
         let defaults = AppEnvironment.current.defaults
-        let boolKeys: [String] = [
+        defaults.integerPublisher(forKey: Constants.UserDefaults.showStatusItem)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] key in
+                self?.changeStatusItem(StatusType(rawValue: key) ?? .black)
+            }
+            .store(in: &cancellables)
+        // Edit snippets
+        notificationCenter
+            .publisher(for: Notification.Name(rawValue: Constants.Notification.closeSnippetEditor))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.createClipMenu()
+            }
+            .store(in: &cancellables)
+        // Observe change preference settings (consolidated): rebuild the menu
+        // when any of these keys change. Fingerprint the watched values so a
+        // change to an unrelated default doesn't trigger a useless rebuild.
+        let watchedBoolKeys: [String] = [
             Constants.UserDefaults.addClearHistoryMenuItem,
             Constants.UserDefaults.showIconInTheMenu,
             Constants.UserDefaults.menuItemsTitleStartWithZero,
@@ -282,29 +321,28 @@ private extension MenuManager {
             Constants.UserDefaults.showColorPreviewInTheMenu,
             Constants.UserDefaults.reorderClipsAfterPasting
         ]
-        let intKeys: [String] = [
+        let watchedIntKeys: [String] = [
             Constants.UserDefaults.maxHistorySize,
             Constants.UserDefaults.numberOfItemsPlaceInline,
             Constants.UserDefaults.numberOfItemsPlaceInsideFolder,
             Constants.UserDefaults.maxMenuItemTitleLength,
             Constants.UserDefaults.maxLengthOfToolTip
         ]
-        let boolObservables = boolKeys.map { key in
-            defaults.rx.observe(Bool.self, key, options: [.new], retainSelf: false)
-                .compactMap { $0 }.distinctUntilChanged().map { _ in }
-        }
-        let intObservables = intKeys.map { key in
-            defaults.rx.observe(Int.self, key, options: [.new], retainSelf: false)
-                .compactMap { $0 }.distinctUntilChanged().map { _ in }
-        }
-        Observable.merge(boolObservables + intObservables)
-            .throttle(.seconds(1), scheduler: MainScheduler.instance)
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] in
+        NotificationCenter.default
+            .publisher(for: UserDefaults.didChangeNotification)
+            .map { _ -> [Int] in
+                let bools = watchedBoolKeys.map { defaults.bool(forKey: $0) ? 1 : 0 }
+                let ints = watchedIntKeys.map { defaults.integer(forKey: $0) }
+                return bools + ints
+            }
+            .removeDuplicates()
+            .dropFirst()  // initial state already used by createClipMenu in clipToken.observe
+            .throttle(for: .seconds(1), scheduler: DispatchQueue.main, latest: true)
+            .sink { [weak self] _ in
                 self?.cachedSettings = nil
                 self?.createClipMenu()
-            })
-            .disposed(by: disposeBag)
+            }
+            .store(in: &cancellables)
     }
 }
 

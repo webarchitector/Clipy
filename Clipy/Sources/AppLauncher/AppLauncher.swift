@@ -40,6 +40,9 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         if let p = panel, p.isVisible {
             hide()
         } else {
+            // Dismiss any other Clipy UI (history popup, history window,
+            // snippet popup) so the launcher takes focus cleanly.
+            AppEnvironment.current.menuManager.dismissAllPopups()
             show()
         }
     }
