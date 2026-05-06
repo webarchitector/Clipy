@@ -13,6 +13,7 @@
 import Cocoa
 import RealmSwift
 import KeyHolder
+import UniformTypeIdentifiers
 import Magnet
 import AEXML
 
@@ -171,7 +172,7 @@ extension CPYSnippetsEditorWindowController {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
-        panel.allowedFileTypes = [Constants.Xml.fileType]
+        panel.allowedContentTypes = [.xml]
         let returnCode = panel.runModal()
 
         if returnCode != NSApplication.ModalResponse.OK { return }
@@ -249,7 +250,7 @@ extension CPYSnippetsEditorWindowController {
         let panel = NSSavePanel()
         panel.accessoryView = nil
         panel.canSelectHiddenExtension = true
-        panel.allowedFileTypes = [Constants.Xml.fileType]
+        panel.allowedContentTypes = [.xml]
         panel.allowsOtherFileTypes = false
         panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
         panel.nameFieldStringValue = "snippets"
