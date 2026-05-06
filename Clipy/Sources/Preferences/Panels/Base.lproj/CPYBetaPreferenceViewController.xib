@@ -36,26 +36,6 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fya-Fc-ZWk" customClass="CPYDesignableButton" customModule="Clipy" customModuleProvider="target">
-                    <rect key="frame" x="59" y="18" width="364" height="18"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <buttonCell key="cell" type="check" title="Save screenshots in history" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="pgE-3j-ZEy">
-                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                        <font key="font" metaFont="system"/>
-                    </buttonCell>
-                    <connections>
-                        <binding destination="zBg-yp-15f" name="value" keyPath="values.kCPYBetaObserveScreenshot" id="Wyb-lc-cVJ"/>
-                    </connections>
-                </button>
-                <textField verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" preferredMaxLayoutWidth="206" translatesAutoresizingMaskIntoConstraints="NO" id="2iQ-ta-6Z6">
-                    <rect key="frame" x="59" y="42" width="210" height="17"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" title="Screenshot" id="0f7-ic-bHq">
-                        <font key="font" size="13" name=".HiraKakuInterface-W6"/>
-                        <color key="textColor" red="0.2666666667" green="0.2666666667" blue="0.2666666667" alpha="1" colorSpace="calibratedRGB"/>
-                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" preferredMaxLayoutWidth="436" translatesAutoresizingMaskIntoConstraints="NO" id="5vu-ef-NJt">
                     <rect key="frame" x="20" y="185" width="440" height="27"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
