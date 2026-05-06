@@ -17,12 +17,6 @@ Clipy is a clipboard extension for macOS that lives in the menu bar and keeps a 
 - Supports reusable snippets and folders for frequently used text.
 - Keeps the workflow lightweight and keyboard-driven.
 
-## Screenshots
-
-Main Clipy interface:
-
-<img src="https://clipy-app.com/img/screenshot1.png" width="640" alt="Clipy screenshot">
-
 ## What Changed
 
 - The build toolchain no longer requires Ruby, Bundler, Fastlane, Danger, or CocoaPods.
@@ -43,7 +37,7 @@ You can install Clipy either from a prebuilt app bundle or by building it from s
 
 ### Requirements
 
-- macOS 11 or later.
+- macOS 13 or later.
 - Xcode with the macOS SDK and command line tools installed.
 - An Apple Silicon Mac. The current project excludes `x86_64` for macOS builds and strips non-`arm64` slices from the final app bundle.
 - No Ruby, Bundler, Fastlane, or CocoaPods setup is required. Dependencies are already vendored in the repository.
