@@ -4,8 +4,6 @@
 //  Clipy AppLauncher — Magnet HotKey registration and lifecycle.
 //
 
-// swiftlint:disable identifier_name
-
 import Cocoa
 import Magnet
 
@@ -49,7 +47,8 @@ final class AppLauncherService: NSObject {
                             keyCombo: keyCombo,
                             target: self,
                             action: #selector(handleHotKey))
-        if !hotKey.register() {
+        let didRegister = hotKey.register()
+        if !didRegister {
             NSLog("AppLauncherService: failed to register hotkey \(keyCombo)")
         }
     }

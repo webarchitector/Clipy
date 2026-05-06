@@ -251,16 +251,16 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         tf.textColor = NSColor.labelColor
 
         switch visibleItems[row] {
-        case .app(let name, let running):
+        case let .app(name, running):
             tf.stringValue = name
             dotLabel.isHidden = !running
-        case .calcCopyResult(let expr, let result):
+        case let .calcCopyResult(expr, result):
             tf.stringValue = "🧮 \(expr) = \(result)   (Enter to copy result)"
             dotLabel.isHidden = true
-        case .calcCopyFull(let expr, let result):
+        case let .calcCopyFull(expr, result):
             tf.stringValue = "📋 \(expr) = \(result)   (Enter to copy expression = result)"
             dotLabel.isHidden = true
-        case .status(let msg):
+        case let .status(msg):
             tf.stringValue = msg
             tf.textColor = .secondaryLabelColor
             dotLabel.isHidden = true
@@ -340,13 +340,13 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
             hide()
             if let url = AppIndex.shared.resolveURL(named: name) {
                 NSWorkspace.shared.openApplication(at: url,
-                                                    configuration: NSWorkspace.OpenConfiguration(),
-                                                    completionHandler: nil)
+                                                   configuration: NSWorkspace.OpenConfiguration(),
+                                                   completionHandler: nil)
             }
-        case .calcCopyResult(_, let result):
+        case let .calcCopyResult(_, result):
             copyToPasteboard(result)
             hide()
-        case .calcCopyFull(let expr, let result):
+        case let .calcCopyFull(expr, result):
             copyToPasteboard("\(expr) = \(result)")
             hide()
         case .status:

@@ -8,8 +8,6 @@
 //  When triggered, the hotkey calls TISSelectInputSource for that source.
 //
 
-// swiftlint:disable identifier_name
-
 import Cocoa
 import Magnet
 
@@ -73,14 +71,13 @@ final class InputSourceService: NSObject {
         // De-duplicate: if another source had the same KeyCombo, drop it so
         // the new binding wins (matches selector HotKeyCenter behaviour).
         if let combo = keyCombo {
-            for (otherID, other) in registrations where otherID != source.identifier {
-                if other.keyCombo == combo {
-                    var updated = other
-                    updated.keyCombo = nil
-                    registrations[otherID] = updated
-                    AppEnvironment.current.defaults.removeObject(forKey: defaultsKey(for: otherID))
-                    HotKeyCenter.shared.unregisterHotKey(with: other.identifier)
-                }
+            for (otherID, other) in registrations
+                where otherID != source.identifier && other.keyCombo == combo {
+                var updated = other
+                updated.keyCombo = nil
+                registrations[otherID] = updated
+                AppEnvironment.current.defaults.removeObject(forKey: defaultsKey(for: otherID))
+                HotKeyCenter.shared.unregisterHotKey(with: other.identifier)
             }
         }
 
@@ -115,7 +112,8 @@ final class InputSourceService: NSObject {
         // to HotKey transitively keeps the target alive.
         objc_setAssociatedObject(hotKey, &HotKeyTarget.associationKey,
                                  target, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        if !hotKey.register() {
+        let didRegister = hotKey.register()
+        if !didRegister {
             NSLog("InputSourceService: failed to register hotkey for \(source.identifier)")
         }
     }

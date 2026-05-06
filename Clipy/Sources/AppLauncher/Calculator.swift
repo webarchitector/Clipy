@@ -31,8 +31,8 @@ final class Calculator {
             .replacingOccurrences(of: "\t", with: "")
             .replacingOccurrences(of: "^", with: "**")
         while let m = sqrtRegex.firstMatch(in: normalized,
-                                            range: NSRange(normalized.startIndex..<normalized.endIndex,
-                                                           in: normalized)),
+                                           range: NSRange(normalized.startIndex..<normalized.endIndex,
+                                                          in: normalized)),
               let full = Range(m.range(at: 0), in: normalized),
               let arg = Range(m.range(at: 1), in: normalized) {
             normalized.replaceSubrange(full, with: "((\(normalized[arg]))**0.5)")
@@ -105,6 +105,7 @@ final class Calculator {
 
     // MARK: - Currency parsing (pure)
 
+    // swiftlint:disable:next large_tuple
     static func parseCurrency(_ s: String) -> (amount: Double, from: String, to: String)? {
         let range = NSRange(s.startIndex..<s.endIndex, in: s)
         guard let m = currencyRegex.firstMatch(in: s, range: range), m.numberOfRanges == 4,
