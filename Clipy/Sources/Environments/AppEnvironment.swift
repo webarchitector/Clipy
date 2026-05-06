@@ -31,6 +31,7 @@ struct AppEnvironment {
                                accessibilityService: AccessibilityService = current.accessibilityService,
                                updateService: UpdateService = current.updateService,
                                menuManager: MenuManager = current.menuManager,
+                               appLauncherService: AppLauncherService = current.appLauncherService,
                                defaults: UserDefaults = current.defaults) {
         replaceCurrent(environment: Environment(clipService: clipService,
                                                 hotKeyService: hotKeyService,
@@ -40,6 +41,7 @@ struct AppEnvironment {
                                                 accessibilityService: accessibilityService,
                                                 updateService: updateService,
                                                 menuManager: menuManager,
+                                                appLauncherService: appLauncherService,
                                                 defaults: defaults))
     }
 
@@ -58,6 +60,7 @@ struct AppEnvironment {
                            accessibilityService: current.accessibilityService,
                            updateService: current.updateService,
                            menuManager: current.menuManager,
+                           appLauncherService: current.appLauncherService,
                            defaults: current.defaults)
     }
 
