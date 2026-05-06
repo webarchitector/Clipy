@@ -1,12 +1,10 @@
 # AGENTS.md
 
-Read this file before changing code in this repository. Use it together with `README.md` and `docs/INDEX.md` (project navigation map).
+Read this file before changing code in this repository. Use it together with `README.md` and `docs/INDEX.md`.
 
-## Project Index
+## Code navigation
 
-`docs/INDEX.md` is the navigation map for this repo: stack, top-level layout, `Clipy/Sources/` subdirectories with one-line purpose each, bootstrap order in `AppDelegate.applicationDidFinishLaunching`, and the external contracts (`~/.local/share/app-launcher/var/`, `NetworkIsolation.allowedHosts`, per-input-source UserDefaults keys). Read it first when orienting; this file (`AGENTS.md`) carries the editing rules, `INDEX.md` carries the map.
-
-After any change that affects items listed in `docs/INDEX.md` ("Reindexing" section), regenerate the index — bump the date stamp and update the affected sections so it does not drift. The reindex trigger list is intentionally narrow (source-tree shape, services on `Environment`, bootstrap order, external contracts, ported-feature invariants); routine bug fixes inside an existing file do not require a reindex.
+For finding classes, methods, call paths, references — query the `codebase-memory-mcp` graph (project key `Users-ank-dev-clipy`). The graph is authoritative and does not drift. `docs/INDEX.md` carries only the non-code knowledge the graph cannot infer (bootstrap order, external contracts, why-decisions, XIB invariants). If the graph is missing/stale, run `codebase-memory-mcp cli index_repository '{"repo_path": "/Users/ank/dev/clipy"}'`.
 
 ## Project Snapshot
 
@@ -113,7 +111,7 @@ xcodebuild \
 - Did you update tests, or note why tests were not updated?
 - If a new file landed in `Clipy/Sources/`, did you also add the file reference to `Clipy.xcodeproj/project.pbxproj` so the Xcode target picks it up? The fastest tool is the `xcodeproj` Ruby gem; an example invocation lives in `docs/archive/2026-05-app-launcher/plans/2026-05-06-app-launcher-port.md` (Task 16).
 - If a new service was added to `AppEnvironment.Environment`, did you update `Environment.init`, `AppEnvironment.replaceCurrent(...)`, AND `AppEnvironment.fromStorage(...)`?
-- If the change touches anything in `docs/INDEX.md`'s "Reindexing" trigger list (source-tree shape, services on `Environment`, bootstrap order, external contracts, ported-feature invariants), did you regenerate `docs/INDEX.md` and bump its date stamp?
+- If the change affects bootstrap order, external contracts (cache format, `NetworkIsolation.allowedHosts`, UserDefaults key naming), or a ported-feature invariant called out in `docs/INDEX.md`, did you update that file? (Code-graph drift is handled by re-running `index_repository` on the codebase-memory MCP, not by hand.)
 
 ## App Launcher / Input Sources Editing Guidance
 
