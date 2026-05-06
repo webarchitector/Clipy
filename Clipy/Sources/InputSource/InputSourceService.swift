@@ -28,26 +28,51 @@ final class InputSourceService: NSObject {
     /// available input source, look up a stored KeyCombo (if any) and
     /// register a Magnet hotkey that selects that source.
     func setupHotKeys() {
-        for source in InputSource.sources {
-            var combo = savedKeyCombo(forIdentifier: source.identifier)
-            // Drop combos already claimed by an earlier source. Without this
-            // dedup, a stale duplicate in defaults (manual plist edit, legacy
-            // migration, two sources sharing a default combo) would silently
-            // fail the second `HotKey.register()` and the zombie binding
-            // would persist in defaults forever.
-            if let existing = combo,
-               registrations.contains(where: { $0.value.keyCombo == existing }) {
+        let entries = InputSource.sources.map {
+            (identifier: $0.identifier, combo: savedKeyCombo(forIdentifier: $0.identifier))
+        }
+        let decisions = Self.dedupCombos(entries)
+        for (source, decision) in zip(InputSource.sources, decisions) {
+            if decision.droppedAsDuplicate {
                 AppEnvironment.current.defaults.removeObject(forKey: defaultsKey(for: source.identifier))
                 NSLog("InputSourceService: cleared duplicate KeyCombo for \(source.identifier)")
-                combo = nil
             }
             registrations[source.identifier] = Registration(
                 source: source,
                 identifier: hotKeyIdentifier(for: source.identifier),
-                keyCombo: combo
+                keyCombo: decision.combo
             )
-            registerIfNeeded(source: source, keyCombo: combo)
+            registerIfNeeded(source: source, keyCombo: decision.combo)
         }
+    }
+
+    struct DedupDecision<Combo: Equatable>: Equatable {
+        let identifier: String
+        let combo: Combo?
+        let droppedAsDuplicate: Bool
+    }
+
+    /// Drops a combo whenever an earlier entry in the list already claimed it.
+    /// Pure (no side effects) so the rule can be unit-tested without touching
+    /// Magnet/HotKeyCenter. Without this dedup a stale duplicate in defaults
+    /// (manual plist edit, legacy migration, shared default combo) would
+    /// silently fail the second `HotKey.register()` and leave a zombie binding
+    /// in defaults forever.
+    static func dedupCombos<Combo: Equatable>(
+        _ entries: [(identifier: String, combo: Combo?)]
+    ) -> [DedupDecision<Combo>] {
+        var seen: [Combo] = []
+        var out: [DedupDecision<Combo>] = []
+        out.reserveCapacity(entries.count)
+        for entry in entries {
+            if let combo = entry.combo, seen.contains(combo) {
+                out.append(DedupDecision(identifier: entry.identifier, combo: nil, droppedAsDuplicate: true))
+            } else {
+                if let combo = entry.combo { seen.append(combo) }
+                out.append(DedupDecision(identifier: entry.identifier, combo: entry.combo, droppedAsDuplicate: false))
+            }
+        }
+        return out
     }
 
     /// Re-register when the user edits a source's shortcut from preferences.
