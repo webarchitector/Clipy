@@ -5,6 +5,8 @@
 //  can be presented in the preferences UI and selected by a hotkey.
 //
 
+// swiftlint:disable identifier_name
+
 import Carbon
 import Cocoa
 

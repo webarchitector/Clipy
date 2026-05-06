@@ -4,6 +4,8 @@
 //  Clipy AppLauncher — NSPanel subclass for first-responder + key forwarding.
 //
 
+// swiftlint:disable identifier_name
+
 import Cocoa
 
 /// NSPanel subclass that:

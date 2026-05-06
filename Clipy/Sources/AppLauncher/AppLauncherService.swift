@@ -4,6 +4,8 @@
 //  Clipy AppLauncher — Magnet HotKey registration and lifecycle.
 //
 
+// swiftlint:disable identifier_name
+
 import Cocoa
 import Magnet
 

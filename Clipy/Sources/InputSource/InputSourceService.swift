@@ -8,6 +8,8 @@
 //  When triggered, the hotkey calls TISSelectInputSource for that source.
 //
 
+// swiftlint:disable identifier_name
+
 import Cocoa
 import Magnet
 
