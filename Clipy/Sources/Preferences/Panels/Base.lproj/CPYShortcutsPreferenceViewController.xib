@@ -31,7 +31,7 @@
                     </textFieldCell>
                 </textField>
                 <view fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="uTq-IP-dYk">
-                    <rect key="frame" x="44" y="144" width="392" height="188"/>
+                    <rect key="frame" x="44" y="96" width="392" height="188"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <subviews>
                         <textField verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Vzz-Iq-77h">
@@ -151,7 +151,7 @@
                     </subviews>
                 </view>
                 <textField verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="NO" preferredMaxLayoutWidth="206" translatesAutoresizingMaskIntoConstraints="NO" id="fZN-Ox-42G">
-                    <rect key="frame" x="59" y="114" width="210" height="17"/>
+                    <rect key="frame" x="59" y="66" width="210" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" title="History" id="Txl-Qh-RzP">
                         <font key="font" metaFont="systemBold"/>
@@ -160,7 +160,7 @@
                     </textFieldCell>
                 </textField>
                 <view fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zgf-1z-HW3">
-                    <rect key="frame" x="44" y="62" width="392" height="44"/>
+                    <rect key="frame" x="44" y="14" width="392" height="44"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <subviews>
                         <textField verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qah-qM-yU1">
