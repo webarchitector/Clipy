@@ -30,6 +30,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     private var runningApps: Set<String> = []
     private var lastQuery: String = ""
     private var pendingFilterWorkItem: DispatchWorkItem?
+    private var runningAppsObserversRegistered = false
 
     private static let dotTag = 1001
 
@@ -51,7 +52,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
             guard let self = self else { return }
             if self.panel == nil { self.setupPanel() }
             AppIndex.shared.reloadIfNeeded()
-            self.refreshRunningApps()
+            self.ensureRunningAppsTracking()
         }
     }
 
@@ -60,7 +61,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         guard let panel = panel, let searchField = searchField else { return }
 
         AppIndex.shared.reloadIfNeeded()
-        refreshRunningApps()
+        ensureRunningAppsTracking()
         searchField.stringValue = ""
         lastQuery = ""
         pendingFilterWorkItem?.cancel()
@@ -102,6 +103,24 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
             if let name = app.localizedName { s.insert(name) }
         }
         runningApps = s
+    }
+
+    /// Replaces per-show `runningApplications` scans with NSWorkspace notifications.
+    /// One initial scan seeds the set; afterwards launch/terminate events keep it
+    /// fresh, so opening the launcher costs zero extra work for this purpose.
+    private func ensureRunningAppsTracking() {
+        if runningAppsObserversRegistered { return }
+        runningAppsObserversRegistered = true
+        let nc = NSWorkspace.shared.notificationCenter
+        nc.addObserver(forName: NSWorkspace.didLaunchApplicationNotification,
+                       object: nil, queue: .main) { [weak self] _ in
+            self?.refreshRunningApps()
+        }
+        nc.addObserver(forName: NSWorkspace.didTerminateApplicationNotification,
+                       object: nil, queue: .main) { [weak self] _ in
+            self?.refreshRunningApps()
+        }
+        refreshRunningApps()
     }
 
     // MARK: - Panel setup
