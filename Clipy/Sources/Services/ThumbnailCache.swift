@@ -40,11 +40,11 @@ final class ThumbnailCache {
         memoryCache.setObject(image, forKey: nsKey, cost: estimatedCost(of: image))
         let path = self.path(for: key)
         writeQueue.async {
-            guard
-                let tiff = image.tiffRepresentation,
-                let rep = NSBitmapImageRep(data: tiff),
-                let png = rep.representation(using: .png, properties: [:])
-            else { return }
+            // Skip the TIFF intermediate: encoding image → TIFF → NSBitmapImageRep → PNG
+            // costs three full-size buffers. CGImage → NSBitmapImageRep → PNG is two.
+            guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
+            let rep = NSBitmapImageRep(cgImage: cgImage)
+            guard let png = rep.representation(using: .png, properties: [:]) else { return }
             try? png.write(to: URL(fileURLWithPath: path), options: .atomic)
         }
     }
