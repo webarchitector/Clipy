@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1C43463CD1FEC683E22E1971 /* CPYInputSourcesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236630F0674F425C8444048A /* CPYInputSourcesWindowController.swift */; };
 		1F077973EC8AEA1CD7B2DED8 /* InputSourceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FCD4CA2D2997016DE6E24BF /* InputSourceService.swift */; };
 		242EC2327861D35B7C3AE84E /* Pods_ClipyTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00A4B450122D7FCE6BD57E77 /* Pods_ClipyTests.framework */; };
 		2CD1E22BE38F6D29158CC909 /* AppIndexFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */; };
@@ -17,7 +16,6 @@
 		5E2CDE20A8E4498F1790A3DB /* LauncherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */; };
 		74421B9C63AAB6648DF10A7E /* AppIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F762C0B202FBAA80E7A0EAA5 /* AppIndex.swift */; };
 		8EE81CDBD64E7A9D8D3361DF /* AppLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */; };
-		9F7907B62FDB3BD96F1DF180 /* CPYInputSourcesPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139844CA083577168EEFFFF6 /* CPYInputSourcesPreferenceViewController.swift */; };
 		ADBBDD749273048F0B0456F4 /* AppLauncherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADF565B73A015CBBA7EB6D01 /* AppLauncherService.swift */; };
 		B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACD8BB2576FA1CAA0AEF6C /* InputSource.swift */; };
 		B7CC520B88EAA6AD38E93462 /* Pods_Clipy.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73A92F6DEE6CFF50A567CFEF /* Pods_Clipy.framework */; };
@@ -122,10 +120,8 @@
 		00A4B450122D7FCE6BD57E77 /* Pods_ClipyTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ClipyTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LauncherPanel.swift; sourceTree = "<group>"; };
 		0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalculatorMathSpec.swift; sourceTree = "<group>"; };
-		139844CA083577168EEFFFF6 /* CPYInputSourcesPreferenceViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYInputSourcesPreferenceViewController.swift; sourceTree = "<group>"; };
 		1C2D23FF23B07B76585DC610 /* Dependencies-ClipyTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.release.xcconfig"; sourceTree = "<group>"; };
 		21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIndexFilterSpec.swift; sourceTree = "<group>"; };
-		236630F0674F425C8444048A /* CPYInputSourcesWindowController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYInputSourcesWindowController.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
 		31064F137CFB046737D1709D /* Dependencies-Clipy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.debug.xcconfig"; sourceTree = "<group>"; };
 		314B299D1EC49AD5004DD070 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/CPYSnippetsEditorWindowController.xib; sourceTree = "<group>"; };
@@ -335,8 +331,6 @@
 				924132C79412C18C7C0FC8F4 /* TISInputSource+Additions.swift */,
 				A5ACD8BB2576FA1CAA0AEF6C /* InputSource.swift */,
 				7FCD4CA2D2997016DE6E24BF /* InputSourceService.swift */,
-				139844CA083577168EEFFFF6 /* CPYInputSourcesPreferenceViewController.swift */,
-				236630F0674F425C8444048A /* CPYInputSourcesWindowController.swift */,
 			);
 			name = InputSource;
 			path = InputSource;
@@ -909,8 +903,6 @@
 				CCD1044872DE40055D2625E5 /* TISInputSource+Additions.swift in Sources */,
 				B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */,
 				1F077973EC8AEA1CD7B2DED8 /* InputSourceService.swift in Sources */,
-				9F7907B62FDB3BD96F1DF180 /* CPYInputSourcesPreferenceViewController.swift in Sources */,
-				1C43463CD1FEC683E22E1971 /* CPYInputSourcesWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -114,11 +114,6 @@ class AppDelegate: NSObject, NSMenuItemValidation {
         CPYSnippetsEditorWindowController.sharedController.showWindow(self)
     }
 
-    @objc func showInputSourcesWindow() {
-        NSApp.activate(ignoringOtherApps: true)
-        CPYInputSourcesWindowController.sharedController.showWindow(self)
-    }
-
     @objc func showClipboardHistoryWindow() {
         AppEnvironment.current.menuManager.showClipboardHistoryWindow()
     }
