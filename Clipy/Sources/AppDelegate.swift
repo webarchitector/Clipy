@@ -199,16 +199,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     }
 
     private func toggleAddingToLoginItems(_ isEnable: Bool) {
-        if #available(macOS 13.0, *) {
-            guard updateMainAppLoginItemState(to: isEnable) else {
-                syncStoredLoginItemState()
-                return
-            }
-            syncStoredLoginItemState()
-            return
-        }
-
-        guard updateLegacyLoginItemState(to: isEnable) else {
+        guard updateMainAppLoginItemState(to: isEnable) else {
             syncStoredLoginItemState()
             return
         }
@@ -222,7 +213,6 @@ class AppDelegate: NSObject, NSMenuItemValidation {
         return LoginServiceKit.addLoginItems(at: appPath)
     }
 
-    @available(macOS 13.0, *)
     private func updateMainAppLoginItemState(to isEnabled: Bool) -> Bool {
         let service = SMAppService.mainApp
 
@@ -284,18 +274,14 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     private func systemLoginItemEnabledState() -> Bool {
         let legacyLoginItemEnabled = LoginServiceKit.isExistLoginItems(at: Bundle.main.bundlePath)
 
-        if #available(macOS 13.0, *) {
-            switch SMAppService.mainApp.status {
-            case .enabled, .requiresApproval:
-                return true
-            case .notRegistered, .notFound:
-                return legacyLoginItemEnabled
-            @unknown default:
-                return legacyLoginItemEnabled
-            }
+        switch SMAppService.mainApp.status {
+        case .enabled, .requiresApproval:
+            return true
+        case .notRegistered, .notFound:
+            return legacyLoginItemEnabled
+        @unknown default:
+            return legacyLoginItemEnabled
         }
-
-        return legacyLoginItemEnabled
     }
 
     private func showLoginItemApprovalAlert() {
