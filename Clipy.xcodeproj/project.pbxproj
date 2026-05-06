@@ -16,6 +16,11 @@
 		FA0157AB1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157AA1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift */; };
 		FA0157061E48A0C7000DEDA1 /* Quick in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157041E48A0C7000DEDA1 /* Quick */; };
 		FA0157071E48A0C7000DEDA1 /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157051E48A0C7000DEDA1 /* Nimble */; };
+		FA01570B1E48A0C7000DEDA1 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157091E48A0C7000DEDA1 /* RealmSwift */; };
+		FA01570C1E48A0C7000DEDA1 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = FA01570A1E48A0C7000DEDA1 /* Realm */; };
+		FA01570E1E48A0C7000DEDA1 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FA01570D1E48A0C7000DEDA1 /* RealmSwift */; };
+		FA01570F1E48A0C7000DEDA1 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = FA0157091E48A0C7000DEDA1 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FA0157101E48A0C7000DEDA1 /* Realm in Embed Frameworks */ = {isa = PBXBuildFile; productRef = FA01570A1E48A0C7000DEDA1 /* Realm */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		50DAEC64393A19CC019A7181 /* CPYClipboardHistoryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 352DCDE5F4B5B5DD15B72C9D /* CPYClipboardHistoryWindowController.swift */; };
 		5E2CDE20A8E4498F1790A3DB /* LauncherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */; };
 		649C3E8C5B875EABDF3D5636 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD037ABF98B968BBAF6D9C9 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift */; };
@@ -97,6 +102,7 @@
 		FAE911BB1DE054F1008A4BEC /* NSCoding+Archive.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE911BA1DE054F1008A4BEC /* NSCoding+Archive.swift */; };
 		FB1234567890ABCDEF123457 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1234567890ABCDEF123456 /* UpdateService.swift */; };
 		FB2345678901BCDEF2345679 /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2345678901BCDEF2345678 /* ThumbnailCache.swift */; };
+		FB3456789012CDEF34567891 /* HIDHotKeyTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +122,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				FA01570F1E48A0C7000DEDA1 /* RealmSwift in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -257,6 +264,7 @@
 		FAE911BA1DE054F1008A4BEC /* NSCoding+Archive.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSCoding+Archive.swift"; sourceTree = "<group>"; };
 		FB1234567890ABCDEF123456 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		FB2345678901BCDEF2345678 /* ThumbnailCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCache.swift; sourceTree = "<group>"; };
+		FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HIDHotKeyTap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,6 +278,7 @@
 				FAC43E251B35DFD000C06102 /* AppKit.framework in Frameworks */,
 				FAC43E231B35DFC800C06102 /* Foundation.framework in Frameworks */,
 				B7CC520B88EAA6AD38E93462 /* Pods_Clipy.framework in Frameworks */,
+				FA01570B1E48A0C7000DEDA1 /* RealmSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,6 +289,7 @@
 				242EC2327861D35B7C3AE84E /* Pods_ClipyTests.framework in Frameworks */,
 				FA0157061E48A0C7000DEDA1 /* Quick in Frameworks */,
 				FA0157071E48A0C7000DEDA1 /* Nimble in Frameworks */,
+				FA01570E1E48A0C7000DEDA1 /* RealmSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,6 +377,7 @@
 				FAA4BCCB2163DC9100FF5D18 /* AccessibilityService.swift */,
 				FB1234567890ABCDEF123456 /* UpdateService.swift */,
 				FB2345678901BCDEF2345678 /* ThumbnailCache.swift */,
+				FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -651,6 +662,9 @@
 			dependencies = (
 			);
 			name = Clipy;
+			packageProductDependencies = (
+				FA0157091E48A0C7000DEDA1 /* RealmSwift */,
+			);
 			productName = Clipy;
 			productReference = FAC43DC61B35D8B100C06102 /* Clipy.app */;
 			productType = "com.apple.product-type.application";
@@ -673,6 +687,7 @@
 			packageProductDependencies = (
 				FA0157041E48A0C7000DEDA1 /* Quick */,
 				FA0157051E48A0C7000DEDA1 /* Nimble */,
+				FA01570D1E48A0C7000DEDA1 /* RealmSwift */,
 			);
 			productName = ClipyTests;
 			productReference = FAC43DD81B35D8B100C06102 /* ClipyTests.xctest */;
@@ -719,6 +734,7 @@
 			packageReferences = (
 				FA0157021E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Quick" */,
 				FA0157031E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Nimble" */,
+				FA0157081E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			productRefGroup = FAC43DC71B35D8B100C06102 /* Products */;
 			projectDirPath = "";
@@ -773,8 +789,6 @@
 				"${BUILT_PRODUCTS_DIR}/KeyHolder/KeyHolder.framework",
 				"${BUILT_PRODUCTS_DIR}/LoginServiceKit/LoginServiceKit.framework",
 				"${BUILT_PRODUCTS_DIR}/Magnet/Magnet.framework",
-				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
-				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
 				"${BUILT_PRODUCTS_DIR}/RxCocoa/RxCocoa.framework",
 				"${BUILT_PRODUCTS_DIR}/RxRelay/RxRelay.framework",
 				"${BUILT_PRODUCTS_DIR}/RxScreeen/RxScreeen.framework",
@@ -788,8 +802,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeyHolder.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/LoginServiceKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Magnet.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxCocoa.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxRelay.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxScreeen.framework",
@@ -911,6 +923,7 @@
 				FA1DB4E71DDCB49C007F95C8 /* CPYDesignableButton.swift in Sources */,
 				FA1DB4D21DDCB479007F95C8 /* CPYAppInfo.swift in Sources */,
 				FAE911B91DE045E2008A4BEC /* HotKeyService.swift in Sources */,
+				FB3456789012CDEF34567891 /* HIDHotKeyTap.swift in Sources */,
 				FA1DB4D71DDCB479007F95C8 /* CPYSnippet.swift in Sources */,
 				FA1DB5201DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.swift in Sources */,
 				FA10897E20EC22E200A3FEFC /* LocalizedStrings.swift in Sources */,
@@ -1347,6 +1360,14 @@
 				minimumVersion = 14.0.0;
 			};
 		};
+		FA0157081E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 20.0.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1359,6 +1380,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FA0157031E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Nimble" */;
 			productName = Nimble;
+		};
+		FA0157091E48A0C7000DEDA1 /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0157081E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
+		};
+		FA01570D1E48A0C7000DEDA1 /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0157081E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
+		};
+		FA01570A1E48A0C7000DEDA1 /* Realm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0157081E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = Realm;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
