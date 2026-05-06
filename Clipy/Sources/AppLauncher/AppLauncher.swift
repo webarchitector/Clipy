@@ -30,7 +30,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     private var runningApps: Set<String> = []
     private var lastQuery: String = ""
     private var pendingFilterWorkItem: DispatchWorkItem?
-    private var runningAppsObserversRegistered = false
+    private var runningAppsObservers: [NSObjectProtocol] = []
 
     private static let dotTag = 1001
 
@@ -109,17 +109,17 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     /// One initial scan seeds the set; afterwards launch/terminate events keep it
     /// fresh, so opening the launcher costs zero extra work for this purpose.
     private func ensureRunningAppsTracking() {
-        if runningAppsObserversRegistered { return }
-        runningAppsObserversRegistered = true
+        if !runningAppsObservers.isEmpty { return }
         let nc = NSWorkspace.shared.notificationCenter
-        nc.addObserver(forName: NSWorkspace.didLaunchApplicationNotification,
-                       object: nil, queue: .main) { [weak self] _ in
+        let launch = nc.addObserver(forName: NSWorkspace.didLaunchApplicationNotification,
+                                    object: nil, queue: .main) { [weak self] _ in
             self?.refreshRunningApps()
         }
-        nc.addObserver(forName: NSWorkspace.didTerminateApplicationNotification,
-                       object: nil, queue: .main) { [weak self] _ in
+        let terminate = nc.addObserver(forName: NSWorkspace.didTerminateApplicationNotification,
+                                       object: nil, queue: .main) { [weak self] _ in
             self?.refreshRunningApps()
         }
+        runningAppsObservers = [launch, terminate]
         refreshRunningApps()
     }
 

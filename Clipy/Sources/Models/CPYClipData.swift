@@ -61,7 +61,7 @@ final class CPYClipData: NSObject {
         var width = image.size.width.bitPattern.bigEndian
         var height = image.size.height.bitPattern.bigEndian
         var length = UInt64(tiff.count).bigEndian
-        withUnsafeBytes(of: &width)  { fingerprint.append(contentsOf: $0) }
+        withUnsafeBytes(of: &width) { fingerprint.append(contentsOf: $0) }
         withUnsafeBytes(of: &height) { fingerprint.append(contentsOf: $0) }
         withUnsafeBytes(of: &length) { fingerprint.append(contentsOf: $0) }
         if tiff.count <= sampleSize * 2 {
@@ -72,6 +72,7 @@ final class CPYClipData: NSObject {
         }
         return fingerprint
     }
+
     var primaryType: NSPasteboard.PasteboardType? {
         return types.first
     }
@@ -107,6 +108,7 @@ final class CPYClipData: NSObject {
             return ""
         }
     }
+
     func thumbnailImage(width: Int, height: Int) -> NSImage? {
         let maxPixel = max(width, height)
 
@@ -147,12 +149,12 @@ final class CPYClipData: NSObject {
 
     static func cappedForStorage(_ image: NSImage?) -> NSImage? {
         guard let image = image else { return nil }
-        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return image }
-        let largest = max(cg.width, cg.height)
+        guard let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return image }
+        let largest = max(source.width, source.height)
         if largest <= maxStoredImageDimension { return image }
         let scale = Double(maxStoredImageDimension) / Double(largest)
-        let newW = max(1, Int((Double(cg.width) * scale).rounded()))
-        let newH = max(1, Int((Double(cg.height) * scale).rounded()))
+        let newW = max(1, Int((Double(source.width) * scale).rounded()))
+        let newH = max(1, Int((Double(source.height) * scale).rounded()))
         guard let context = CGContext(
             data: nil,
             width: newW,
@@ -163,10 +165,11 @@ final class CPYClipData: NSObject {
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else { return image }
         context.interpolationQuality = .medium
-        context.draw(cg, in: CGRect(x: 0, y: 0, width: newW, height: newH))
+        context.draw(source, in: CGRect(x: 0, y: 0, width: newW, height: newH))
         guard let resized = context.makeImage() else { return image }
         return NSImage(cgImage: resized, size: NSSize(width: newW, height: newH))
     }
+
     var colorCodeImage: NSImage? {
         guard let color = NSColor(hexString: stringValue) else { return nil }
         return NSImage.create(with: color, size: NSSize(width: 20, height: 20))
