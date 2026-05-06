@@ -46,6 +46,7 @@
 		FA1DB4A31DDCB433007F95C8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4A11DDCB433007F95C8 /* Constants.swift */; };
 		FA1DB4A61DDCB443007F95C8 /* MenuType.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4A51DDCB443007F95C8 /* MenuType.swift */; };
 		FA1DB4B31DDCB452007F95C8 /* Array+Remove.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4A81DDCB452007F95C8 /* Array+Remove.swift */; };
+		FA0157111E48A0C7000DEDA1 /* UserDefaults+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157121E48A0C7000DEDA1 /* UserDefaults+Combine.swift */; };
 		FA1DB4B41DDCB452007F95C8 /* NSBundle+Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4A91DDCB452007F95C8 /* NSBundle+Version.swift */; };
 		FA1DB4B71DDCB452007F95C8 /* NSImage+Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4AC1DDCB452007F95C8 /* NSImage+Resize.swift */; };
 		FA1DB4B81DDCB452007F95C8 /* NSLock+Clipy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4AD1DDCB452007F95C8 /* NSLock+Clipy.swift */; };
@@ -202,6 +203,7 @@
 		FA1DB4A11DDCB433007F95C8 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		FA1DB4A51DDCB443007F95C8 /* MenuType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuType.swift; sourceTree = "<group>"; };
 		FA1DB4A81DDCB452007F95C8 /* Array+Remove.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Array+Remove.swift"; sourceTree = "<group>"; };
+		FA0157121E48A0C7000DEDA1 /* UserDefaults+Combine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Combine.swift"; sourceTree = "<group>"; };
 		FA1DB4A91DDCB452007F95C8 /* NSBundle+Version.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSBundle+Version.swift"; sourceTree = "<group>"; };
 		FA1DB4AC1DDCB452007F95C8 /* NSImage+Resize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSImage+Resize.swift"; sourceTree = "<group>"; };
 		FA1DB4AD1DDCB452007F95C8 /* NSLock+Clipy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSLock+Clipy.swift"; sourceTree = "<group>"; };
@@ -442,6 +444,7 @@
 				FAE911BA1DE054F1008A4BEC /* NSCoding+Archive.swift */,
 				FAC0DCEE1DE3255E00309C49 /* NSImage+NSColor.swift */,
 				FA1DB4A81DDCB452007F95C8 /* Array+Remove.swift */,
+				FA0157121E48A0C7000DEDA1 /* UserDefaults+Combine.swift */,
 				FA1DB4A91DDCB452007F95C8 /* NSBundle+Version.swift */,
 				FA1DB4AC1DDCB452007F95C8 /* NSImage+Resize.swift */,
 				FA1DB4AD1DDCB452007F95C8 /* NSLock+Clipy.swift */,
@@ -887,6 +890,7 @@
 				FAC0DCEF1DE3255E00309C49 /* NSImage+NSColor.swift in Sources */,
 				FA1DB4A61DDCB443007F95C8 /* MenuType.swift in Sources */,
 				FA1DB4B31DDCB452007F95C8 /* Array+Remove.swift in Sources */,
+				FA0157111E48A0C7000DEDA1 /* UserDefaults+Combine.swift in Sources */,
 				FA3778931F3B691A003B5BAB /* AppEnvironment.swift in Sources */,
 				FAC0DCF11DE576F300309C49 /* PasteService.swift in Sources */,
 				FA1DB4E51DDCB49C007F95C8 /* CPYUtilities.swift in Sources */,

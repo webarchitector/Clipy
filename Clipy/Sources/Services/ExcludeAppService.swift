@@ -10,9 +10,8 @@
 //  Copyright © 2015-2018 Clipy Project.
 //
 
-import Foundation
-import RxSwift
-import RxCocoa
+import Cocoa
+import Combine
 
 final class ExcludeAppService {
 

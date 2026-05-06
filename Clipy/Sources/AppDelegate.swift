@@ -12,12 +12,10 @@
 
 import Cocoa
 import ServiceManagement
-import RxCocoa
-import RxSwift
+import Combine
 import LoginServiceKit
 import Magnet
 import Screeen
-import RxScreeen
 import RealmSwift
 
 private enum NetworkIsolation {
@@ -73,7 +71,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
 
     // MARK: - Properties
     private var screenshotObserver: ScreenShotObserver?
-    let disposeBag = DisposeBag()
+    var cancellables: Set<AnyCancellable> = []
     private var isSyncingLoginItemPreference = false
 
     override init() {
@@ -338,13 +336,14 @@ extension AppDelegate: NSApplicationDelegate {
 // MARK: - Bind
 private extension AppDelegate {
     func bind() {
-        // Login Item
-        AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.UserDefaults.loginItem, retainSelf: false)
-            .compactMap { $0 }
-            .subscribe(onNext: { [weak self] _ in
+        // Login Item — drop the initial value so reflectLoginItemState runs
+        // only on user-driven changes, not on launch.
+        AppEnvironment.current.defaults.boolPublisher(forKey: Constants.UserDefaults.loginItem)
+            .dropFirst()
+            .sink { [weak self] _ in
                 guard let self = self, !self.isSyncingLoginItemPreference else { return }
                 self.reflectLoginItemState()
-            })
-            .disposed(by: disposeBag)
+            }
+            .store(in: &cancellables)
     }
 }
