@@ -33,9 +33,6 @@ DerivedData/
 # Vendored dependencies (large binary frameworks)
 vendor/
 
-# Scripts
-Scripts/
-
 # Claude
 .claude/
 CLAUDE.md
