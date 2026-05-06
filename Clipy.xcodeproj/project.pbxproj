@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1C43463CD1FEC683E22E1971 /* CPYInputSourcesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236630F0674F425C8444048A /* CPYInputSourcesWindowController.swift */; };
+		1F077973EC8AEA1CD7B2DED8 /* InputSourceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FCD4CA2D2997016DE6E24BF /* InputSourceService.swift */; };
 		242EC2327861D35B7C3AE84E /* Pods_ClipyTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00A4B450122D7FCE6BD57E77 /* Pods_ClipyTests.framework */; };
 		2CD1E22BE38F6D29158CC909 /* AppIndexFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */; };
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
@@ -15,12 +17,14 @@
 		5E2CDE20A8E4498F1790A3DB /* LauncherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */; };
 		74421B9C63AAB6648DF10A7E /* AppIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F762C0B202FBAA80E7A0EAA5 /* AppIndex.swift */; };
 		8EE81CDBD64E7A9D8D3361DF /* AppLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */; };
+		9F7907B62FDB3BD96F1DF180 /* CPYInputSourcesPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139844CA083577168EEFFFF6 /* CPYInputSourcesPreferenceViewController.swift */; };
 		ADBBDD749273048F0B0456F4 /* AppLauncherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADF565B73A015CBBA7EB6D01 /* AppLauncherService.swift */; };
+		B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACD8BB2576FA1CAA0AEF6C /* InputSource.swift */; };
 		B7CC520B88EAA6AD38E93462 /* Pods_Clipy.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73A92F6DEE6CFF50A567CFEF /* Pods_Clipy.framework */; };
 		C5F1B7331FF74A2D00D2DA83 /* NSPasteboard+Deprecated.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F1B7321FF74A2D00D2DA83 /* NSPasteboard+Deprecated.swift */; };
+		CCD1044872DE40055D2625E5 /* TISInputSource+Additions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924132C79412C18C7C0FC8F4 /* TISInputSource+Additions.swift */; };
 		E1826F7CDEF9ED3824C7BBE3 /* CalculatorCurrencySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36D4163620B8B1A4CDCA70ED /* CalculatorCurrencySpec.swift */; };
 		F6B24C097D26610A40919734 /* AppIndexTranslitSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0A3A5E9212B8EBB981DEDB /* AppIndexTranslitSpec.swift */; };
-		FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA08EDF71D1FED7D000D1D13 /* HotKeyServiceSpec.swift */; };
 		FA0D5CE81DDCC61600AC9052 /* ClipService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0D5CE71DDCC61600AC9052 /* ClipService.swift */; };
 		FA10897D20EC22E200A3FEFC /* AssetsImages.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA10897B20EC22E200A3FEFC /* AssetsImages.swift */; };
 		FA10897E20EC22E200A3FEFC /* LocalizedStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA10897C20EC22E200A3FEFC /* LocalizedStrings.swift */; };
@@ -118,8 +122,10 @@
 		00A4B450122D7FCE6BD57E77 /* Pods_ClipyTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ClipyTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LauncherPanel.swift; sourceTree = "<group>"; };
 		0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalculatorMathSpec.swift; sourceTree = "<group>"; };
+		139844CA083577168EEFFFF6 /* CPYInputSourcesPreferenceViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYInputSourcesPreferenceViewController.swift; sourceTree = "<group>"; };
 		1C2D23FF23B07B76585DC610 /* Dependencies-ClipyTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.release.xcconfig"; sourceTree = "<group>"; };
 		21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIndexFilterSpec.swift; sourceTree = "<group>"; };
+		236630F0674F425C8444048A /* CPYInputSourcesWindowController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYInputSourcesWindowController.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
 		31064F137CFB046737D1709D /* Dependencies-Clipy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.debug.xcconfig"; sourceTree = "<group>"; };
 		314B299D1EC49AD5004DD070 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/CPYSnippetsEditorWindowController.xib; sourceTree = "<group>"; };
@@ -151,6 +157,7 @@
 		5C0A3A5E9212B8EBB981DEDB /* AppIndexTranslitSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIndexTranslitSpec.swift; sourceTree = "<group>"; };
 		66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLauncher.swift; sourceTree = "<group>"; };
 		73A92F6DEE6CFF50A567CFEF /* Pods_Clipy.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Clipy.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7FCD4CA2D2997016DE6E24BF /* InputSourceService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputSourceService.swift; sourceTree = "<group>"; };
 		846004961FD5511800BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYPreferencesWindowController.strings; sourceTree = "<group>"; };
 		846004971FD5511900BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYBetaPreferenceViewController.strings; sourceTree = "<group>"; };
 		846004981FD5511900BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYExcludeAppPreferenceViewController.strings; sourceTree = "<group>"; };
@@ -161,8 +168,10 @@
 		8460049D1FD5511A00BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYUpdatesPreferenceViewController.strings; sourceTree = "<group>"; };
 		8460049E1FD5511A00BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/CPYSnippetsEditorWindowController.strings; sourceTree = "<group>"; };
 		8460049F1FD5511A00BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		924132C79412C18C7C0FC8F4 /* TISInputSource+Additions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "TISInputSource+Additions.swift"; sourceTree = "<group>"; };
 		994536AAB91CE22186C3CFB1 /* Dependencies-ClipyTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.debug.xcconfig"; sourceTree = "<group>"; };
 		9DBBF976436A0651CB8BD4B2 /* Dependencies-Clipy.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.release.xcconfig"; sourceTree = "<group>"; };
+		A5ACD8BB2576FA1CAA0AEF6C /* InputSource.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputSource.swift; sourceTree = "<group>"; };
 		ADF565B73A015CBBA7EB6D01 /* AppLauncherService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLauncherService.swift; sourceTree = "<group>"; };
 		C5F1B7321FF74A2D00D2DA83 /* NSPasteboard+Deprecated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSPasteboard+Deprecated.swift"; sourceTree = "<group>"; };
 		F762C0B202FBAA80E7A0EAA5 /* AppIndex.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIndex.swift; sourceTree = "<group>"; };
@@ -320,6 +329,19 @@
 			name = Dependencies;
 			sourceTree = "<group>";
 		};
+		F0F4AEE2D2A89FF5886B2EFF /* InputSource */ = {
+			isa = PBXGroup;
+			children = (
+				924132C79412C18C7C0FC8F4 /* TISInputSource+Additions.swift */,
+				A5ACD8BB2576FA1CAA0AEF6C /* InputSource.swift */,
+				7FCD4CA2D2997016DE6E24BF /* InputSourceService.swift */,
+				139844CA083577168EEFFFF6 /* CPYInputSourcesPreferenceViewController.swift */,
+				236630F0674F425C8444048A /* CPYInputSourcesWindowController.swift */,
+			);
+			name = InputSource;
+			path = InputSource;
+			sourceTree = "<group>";
+		};
 		FA06D2D21DD882BD002FB7C2 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -377,6 +399,7 @@
 				FA1DB4A01DDCB433007F95C8 /* AppDelegate.swift */,
 				FA1DB4A11DDCB433007F95C8 /* Constants.swift */,
 				B4257C0B9C8C026F3362A142 /* AppLauncher */,
+				F0F4AEE2D2A89FF5886B2EFF /* InputSource */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -798,7 +821,6 @@
 			);
 			inputPaths = (
 				"${PROJECT_DIR}/Scripts/strip-non-arm64-slices.sh",
-				"${TARGET_BUILD_DIR}/${WRAPPER_NAME}",
 			);
 			name = "Strip Non-ARM64 Slices";
 			outputPaths = (
@@ -884,6 +906,11 @@
 				5E2CDE20A8E4498F1790A3DB /* LauncherPanel.swift in Sources */,
 				8EE81CDBD64E7A9D8D3361DF /* AppLauncher.swift in Sources */,
 				ADBBDD749273048F0B0456F4 /* AppLauncherService.swift in Sources */,
+				CCD1044872DE40055D2625E5 /* TISInputSource+Additions.swift in Sources */,
+				B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */,
+				1F077973EC8AEA1CD7B2DED8 /* InputSourceService.swift in Sources */,
+				9F7907B62FDB3BD96F1DF180 /* CPYInputSourcesPreferenceViewController.swift in Sources */,
+				1C43463CD1FEC683E22E1971 /* CPYInputSourcesWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -892,7 +919,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */,
-				FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */,
 				FA6167961D3ACDD80049FA14 /* SnippetSpec.swift in Sources */,
 				FA6167941D3ACCB90049FA14 /* DraggedDataSpec.swift in Sources */,
 				F6B24C097D26610A40919734 /* AppIndexTranslitSpec.swift in Sources */,

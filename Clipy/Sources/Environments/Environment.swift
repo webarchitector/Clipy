@@ -24,6 +24,7 @@ struct Environment {
     let updateService: UpdateService
     let menuManager: MenuManager
     let appLauncherService: AppLauncherService
+    let inputSourceService: InputSourceService
 
     let defaults: UserDefaults
 
@@ -37,6 +38,7 @@ struct Environment {
          updateService: UpdateService = UpdateService(),
          menuManager: MenuManager = MenuManager(),
          appLauncherService: AppLauncherService = AppLauncherService(),
+         inputSourceService: InputSourceService = InputSourceService(),
          defaults: UserDefaults = .standard) {
 
         self.clipService = clipService
@@ -48,6 +50,7 @@ struct Environment {
         self.updateService = updateService
         self.menuManager = menuManager
         self.appLauncherService = appLauncherService
+        self.inputSourceService = inputSourceService
         self.defaults = defaults
     }
 

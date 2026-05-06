@@ -32,6 +32,7 @@ struct AppEnvironment {
                                updateService: UpdateService = current.updateService,
                                menuManager: MenuManager = current.menuManager,
                                appLauncherService: AppLauncherService = current.appLauncherService,
+                               inputSourceService: InputSourceService = current.inputSourceService,
                                defaults: UserDefaults = current.defaults) {
         replaceCurrent(environment: Environment(clipService: clipService,
                                                 hotKeyService: hotKeyService,
@@ -42,6 +43,7 @@ struct AppEnvironment {
                                                 updateService: updateService,
                                                 menuManager: menuManager,
                                                 appLauncherService: appLauncherService,
+                                                inputSourceService: inputSourceService,
                                                 defaults: defaults))
     }
 
@@ -61,6 +63,7 @@ struct AppEnvironment {
                            updateService: current.updateService,
                            menuManager: current.menuManager,
                            appLauncherService: current.appLauncherService,
+                           inputSourceService: current.inputSourceService,
                            defaults: current.defaults)
     }
 
