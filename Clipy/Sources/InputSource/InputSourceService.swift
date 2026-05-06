@@ -29,7 +29,18 @@ final class InputSourceService: NSObject {
     /// register a Magnet hotkey that selects that source.
     func setupHotKeys() {
         for source in InputSource.sources {
-            let combo = savedKeyCombo(forIdentifier: source.identifier)
+            var combo = savedKeyCombo(forIdentifier: source.identifier)
+            // Drop combos already claimed by an earlier source. Without this
+            // dedup, a stale duplicate in defaults (manual plist edit, legacy
+            // migration, two sources sharing a default combo) would silently
+            // fail the second `HotKey.register()` and the zombie binding
+            // would persist in defaults forever.
+            if let existing = combo,
+               registrations.contains(where: { $0.value.keyCombo == existing }) {
+                AppEnvironment.current.defaults.removeObject(forKey: defaultsKey(for: source.identifier))
+                NSLog("InputSourceService: cleared duplicate KeyCombo for \(source.identifier)")
+                combo = nil
+            }
             registrations[source.identifier] = Registration(
                 source: source,
                 identifier: hotKeyIdentifier(for: source.identifier),
