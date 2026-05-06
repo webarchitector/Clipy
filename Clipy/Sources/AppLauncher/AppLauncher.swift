@@ -4,6 +4,8 @@
 //  Clipy AppLauncher — NSPanel + filter + dispatch.
 //
 
+// swiftlint:disable identifier_name
+
 import Cocoa
 
 enum LauncherItem {

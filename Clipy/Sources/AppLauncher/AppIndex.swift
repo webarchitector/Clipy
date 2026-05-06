@@ -4,6 +4,8 @@
 //  Clipy AppLauncher — application discovery, cache, and matching.
 //
 
+// swiftlint:disable identifier_name
+
 import Foundation
 
 struct AppEntry {

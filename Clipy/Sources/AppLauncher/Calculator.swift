@@ -4,6 +4,8 @@
 //  Clipy AppLauncher — math evaluator + currency conversion.
 //
 
+// swiftlint:disable identifier_name
+
 import Foundation
 
 final class Calculator {
