@@ -16,6 +16,7 @@
 		5E2CDE20A8E4498F1790A3DB /* LauncherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */; };
 		74421B9C63AAB6648DF10A7E /* AppIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F762C0B202FBAA80E7A0EAA5 /* AppIndex.swift */; };
 		8EE81CDBD64E7A9D8D3361DF /* AppLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */; };
+		A191E67DF15E40E758ECD23F /* CPYClipDataSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */; };
 		ADBBDD749273048F0B0456F4 /* AppLauncherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADF565B73A015CBBA7EB6D01 /* AppLauncherService.swift */; };
 		B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACD8BB2576FA1CAA0AEF6C /* InputSource.swift */; };
 		B7CC520B88EAA6AD38E93462 /* Pods_Clipy.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73A92F6DEE6CFF50A567CFEF /* Pods_Clipy.framework */; };
@@ -119,6 +120,7 @@
 		00A4B450122D7FCE6BD57E77 /* Pods_ClipyTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ClipyTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LauncherPanel.swift; sourceTree = "<group>"; };
 		0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalculatorMathSpec.swift; sourceTree = "<group>"; };
+		19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYClipDataSpec.swift; sourceTree = "<group>"; };
 		1C2D23FF23B07B76585DC610 /* Dependencies-ClipyTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.release.xcconfig"; sourceTree = "<group>"; };
 		21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIndexFilterSpec.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
@@ -590,6 +592,7 @@
 				FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */,
 				FAC43DDC1B35D8B100C06102 /* Supporting Files */,
 				9E713A47C4F6F391C4C93C0E /* AppLauncher */,
+				19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */,
 			);
 			path = ClipyTests;
 			sourceTree = "<group>";
@@ -911,6 +914,7 @@
 				2CD1E22BE38F6D29158CC909 /* AppIndexFilterSpec.swift in Sources */,
 				3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */,
 				E1826F7CDEF9ED3824C7BBE3 /* CalculatorCurrencySpec.swift in Sources */,
+				A191E67DF15E40E758ECD23F /* CPYClipDataSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
