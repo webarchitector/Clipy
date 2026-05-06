@@ -324,6 +324,11 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.current.hotKeyService.setupDefaultHotKeys()
         AppEnvironment.current.appLauncherService.setupHotKey()
         AppEnvironment.current.inputSourceService.setupHotKeys()
+        // Higher-priority hotkey delivery: shadows Magnet at HID-tap level so
+        // Zoom-style apps that install their own session-tap can't eat ⌘Space
+        // and per-input-source layout shortcuts. Requests Input Monitoring on
+        // first launch; falls back silently to plain Magnet if denied.
+        HIDHotKeyTap.shared.install()
 
         // Managers
         AppEnvironment.current.menuManager.setup()
