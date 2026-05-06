@@ -27,22 +27,18 @@ final class InputSourceService: NSObject {
     /// Called once from AppDelegate.applicationDidFinishLaunching. For each
     /// available input source, look up a stored KeyCombo (if any) and
     /// register a Magnet hotkey that selects that source.
+    /// We deliberately do NOT de-duplicate combos here — sharing one combo
+    /// across multiple sources is the intended way to bind a single hotkey
+    /// to a layout cycle. De-dup only happens in `change()` (explicit edit).
     func setupHotKeys() {
-        let entries = InputSource.sources.map {
-            (identifier: $0.identifier, combo: savedKeyCombo(forIdentifier: $0.identifier))
-        }
-        let decisions = Self.dedupCombos(entries)
-        for (source, decision) in zip(InputSource.sources, decisions) {
-            if decision.droppedAsDuplicate {
-                AppEnvironment.current.defaults.removeObject(forKey: defaultsKey(for: source.identifier))
-                NSLog("InputSourceService: cleared duplicate KeyCombo for \(source.identifier)")
-            }
+        for source in InputSource.sources {
+            let combo = savedKeyCombo(forIdentifier: source.identifier)
             registrations[source.identifier] = Registration(
                 source: source,
                 identifier: hotKeyIdentifier(for: source.identifier),
-                keyCombo: decision.combo
+                keyCombo: combo
             )
-            registerIfNeeded(source: source, keyCombo: decision.combo)
+            registerIfNeeded(source: source, keyCombo: combo)
         }
     }
 
