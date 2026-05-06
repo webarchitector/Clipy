@@ -28,6 +28,12 @@ final class Calculator {
                 normalized.replaceSubrange(full, with: "((\(normalized[arg]))**0.5)")
             }
         }
+        // Promote bare integer literals to doubles so NSExpression performs
+        // floating-point division (otherwise "10/4" yields 2 instead of 2.5).
+        if let r = try? NSRegularExpression(pattern: #"(?<![\d.])\d+(?![\d.])"#) {
+            let range = NSRange(normalized.startIndex..<normalized.endIndex, in: normalized)
+            normalized = r.stringByReplacingMatches(in: normalized, range: range, withTemplate: "$0.0")
+        }
         let nsExpr = NSExpression(format: normalized)
         if let value = nsExpr.expressionValue(with: nil, context: nil) as? NSNumber {
             let v = value.doubleValue
