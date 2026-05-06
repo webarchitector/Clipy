@@ -43,6 +43,10 @@ final class Calculator {
         normalized = intPromoteRegex.stringByReplacingMatches(in: normalized,
                                                               range: promoteRange,
                                                               withTemplate: "$0.0")
+        // Reject syntactically invalid input *before* NSExpression — its
+        // `init(format:)` raises an Objective-C exception (uncatchable from
+        // Swift) on malformed input like "1+", "(5", "*5", "1+*2".
+        guard isValidExpression(normalized) else { return nil }
         let nsExpr = NSExpression(format: normalized)
         if let value = nsExpr.expressionValue(with: nil, context: nil) as? NSNumber {
             let v = value.doubleValue
@@ -53,6 +57,50 @@ final class Calculator {
             return String(format: "%.6g", v)
         }
         return nil
+    }
+
+    /// Cheap syntactic check used as a pre-filter for `NSExpression(format:)`.
+    /// Operates on the post-transform string (sqrt expanded, ^→**, ints promoted).
+    /// Goal: reject anything that would raise an Objective-C exception inside
+    /// NSExpression — partial expressions like "1+", trailing ops, unbalanced
+    /// parens, doubled binary ops (except "**"), op adjacent to ")".
+    static func isValidExpression(_ s: String) -> Bool {
+        let stripped = s.replacingOccurrences(of: " ", with: "")
+                        .replacingOccurrences(of: "**", with: "^")
+        guard !stripped.isEmpty else { return false }
+        let chars = Array(stripped)
+        let binary: Set<Character> = ["+", "-", "*", "/", "^"]
+        let allowed: Set<Character> = ["(", ")", ".", "+", "-", "*", "/", "^"]
+        for ch in chars {
+            guard ch.isNumber || allowed.contains(ch) else { return false }
+        }
+        guard let first = chars.first else { return false }
+        if first == ")" || first == "*" || first == "/" || first == "^" { return false }
+        guard let last = chars.last, last.isNumber || last == "." || last == ")" else { return false }
+        var depth = 0
+        for ch in chars {
+            if ch == "(" { depth += 1 } else if ch == ")" {
+                depth -= 1
+                if depth < 0 { return false }
+            }
+        }
+        guard depth == 0 else { return false }
+        for i in 0..<(chars.count - 1) {
+            let a = chars[i], b = chars[i + 1]
+            // op + op: only "binary then unary +/-" is allowed (e.g. "5*-3").
+            if binary.contains(a) && binary.contains(b) && b != "+" && b != "-" {
+                return false
+            }
+            // "(" followed by binary op other than unary +/-.
+            if a == "(" && binary.contains(b) && b != "+" && b != "-" { return false }
+            // Empty pair of parens.
+            if a == "(" && b == ")" { return false }
+            // ")(" — implicit multiplication not supported by NSExpression.
+            if a == ")" && b == "(" { return false }
+            // Binary op immediately before ")".
+            if binary.contains(a) && b == ")" { return false }
+        }
+        return true
     }
 
     // MARK: - Currency parsing (pure)
@@ -76,6 +124,12 @@ final class Calculator {
     // MARK: - Stateful currency cache + fetch
 
     private var pendingFetch: URLSessionDataTask?
+    /// Per-base "don't retry until" timestamps. Prevents a request storm when
+    /// the upstream rate API is down — without it, every keystroke through the
+    /// debounce would fire a brand-new fetch (the rate file stays missing, so
+    /// `stale` keeps evaluating true).
+    private var failedFetchUntil: [String: Date] = [:]
+    private static let failBackoff: TimeInterval = 60
 
     private var ratesDir: URL {
         URL(fileURLWithPath: NSHomeDirectory() + "/.local/share/app-launcher/var/rates", isDirectory: true)
@@ -120,7 +174,10 @@ final class Calculator {
         let mtime = (try? FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]) as? Date
         let stale = mtime == nil || Date().timeIntervalSince(mtime!) > 4 * 3600
 
-        if stale { kickOffFetch(base: from) }
+        if stale {
+            let backoffActive = (failedFetchUntil[from] ?? .distantPast) > Date()
+            if !backoffActive { kickOffFetch(base: from) }
+        }
 
         if let rate = readRate(toCcy: to, from: file) {
             let result = amount * rate
@@ -153,23 +210,37 @@ final class Calculator {
         pendingFetch?.cancel()
         let url = URL(string: "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/\(base).json")!
         let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, _ in
-            guard let self = self,
-                  let data = data,
-                  let http = response as? HTTPURLResponse, http.statusCode == 200,
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let rates = json[base] as? [String: Any] else { return }
-            var lines: [String] = []
-            for (k, v) in rates {
-                if let n = (v as? NSNumber)?.doubleValue {
-                    lines.append("\(k)\t\(n)")
+            // Decide success up front so the deferred main-thread block can
+            // both clear pendingFetch / record fail backoff *and* refresh the
+            // panel — otherwise the launcher would stay stuck on the
+            // "fetching … rates…" status row indefinitely on HTTP error.
+            let success: Bool = {
+                guard let data = data,
+                      let http = response as? HTTPURLResponse, http.statusCode == 200,
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let rates = json[base] as? [String: Any],
+                      let self = self else { return false }
+                var lines: [String] = []
+                for (k, v) in rates {
+                    if let n = (v as? NSNumber)?.doubleValue {
+                        lines.append("\(k)\t\(n)")
+                    }
                 }
-            }
-            let body = lines.joined(separator: "\n") + "\n"
-            try? FileManager.default.createDirectory(at: self.ratesDir, withIntermediateDirectories: true)
-            try? body.write(to: self.ratesDir.appendingPathComponent("\(base).tsv"),
-                            atomically: true,
-                            encoding: .utf8)
+                let body = lines.joined(separator: "\n") + "\n"
+                try? FileManager.default.createDirectory(at: self.ratesDir, withIntermediateDirectories: true)
+                try? body.write(to: self.ratesDir.appendingPathComponent("\(base).tsv"),
+                                atomically: true,
+                                encoding: .utf8)
+                return true
+            }()
             DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.pendingFetch = nil
+                if success {
+                    self.failedFetchUntil.removeValue(forKey: base)
+                } else {
+                    self.failedFetchUntil[base] = Date().addingTimeInterval(Calculator.failBackoff)
+                }
                 AppLauncher.shared.rebuildDidFinish()
             }
         }
