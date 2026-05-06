@@ -17,7 +17,7 @@ extension UserDefaults {
     func boolPublisher(forKey key: String) -> AnyPublisher<Bool, Never> {
         NotificationCenter.default
             .publisher(for: UserDefaults.didChangeNotification)
-            .map { [weak self] _ in self?.bool(forKey: key) ?? false }
+            .compactMap { [weak self] _ in self?.bool(forKey: key) }
             .prepend(bool(forKey: key))
             .removeDuplicates()
             .eraseToAnyPublisher()
@@ -26,7 +26,7 @@ extension UserDefaults {
     func integerPublisher(forKey key: String) -> AnyPublisher<Int, Never> {
         NotificationCenter.default
             .publisher(for: UserDefaults.didChangeNotification)
-            .map { [weak self] _ in self?.integer(forKey: key) ?? 0 }
+            .compactMap { [weak self] _ in self?.integer(forKey: key) }
             .prepend(integer(forKey: key))
             .removeDuplicates()
             .eraseToAnyPublisher()
@@ -36,7 +36,7 @@ extension UserDefaults {
         let initial = (dictionary(forKey: key) as? [String: NSNumber]) ?? [:]
         return NotificationCenter.default
             .publisher(for: UserDefaults.didChangeNotification)
-            .map { [weak self] _ in (self?.dictionary(forKey: key) as? [String: NSNumber]) ?? [:] }
+            .compactMap { [weak self] _ in self?.dictionary(forKey: key) as? [String: NSNumber] }
             .prepend(initial)
             .removeDuplicates()
             .eraseToAnyPublisher()

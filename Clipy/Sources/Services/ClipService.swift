@@ -154,7 +154,12 @@ final class ClipService {
     }
 
     func incrementChangeCount() {
-        cachedChangeCount.send(cachedChangeCount.value + 1)
+        // Serialize through `queue` so the read-modify-write doesn't race with
+        // the filter/sink in startMonitoring(), which also runs on `queue`.
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            self.cachedChangeCount.send(self.cachedChangeCount.value + 1)
+        }
     }
 
 }
