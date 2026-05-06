@@ -1,9 +1,10 @@
 import Quick
 import Nimble
+import Foundation
 @testable import Clipy
 
 class InputSourceServiceDedupSpec: QuickSpec {
-    override func spec() {
+    override class func spec() {
         describe("InputSourceService.dedupCombos") {
 
             it("returns an empty list for empty input") {

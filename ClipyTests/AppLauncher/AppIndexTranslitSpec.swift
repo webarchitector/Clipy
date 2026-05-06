@@ -2,10 +2,11 @@
 
 import Quick
 import Nimble
+import Foundation
 @testable import Clipy
 
 class AppIndexTranslitSpec: QuickSpec {
-    override func spec() {
+    override class func spec() {
         describe("translit tables") {
 
             it("maps lowercase Latin to lowercase Cyrillic via the Russian PC layout") {

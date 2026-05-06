@@ -14,6 +14,8 @@
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
 		FA0157AB1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157AA1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift */; };
+		FA0157061E48A0C7000DEDA1 /* Quick in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157041E48A0C7000DEDA1 /* Quick */; };
+		FA0157071E48A0C7000DEDA1 /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157051E48A0C7000DEDA1 /* Nimble */; };
 		50DAEC64393A19CC019A7181 /* CPYClipboardHistoryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 352DCDE5F4B5B5DD15B72C9D /* CPYClipboardHistoryWindowController.swift */; };
 		5E2CDE20A8E4498F1790A3DB /* LauncherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */; };
 		649C3E8C5B875EABDF3D5636 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD037ABF98B968BBAF6D9C9 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift */; };
@@ -276,6 +278,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				242EC2327861D35B7C3AE84E /* Pods_ClipyTests.framework in Frameworks */,
+				FA0157061E48A0C7000DEDA1 /* Quick in Frameworks */,
+				FA0157071E48A0C7000DEDA1 /* Nimble in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -666,6 +670,10 @@
 				FAC43DDA1B35D8B100C06102 /* PBXTargetDependency */,
 			);
 			name = ClipyTests;
+			packageProductDependencies = (
+				FA0157041E48A0C7000DEDA1 /* Quick */,
+				FA0157051E48A0C7000DEDA1 /* Nimble */,
+			);
 			productName = ClipyTests;
 			productReference = FAC43DD81B35D8B100C06102 /* ClipyTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -708,6 +716,10 @@
 				"zh-Hans",
 			);
 			mainGroup = FAC43DBD1B35D8B100C06102;
+			packageReferences = (
+				FA0157021E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Quick" */,
+				FA0157031E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Nimble" */,
+			);
 			productRefGroup = FAC43DC71B35D8B100C06102 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -797,13 +809,9 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-ClipyTests/Pods-ClipyTests-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/Nimble/Nimble.framework",
-				"${BUILT_PRODUCTS_DIR}/Quick/Quick.framework",
 			);
 			name = "Embed Vendored Frameworks";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Nimble.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Quick.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1321,6 +1329,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FA0157021E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Quick" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Quick/Quick";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.6.2;
+			};
+		};
+		FA0157031E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Nimble" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Quick/Nimble";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FA0157041E48A0C7000DEDA1 /* Quick */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0157021E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Quick" */;
+			productName = Quick;
+		};
+		FA0157051E48A0C7000DEDA1 /* Nimble */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0157031E48A0C7000DEDA1 /* XCRemoteSwiftPackageReference "Nimble" */;
+			productName = Nimble;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FAC43DBE1B35D8B100C06102 /* Project object */;
 }

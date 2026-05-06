@@ -1,9 +1,10 @@
 import Quick
 import Nimble
+import Foundation
 @testable import Clipy
 
 class AppIndexFilterSpec: QuickSpec {
-    override func spec() {
+    override class func spec() {
 
         let mail = AppEntry(
             original: "Mail",

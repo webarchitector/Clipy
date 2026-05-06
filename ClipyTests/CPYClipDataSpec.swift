@@ -4,7 +4,7 @@ import Cocoa
 @testable import Clipy
 
 class CPYClipDataSpec: QuickSpec {
-    override func spec() {
+    override class func spec() {
 
         describe("contentHash fingerprint for image clips") {
 

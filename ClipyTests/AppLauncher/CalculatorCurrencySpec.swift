@@ -1,9 +1,10 @@
 import Quick
 import Nimble
+import Foundation
 @testable import Clipy
 
 class CalculatorCurrencySpec: QuickSpec {
-    override func spec() {
+    override class func spec() {
 
         describe("Calculator.parseCurrency") {
 
