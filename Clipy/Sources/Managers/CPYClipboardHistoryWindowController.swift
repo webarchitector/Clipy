@@ -785,7 +785,22 @@ private extension CPYClipboardHistoryWindowController {
             menu.addItem(openItem)
         }
 
+        menu.addItem(NSMenuItem.separator())
+        let deleteItem = NSMenuItem(title: "Delete",
+                                    action: #selector(deleteContextMenuAction(_:)),
+                                    keyEquivalent: "")
+        deleteItem.target = self
+        deleteItem.representedObject = entry.primaryKey
+        menu.addItem(deleteItem)
+
         return menu
+    }
+
+    @objc func deleteContextMenuAction(_ sender: NSMenuItem) {
+        guard let primaryKey = sender.representedObject as? String,
+              let realm = Realm.safeInstance(),
+              let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else { return }
+        AppEnvironment.current.clipService.delete(with: clip)
     }
 
     @objc func openContextMenuAction(_ sender: NSMenuItem) {
