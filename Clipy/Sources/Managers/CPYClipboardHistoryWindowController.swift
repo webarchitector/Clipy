@@ -149,7 +149,6 @@ final class ClipboardHistoryTableView: NSTableView {
     var contextMenuProvider: ((Int) -> NSMenu?)?
 
     override func mouseDown(with event: NSEvent) {
-        NSLog("ClipyDiag: tableView.mouseDown clickCount=\(event.clickCount) buttonNumber=\(event.buttonNumber) type=\(event.type.rawValue)")
         let point = convert(event.locationInWindow, from: nil)
         let clickedRow = row(at: point)
 
@@ -158,11 +157,6 @@ final class ClipboardHistoryTableView: NSTableView {
         guard event.clickCount == 1 else { return }
         guard clickedRow >= 0, selectedRow == clickedRow else { return }
         confirmHandler?()
-    }
-
-    override func rightMouseDown(with event: NSEvent) {
-        NSLog("ClipyDiag: tableView.rightMouseDown buttonNumber=\(event.buttonNumber) type=\(event.type.rawValue)")
-        super.rightMouseDown(with: event)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -186,23 +180,17 @@ final class ClipboardHistoryTableView: NSTableView {
         super.keyDown(with: event)
     }
 
-    // Build the menu per-event from the click location instead of a single
-    // tableView.menu populated lazily via NSMenuDelegate. The delegate path
-    // produced an empty NSMenu when the row wasn't openable; AppKit's
-    // empty-menu handling caused the panel to lose key (NSPanel's default
-    // hidesOnDeactivate=true) and the whole window vanished. Returning nil
-    // here when there is nothing to show keeps the panel key.
+    // Build the menu per-event from the click location. Returning nil for
+    // empty rows / non-openable types keeps the panel key (an empty NSMenu
+    // would briefly resign-key the panel during AppKit's display dance).
     override func menu(for event: NSEvent) -> NSMenu? {
         let point = convert(event.locationInWindow, from: nil)
         let clickedRow = row(at: point)
-        NSLog("ClipyDiag: tableView.menu(for:) eventType=\(event.type.rawValue) clickedRow=\(clickedRow)")
         guard clickedRow >= 0 else { return nil }
         // Mirror Finder/Mail UX: right-click selects the row before showing
         // the context menu so the action's target is unambiguous.
         selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
-        let result = contextMenuProvider?(clickedRow)
-        NSLog("ClipyDiag: tableView.menu(for:) returning menu=\(result == nil ? "nil" : "non-nil items=\(result!.numberOfItems)")")
-        return result
+        return contextMenuProvider?(clickedRow)
     }
 }
 
@@ -551,7 +539,6 @@ private extension CPYClipboardHistoryWindowController {
 
 extension CPYClipboardHistoryWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
-        NSLog("ClipyDiag: windowWillClose stack:\n\(Thread.callStackSymbols.prefix(20).joined(separator: "\n"))")
         isWindowVisible = false
         reloadWorkItem?.cancel()
         reloadWorkItem = nil
@@ -560,14 +547,6 @@ extension CPYClipboardHistoryWindowController: NSWindowDelegate {
         entries.removeAll()
         filteredEntries.removeAll()
         tableView.reloadData()
-    }
-
-    func windowDidResignKey(_ notification: Notification) {
-        NSLog("ClipyDiag: windowDidResignKey isVisible=\(window?.isVisible ?? false) appActive=\(NSApp.isActive)")
-    }
-
-    func windowDidResignMain(_ notification: Notification) {
-        NSLog("ClipyDiag: windowDidResignMain isVisible=\(window?.isVisible ?? false) appActive=\(NSApp.isActive)")
     }
 }
 
