@@ -27,6 +27,8 @@ struct MenuSettings {
     let maxHistory: Int
     let reorderClipsAfterPasting: Bool
     let addClearHistoryMenuItem: Bool
+    let thumbnailWidth: Int
+    let thumbnailHeight: Int
 
     init() {
         let defaults = AppEnvironment.current.defaults
@@ -44,6 +46,8 @@ struct MenuSettings {
         maxHistory = defaults.integer(forKey: Constants.UserDefaults.maxHistorySize)
         reorderClipsAfterPasting = defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
         addClearHistoryMenuItem = defaults.bool(forKey: Constants.UserDefaults.addClearHistoryMenuItem)
+        thumbnailWidth = defaults.integer(forKey: Constants.UserDefaults.thumbnailWidth)
+        thumbnailHeight = defaults.integer(forKey: Constants.UserDefaults.thumbnailHeight)
     }
 }
 

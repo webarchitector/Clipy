@@ -102,13 +102,16 @@ struct ClipboardHistoryEntry: Equatable {
 
 /// NSPanel subclass that adds a single key equivalent: Cmd+O fires
 /// "open in default app" so the user doesn't have to focus the table
-/// (they can stay in the search field and still trigger it).
+/// (they can stay in the search field and still trigger it). Matches
+/// the Cyrillic equivalent (Russian "о") too.
 final class ClipboardHistoryPanel: NSPanel {
     var openInDefaultAppHandler: (() -> Void)?
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
-        if mods == .command, event.charactersIgnoringModifiers == "o" {
+        if mods == .command,
+           let chars = event.charactersIgnoringModifiers?.lowercased(),
+           chars == "o" || chars == "о" {
             openInDefaultAppHandler?()
             return true
         }
@@ -135,18 +138,25 @@ final class ClipboardHistoryTableView: NSTableView {
     }
 
     override func keyDown(with event: NSEvent) {
-        let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
         switch event.keyCode {
         case 36, 76:
             confirmHandler?()
+            return
         case 53:
             cancelHandler?()
-        case 31 where mods.isEmpty:
-            // 'O' — open in default app for the selected row
-            openInDefaultAppHandler?()
+            return
         default:
-            super.keyDown(with: event)
+            break
         }
+        let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
+        if mods.isEmpty,
+           let chars = event.charactersIgnoringModifiers?.lowercased(),
+           chars == "o" || chars == "о" {
+            // 'O' / 'О' — open the selected row in the default app
+            openInDefaultAppHandler?()
+            return
+        }
+        super.keyDown(with: event)
     }
 }
 
@@ -180,11 +190,14 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         // flipping the app to .regular activation policy — that switch is
         // synchronously gated by TCC and stalls visibly when Accessibility
         // is denied. The panel can still become key via NSApp.activate.
-        let window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640),
-                             styleMask: [.titled, .closable, .resizable],
-                             backing: .buffered,
-                             defer: false)
-        super.init(window: window)
+        let panel = ClipboardHistoryPanel(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640),
+                                          styleMask: [.titled, .closable, .resizable],
+                                          backing: .buffered,
+                                          defer: false)
+        super.init(window: panel)
+        panel.openInDefaultAppHandler = { [weak self] in
+            self?.openSelectedInDefaultApp()
+        }
         configureWindow()
         configureContentView()
         observeWorkspace()
@@ -214,6 +227,7 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         reloadWorkItem?.cancel()
         reloadWorkItem = nil
         settings = MenuSettings()
+        tableView.rowHeight = computedRowHeight()
         reloadEntries()
         super.showWindow(sender)
         window?.backgroundColor = .windowBackgroundColor
@@ -256,7 +270,7 @@ private extension CPYClipboardHistoryWindowController {
         tableView.addTableColumn(tableColumn)
         tableView.headerView = nil
         tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
-        tableView.rowHeight = 72
+        tableView.rowHeight = computedRowHeight()
         tableView.intercellSpacing = .zero
         tableView.backgroundColor = .controlBackgroundColor
         tableView.focusRingType = .none
@@ -344,10 +358,20 @@ private extension CPYClipboardHistoryWindowController {
         ) { [weak self] _ in
             guard let self = self else { return }
             self.settings = MenuSettings()
+            self.tableView.rowHeight = self.computedRowHeight()
             if self.isWindowVisible {
                 self.tableView.reloadData()
             }
         }
+    }
+
+    /// Row height grows to fit the thumbnail when any image-style preview is
+    /// enabled (Show Image / Show color preview / Show icon). When all of
+    /// those are off, fall back to a tighter title-only row.
+    private func computedRowHeight() -> CGFloat {
+        let imagey = settings.isShowImage || settings.isShowColorCode || settings.isShowIcon
+        guard imagey else { return 28 }
+        return max(72, CGFloat(settings.thumbnailHeight) + 8)
     }
 
     func observeWorkspace() {
@@ -499,6 +523,21 @@ extension CPYClipboardHistoryWindowController: NSTableViewDataSource, NSTableVie
 
 // MARK: - Open In Default App
 
+extension CPYClipboardHistoryWindowController {
+    /// Whether a clip with this pasteboard type can be opened in an external
+    /// app. Pure (no instance state), so the spec exercises it directly.
+    static func isOpenablePrimaryType(_ rawType: String) -> Bool {
+        let type = NSPasteboard.PasteboardType(rawValue: rawType)
+        switch type {
+        case .deprecatedTIFF, .tiff, .png, .deprecatedPDF, .pdf,
+             .deprecatedFilenames, .fileURL:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
 extension CPYClipboardHistoryWindowController: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
@@ -533,14 +572,7 @@ private extension CPYClipboardHistoryWindowController {
     }
 
     func isOpenableEntry(_ entry: ClipboardHistoryEntry) -> Bool {
-        let type = NSPasteboard.PasteboardType(rawValue: entry.primaryType)
-        switch type {
-        case .deprecatedTIFF, .tiff, .png, .deprecatedPDF, .pdf,
-             .deprecatedFilenames, .fileURL:
-            return true
-        default:
-            return false
-        }
+        return CPYClipboardHistoryWindowController.isOpenablePrimaryType(entry.primaryType)
     }
 
     func openEntryInDefaultApp(_ entry: ClipboardHistoryEntry) {

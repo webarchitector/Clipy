@@ -25,6 +25,8 @@ final class ClipboardHistoryCellView: NSTableCellView {
     private let titleField = NSTextField(labelWithString: "")
     private var titleLeadingWithImage: NSLayoutConstraint?
     private var titleLeadingWithoutImage: NSLayoutConstraint?
+    private var thumbnailWidthConstraint: NSLayoutConstraint?
+    private var thumbnailHeightConstraint: NSLayoutConstraint?
     // Bumped on every configure() / prepareForReuse() so an in-flight async
     // thumbnail load from a *previous* configure can't re-show an image after
     // the user toggled Show Image / Show color preview off.
@@ -56,11 +58,16 @@ final class ClipboardHistoryCellView: NSTableCellView {
         titleLeadingWithImage = withImage
         titleLeadingWithoutImage = withoutImage
 
+        let widthC = thumbnailView.widthAnchor.constraint(equalToConstant: 64)
+        let heightC = thumbnailView.heightAnchor.constraint(equalToConstant: 64)
+        thumbnailWidthConstraint = widthC
+        thumbnailHeightConstraint = heightC
+
         NSLayoutConstraint.activate([
             thumbnailView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             thumbnailView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            thumbnailView.widthAnchor.constraint(equalToConstant: 64),
-            thumbnailView.heightAnchor.constraint(equalToConstant: 64),
+            widthC,
+            heightC,
             withoutImage,
             titleField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             titleField.centerYAnchor.constraint(equalTo: centerYAnchor)
@@ -74,6 +81,14 @@ final class ClipboardHistoryCellView: NSTableCellView {
     func configure(with entry: ClipboardHistoryEntry, settings: MenuSettings) {
         configureToken &+= 1
         let token = configureToken
+
+        // Drive thumbnail size from Preferences > Menu (Width/Height pixel
+        // fields). Falling back to 64 keeps a sane default if the user has
+        // never set them. File icons keep their fixed 32 size below.
+        let thumbW = max(16, settings.thumbnailWidth)
+        let thumbH = max(16, settings.thumbnailHeight)
+        thumbnailWidthConstraint?.constant = CGFloat(thumbW)
+        thumbnailHeightConstraint?.constant = CGFloat(thumbH)
 
         titleField.stringValue = entry.displayTitle
         titleField.toolTip = settings.isShowToolTip
