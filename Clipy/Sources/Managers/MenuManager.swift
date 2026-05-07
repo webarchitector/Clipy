@@ -315,21 +315,6 @@ extension MenuManager {
     }
 
     func popUpMenu(_ type: MenuType) {
-        // .main (the primary ⌘⇧V hotkey) opens the searchable history
-        // window — that's the inline-search experience NSMenu can't
-        // deliver (its tracker hijacks key input, isHidden doesn't
-        // re-layout mid-tracking, NSSearchField won't receive focus).
-        // Status-item click still shows the full NSMenu (snippets,
-        // preferences, quit), and the .snippet hotkey still pops the
-        // snippets-only NSMenu.
-        if type == .main {
-            pendingMenuType = nil
-            showClipboardHistoryWindow()
-            handlePendingMenu()
-            flushPendingRebuildIfNeeded()
-            return
-        }
-
         // If the standalone history window is up, hide it synchronously
         // (orderOut, not close) so the new popup actually appears as the
         // focal UI. close() schedules animation that may run after popUp(),
@@ -341,7 +326,7 @@ extension MenuManager {
         let menu: NSMenu?
         switch type {
         case .main:
-            menu = clipMenu  // unreachable — handled above
+            menu = clipMenu
         case .history:
             menu = buildHistoryMenu()
         case .snippet:
