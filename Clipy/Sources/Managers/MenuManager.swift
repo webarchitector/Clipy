@@ -126,12 +126,35 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
         return nil
     }
 
+    let bareMods = flags.intersection([.maskCommand, .maskAlternate, .maskControl, .maskShift])
+
+    // Vim j/k → ↓/↑ in popup menus. NSMenu's tracker pulls events directly
+    // from the OS event queue (bypassing addLocalMonitorForEvents and
+    // NSApp.postEvent), so the only reliable interception point is here at
+    // the HID tap, before NSMenu sees the keystroke. We rewrite the event
+    // in place — change keycode + flags so the OS regenerates characters
+    // as NSDownArrowFunctionKey/NSUpArrowFunctionKey on delivery — which
+    // sidesteps NSMenu's type-to-search ('j' on Latin = 'о' on JCUKEN, and
+    // a substitute would let the original character leak into type-ahead).
+    if bareMods.isEmpty {
+        let arrowKeyCode: Int64?
+        switch keyCode {
+        case 38:  arrowKeyCode = 125  // down
+        case 40:  arrowKeyCode = 126  // up
+        default:  arrowKeyCode = nil
+        }
+        if let arrowKeyCode = arrowKeyCode, manager.currentPopupMenu != nil {
+            event.setIntegerValueField(.keyboardEventKeycode, value: arrowKeyCode)
+            event.flags = [.maskNumericPad, .maskSecondaryFn]
+            return Unmanaged.passUnretained(event)
+        }
+    }
+
     // Plain 'O' (keyCode 31, no modifiers) on a highlighted clip with an
     // openable type → open in default app. keyCode 31 is the same physical
     // key for Latin 'o' and Russian 'щ', so the shortcut works regardless
     // of input layout. Non-openable types (text, RTF, snippets) fall through
     // to NSMenu's normal type-to-search.
-    let bareMods = flags.intersection([.maskCommand, .maskAlternate, .maskControl, .maskShift])
     if keyCode == 31, bareMods.isEmpty,
        let menu = manager.currentPopupMenu,
        let item = menu.highlightedItem,
@@ -148,22 +171,6 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
     }
 
     return Unmanaged.passUnretained(event)
-}
-
-/// Build an NSEvent for an arrow keyDown that NSMenu's tracking loop will
-/// pick up via `NSApp.postEvent(_:atStart:)`. Used by the local-monitor
-/// j/k → ↓/↑ translation so vim-style navigation works in popup menus.
-private func makeArrowKeyEvent(keyCode: UInt16, source: NSEvent) -> NSEvent? {
-    // Build the arrow as a CGEvent first (with the same numericPad +
-    // secondaryFn flags real hardware sends) and convert to NSEvent so all
-    // low-level fields — including subtype, source, characters — match a
-    // genuine arrow press. Synthesising NSEvent.keyEvent(...) directly loses
-    // some of those bits and NSMenu's tracker falls back to type-to-search.
-    guard let cgEvent = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true) else {
-        return nil
-    }
-    cgEvent.flags = [.maskNumericPad, .maskSecondaryFn]
-    return NSEvent(cgEvent: cgEvent)
 }
 
 // MARK: - Popup Menu
@@ -211,28 +218,12 @@ extension MenuManager {
                 self.currentPopupMenu?.cancelTrackingWithoutAnimation()
                 return nil
             }
-            // Vim-style j/k navigation — keyCode 38 (j / Russian о) → down,
-            // keyCode 40 (k / Russian л) → up. addLocalMonitorForEvents
-            // lets the handler *replace* the dispatched event by returning a
-            // different NSEvent. We swap the original 'j'/'k' for a fully
-            // synthesised arrow-key NSEvent (CGEvent → NSEvent so all
-            // low-level fields match a real arrow press). NSApp.postEvent +
-            // CGEvent.post both got dropped or arrived after NSMenu's
-            // tracker had already consumed the original; replacement is the
-            // only reliable path.
-            let bareMods = event.modifierFlags.intersection([.command, .option, .control, .shift])
-            if bareMods.isEmpty {
-                let arrowKeyCode: UInt16?
-                switch event.keyCode {
-                case 38:  arrowKeyCode = 125  // down
-                case 40:  arrowKeyCode = 126  // up
-                default:  arrowKeyCode = nil
-                }
-                if let arrowKeyCode = arrowKeyCode,
-                   let arrowEvent = makeArrowKeyEvent(keyCode: arrowKeyCode, source: event) {
-                    return arrowEvent
-                }
-            }
+            // j/k → ↓/↑ vim navigation is handled in the CGEventTap below
+            // (see menuManagerEventTapCallback): NSMenu's tracker pulls
+            // events directly from the OS-level queue, so neither this local
+            // monitor's substitute-return nor NSApp.postEvent reach it. The
+            // tap rewrites keyCode 38/40 to 125/126 in place at the HID
+            // layer, before NSMenu sees them.
             return event
         }
         // CGEvent tap is the kernel-level fallback; only succeeds when the
