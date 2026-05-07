@@ -148,10 +148,14 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
     private var reloadWorkItem: DispatchWorkItem?
 
     init() {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                              backing: .buffered,
-                              defer: false)
+        // NSPanel (not NSWindow) so showing the history doesn't require
+        // flipping the app to .regular activation policy — that switch is
+        // synchronously gated by TCC and stalls visibly when Accessibility
+        // is denied. The panel can still become key via NSApp.activate.
+        let window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640),
+                             styleMask: [.titled, .closable, .resizable],
+                             backing: .buffered,
+                             defer: false)
         super.init(window: window)
         configureWindow()
         configureContentView()
@@ -180,7 +184,10 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         reloadEntries()
         super.showWindow(sender)
         window?.backgroundColor = .windowBackgroundColor
-        CPYUtilities.presentHistoryWindow(window)
+        // Direct activate — no setActivationPolicy(.regular), which is the
+        // path that lags hard without Accessibility (see init() comment).
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
         window?.makeFirstResponder(searchField)
     }
 }
@@ -388,7 +395,6 @@ extension CPYClipboardHistoryWindowController: NSWindowDelegate {
         entries.removeAll()
         filteredEntries.removeAll()
         tableView.reloadData()
-        CPYUtilities.closeHistoryWindow()
     }
 }
 

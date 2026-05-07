@@ -18,7 +18,6 @@ final class CPYUtilities {
     private enum InteractiveWindow: String {
         case preferences
         case snippets
-        case history
     }
 
     private static var interactiveWindows = Set<String>()
@@ -108,20 +107,12 @@ final class CPYUtilities {
         presentInteractiveWindow(.snippets, window: window)
     }
 
-    static func presentHistoryWindow(_ window: NSWindow?) {
-        presentInteractiveWindow(.history, window: window)
-    }
-
     static func closePreferencesWindow() {
         closeInteractiveWindow(.preferences)
     }
 
     static func closeSnippetsWindow() {
         closeInteractiveWindow(.snippets)
-    }
-
-    static func closeHistoryWindow() {
-        closeInteractiveWindow(.history)
     }
 
     static func applyAdaptiveAppearance(to view: NSView?) {
