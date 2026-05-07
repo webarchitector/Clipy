@@ -211,6 +211,7 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
     private let scrollView = NSScrollView()
     private let tableView = ClipboardHistoryTableView()
     private let emptyStateLabel = NSTextField(labelWithString: L10n.noMatchingHistoryItems)
+    private let historyPreviewView = HistoryPreviewView()
     private var realm: Realm? = Realm.safeInstance()
 
     private var clipToken: NotificationToken?
@@ -232,7 +233,7 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         // flipping the app to .regular activation policy — that switch is
         // synchronously gated by TCC and stalls visibly when Accessibility
         // is denied. The panel can still become key via NSApp.activate.
-        let panel = ClipboardHistoryPanel(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640),
+        let panel = ClipboardHistoryPanel(contentRect: NSRect(x: 0, y: 0, width: 880, height: 640),
                                           styleMask: [.titled, .closable, .resizable],
                                           backing: .buffered,
                                           defer: false)
@@ -348,9 +349,38 @@ private extension CPYClipboardHistoryWindowController {
         emptyStateLabel.textColor = .secondaryLabelColor
         emptyStateLabel.isHidden = true
 
+        // Build a horizontal NSSplitView: history list on the left, full
+        // preview of the selected clip on the right. The user can drag the
+        // divider; min widths keep both panes usable.
+        let listSide = NSView()
+        listSide.translatesAutoresizingMaskIntoConstraints = false
+        listSide.addSubview(scrollView)
+        listSide.addSubview(emptyStateLabel)
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: listSide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: listSide.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: listSide.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: listSide.bottomAnchor),
+            emptyStateLabel.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: scrollView.leadingAnchor, constant: 16),
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.trailingAnchor, constant: -16)
+        ])
+
+        historyPreviewView.translatesAutoresizingMaskIntoConstraints = false
+
+        let splitView = NSSplitView()
+        splitView.translatesAutoresizingMaskIntoConstraints = false
+        splitView.isVertical = true
+        splitView.dividerStyle = .thin
+        splitView.delegate = self
+        splitView.identifier = NSUserInterfaceItemIdentifier("ClipboardHistorySplit")
+        splitView.autosaveName = "ClipboardHistorySplit"
+        splitView.addArrangedSubview(listSide)
+        splitView.addArrangedSubview(historyPreviewView)
+
         contentView.addSubview(searchField)
-        contentView.addSubview(scrollView)
-        contentView.addSubview(emptyStateLabel)
+        contentView.addSubview(splitView)
 
         window?.contentView = contentView
 
@@ -359,16 +389,17 @@ private extension CPYClipboardHistoryWindowController {
             searchField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             searchField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
 
-            scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
-            scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-
-            emptyStateLabel.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            emptyStateLabel.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
-            emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: scrollView.leadingAnchor, constant: 16),
-            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.trailingAnchor, constant: -16)
+            splitView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
+            splitView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            splitView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            splitView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
         ])
+
+        // Default split: list ~380, preview takes the rest. The autosave
+        // name above means the user's drag-position survives relaunches.
+        DispatchQueue.main.async { [weak splitView] in
+            splitView?.setPosition(380, ofDividerAt: 0)
+        }
     }
 
     func observeClips() {
@@ -569,6 +600,28 @@ extension CPYClipboardHistoryWindowController: NSTableViewDataSource, NSTableVie
             ?? ClipboardHistoryCellView(frame: .zero)
         cellView.configure(with: entry, settings: settings)
         return cellView
+    }
+
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        historyPreviewView.show(entry: selectedEntry)
+        // QLPreviewPanel re-asks the data source when the index changes.
+        if let panel = QLPreviewPanel.shared(), panel.isVisible {
+            panel.reloadData()
+        }
+    }
+}
+
+// MARK: - NSSplitViewDelegate
+
+extension CPYClipboardHistoryWindowController: NSSplitViewDelegate {
+    // Keep both panes usable: the list won't shrink past one cell width and
+    // the preview won't disappear entirely.
+    func splitView(_ splitView: NSSplitView, constrainMinCoordinate proposed: CGFloat, ofSubviewAt index: Int) -> CGFloat {
+        return 280
+    }
+
+    func splitView(_ splitView: NSSplitView, constrainMaxCoordinate proposed: CGFloat, ofSubviewAt index: Int) -> CGFloat {
+        return splitView.bounds.width - 240
     }
 }
 
@@ -806,3 +859,6 @@ private final class HistoryQuickLookItem: NSObject, QLPreviewItem {
         return nil
     }
 }
+
+// HistoryPreviewView lives in `HistoryPreviewView.swift` to keep this file
+// under the 500-line SwiftLint cap.

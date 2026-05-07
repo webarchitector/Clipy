@@ -42,6 +42,7 @@
 		649C3E8C5B875EABDF3D5636 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD037ABF98B968BBAF6D9C9 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift */; };
 		74421B9C63AAB6648DF10A7E /* AppIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F762C0B202FBAA80E7A0EAA5 /* AppIndex.swift */; };
 		7A4551FE2D5AD6CCA519AD2B /* ClipboardHistoryCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9446C6A3D09548C2CAD67343 /* ClipboardHistoryCellView.swift */; };
+		AB04000000000000000A0002 /* HistoryPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB04000000000000000A0001 /* HistoryPreviewView.swift */; };
 		8EE81CDBD64E7A9D8D3361DF /* AppLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */; };
 		A191E67DF15E40E758ECD23F /* CPYClipDataSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */; };
 		ADBBDD749273048F0B0456F4 /* AppLauncherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADF565B73A015CBBA7EB6D01 /* AppLauncherService.swift */; };
@@ -216,6 +217,7 @@
 		8460049F1FD5511A00BA733E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		924132C79412C18C7C0FC8F4 /* TISInputSource+Additions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "TISInputSource+Additions.swift"; sourceTree = "<group>"; };
 		9446C6A3D09548C2CAD67343 /* ClipboardHistoryCellView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryCellView.swift; sourceTree = "<group>"; };
+		AB04000000000000000A0001 /* HistoryPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryPreviewView.swift; sourceTree = "<group>"; };
 		994536AAB91CE22186C3CFB1 /* Dependencies-ClipyTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.debug.xcconfig"; sourceTree = "<group>"; };
 		9DBBF976436A0651CB8BD4B2 /* Dependencies-Clipy.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.release.xcconfig"; sourceTree = "<group>"; };
 		A5ACD8BB2576FA1CAA0AEF6C /* InputSource.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputSource.swift; sourceTree = "<group>"; };
@@ -494,6 +496,7 @@
 				352DCDE5F4B5B5DD15B72C9D /* CPYClipboardHistoryWindowController.swift */,
 				FA1DB4C31DDCB460007F95C8 /* MenuManager.swift */,
 				9446C6A3D09548C2CAD67343 /* ClipboardHistoryCellView.swift */,
+				AB04000000000000000A0001 /* HistoryPreviewView.swift */,
 				1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */,
 			);
 			path = Managers;
@@ -995,6 +998,7 @@
 				1F077973EC8AEA1CD7B2DED8 /* InputSourceService.swift in Sources */,
 				649C3E8C5B875EABDF3D5636 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift in Sources */,
 				7A4551FE2D5AD6CCA519AD2B /* ClipboardHistoryCellView.swift in Sources */,
+				AB04000000000000000A0002 /* HistoryPreviewView.swift in Sources */,
 				389CB265D2D6FF14FD4F7149 /* MenuManager+MenuBuilders.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
