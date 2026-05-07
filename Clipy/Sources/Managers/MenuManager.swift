@@ -136,18 +136,12 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
     // as NSDownArrowFunctionKey/NSUpArrowFunctionKey on delivery — which
     // sidesteps NSMenu's type-to-search ('j' on Latin = 'о' on JCUKEN, and
     // a substitute would let the original character leak into type-ahead).
-    if bareMods.isEmpty {
-        let arrowKeyCode: Int64?
-        switch keyCode {
-        case 38:  arrowKeyCode = 125  // down
-        case 40:  arrowKeyCode = 126  // up
-        default:  arrowKeyCode = nil
-        }
-        if let arrowKeyCode = arrowKeyCode, manager.currentPopupMenu != nil {
-            event.setIntegerValueField(.keyboardEventKeycode, value: arrowKeyCode)
-            event.flags = [.maskNumericPad, .maskSecondaryFn]
-            return Unmanaged.passUnretained(event)
-        }
+    if bareMods.isEmpty,
+       let arrowKeyCode = manager.arrowKeyCodeForVimKey(keyCode),
+       manager.currentPopupMenu != nil {
+        event.setIntegerValueField(.keyboardEventKeycode, value: arrowKeyCode)
+        event.flags = [.maskNumericPad, .maskSecondaryFn]
+        return Unmanaged.passUnretained(event)
     }
 
     // Plain 'O' (keyCode 31, no modifiers) on a highlighted clip with an
@@ -251,6 +245,20 @@ extension MenuManager {
         eventTapSource = source
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
+    }
+
+    /// Map a vim-style nav keycode to the matching arrow-key keycode used
+    /// by `menuManagerEventTapCallback` to rewrite events at the HID tap.
+    /// Latin 'j' (38) → ↓ (125), Latin 'k' (40) → ↑ (126); the same physical
+    /// keys produce 'о' / 'л' on JCUKEN, so keycode-based mapping covers
+    /// both layouts. nil = no mapping (pass through).
+    /// Visible to tests via `@testable import Clipy`.
+    func arrowKeyCodeForVimKey(_ keyCode: Int64) -> Int64? {
+        switch keyCode {
+        case 38:  return 125
+        case 40:  return 126
+        default:  return nil
+        }
     }
 
     /// Translate AppKit's `NSEvent.ModifierFlags` to the CGEventFlags shape

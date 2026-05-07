@@ -94,5 +94,24 @@ class MenuManagerCGEventSpec: QuickSpec {
                 expect(manager.matchesCGEvent(keyCode: 9, flags: flags, keyCombo: nil)) == false
             }
         }
+
+        describe("MenuManager.arrowKeyCodeForVimKey(_:)") {
+
+            it("maps j (38) to ↓ (125)") {
+                expect(MenuManager().arrowKeyCodeForVimKey(38)) == 125
+            }
+
+            it("maps k (40) to ↑ (126)") {
+                expect(MenuManager().arrowKeyCodeForVimKey(40)) == 126
+            }
+
+            it("returns nil for keycodes outside the vim nav pair") {
+                let manager = MenuManager()
+                expect(manager.arrowKeyCodeForVimKey(31)).to(beNil())   // 'O' / 'щ'
+                expect(manager.arrowKeyCodeForVimKey(125)).to(beNil())  // already ↓
+                expect(manager.arrowKeyCodeForVimKey(126)).to(beNil())  // already ↑
+                expect(manager.arrowKeyCodeForVimKey(0)).to(beNil())
+            }
+        }
     }
 }
