@@ -72,6 +72,8 @@ private extension CPYShortcutsPreferenceViewController {
 private extension CPYShortcutsPreferenceViewController {
 
     static let layoutsHeaderHeight: CGFloat = 17
+    static let layoutsSubtitleHeight: CGFloat = 14
+    static let layoutsHeaderToSubtitleGap: CGFloat = 2
     static let layoutsRowHeight: CGFloat = 34
     static let layoutsRowGap: CGFloat = 12
     static let layoutsTopPadding: CGFloat = 24
@@ -85,6 +87,8 @@ private extension CPYShortcutsPreferenceViewController {
         let extraHeight =
             Self.layoutsTopPadding +
             Self.layoutsHeaderHeight +
+            Self.layoutsHeaderToSubtitleGap +
+            Self.layoutsSubtitleHeight +
             Self.layoutsHeaderToFirstRowGap +
             CGFloat(sources.count) * Self.layoutsRowHeight +
             CGFloat(max(sources.count - 1, 0)) * Self.layoutsRowGap +
@@ -118,7 +122,24 @@ private extension CPYShortcutsPreferenceViewController {
         header.autoresizingMask = [.maxXMargin, .minYMargin]
         view.addSubview(header)
 
-        let firstRowTop = sectionTop - Self.layoutsHeaderHeight - Self.layoutsHeaderToFirstRowGap
+        let subtitle = NSTextField(labelWithString:
+            "Press a key combo to switch keyboard input source globally.")
+        subtitle.frame = NSRect(
+            x: 59,
+            y: sectionTop - Self.layoutsHeaderHeight - Self.layoutsHeaderToSubtitleGap - Self.layoutsSubtitleHeight,
+            width: view.frame.width - 88,
+            height: Self.layoutsSubtitleHeight
+        )
+        subtitle.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        subtitle.textColor = .secondaryLabelColor
+        subtitle.autoresizingMask = [.width, .minYMargin]
+        view.addSubview(subtitle)
+
+        let firstRowTop = sectionTop
+            - Self.layoutsHeaderHeight
+            - Self.layoutsHeaderToSubtitleGap
+            - Self.layoutsSubtitleHeight
+            - Self.layoutsHeaderToFirstRowGap
 
         if useScrollView {
             let scroll = NSScrollView(frame: NSRect(
