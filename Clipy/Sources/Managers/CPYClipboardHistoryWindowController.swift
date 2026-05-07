@@ -6,6 +6,8 @@
 //  HP: https://clipy-app.com
 //
 
+// swiftlint:disable file_length
+
 import Cocoa
 import Quartz
 import RealmSwift
@@ -601,6 +603,17 @@ extension CPYClipboardHistoryWindowController: NSSearchFieldDelegate {
             confirmSelection(nil)
             return true
         case #selector(NSResponder.cancelOperation(_:)):
+            // First Esc clears the search query and refocuses the table so
+            // the user can keep navigating; second Esc (with empty query)
+            // closes the window.
+            if !searchField.stringValue.isEmpty {
+                searchField.stringValue = ""
+                applyFilter("")
+                if !filteredEntries.isEmpty {
+                    window?.makeFirstResponder(tableView)
+                }
+                return true
+            }
             close()
             return true
         case #selector(NSResponder.moveDown(_:)):
