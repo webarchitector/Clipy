@@ -98,6 +98,24 @@ struct ClipboardHistoryEntry: Equatable {
     }
 }
 
+// MARK: - Panel
+
+/// NSPanel subclass that adds a single key equivalent: Cmd+O fires
+/// "open in default app" so the user doesn't have to focus the table
+/// (they can stay in the search field and still trigger it).
+final class ClipboardHistoryPanel: NSPanel {
+    var openInDefaultAppHandler: (() -> Void)?
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
+        if mods == .command, event.charactersIgnoringModifiers == "o" {
+            openInDefaultAppHandler?()
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+}
+
 // MARK: - Table View
 
 final class ClipboardHistoryTableView: NSTableView {
