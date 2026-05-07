@@ -109,7 +109,8 @@ final class HIDHotKeyTap {
         return nil
     }
 
-    private static func carbonModifiers(from flags: CGEventFlags) -> Int {
+    // Visible to tests via `@testable import Clipy`.
+    static func carbonModifiers(from flags: CGEventFlags) -> Int {
         var result = 0
         if flags.contains(.maskCommand) { result |= cmdKey }
         if flags.contains(.maskAlternate) { result |= optionKey }

@@ -186,7 +186,8 @@ extension MenuManager {
     /// Translate AppKit's `NSEvent.ModifierFlags` to the CGEventFlags shape
     /// `matchesCGEvent` expects, so the local-monitor and CGEventTap paths
     /// share the exact same key-combo detection logic.
-    private func cgFlags(from modifiers: NSEvent.ModifierFlags) -> CGEventFlags {
+    /// Visible to tests via `@testable import Clipy`.
+    func cgFlags(from modifiers: NSEvent.ModifierFlags) -> CGEventFlags {
         var flags = CGEventFlags()
         if modifiers.contains(.command) { flags.insert(.maskCommand) }
         if modifiers.contains(.option) { flags.insert(.maskAlternate) }
