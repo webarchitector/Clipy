@@ -8,10 +8,10 @@ class MenuSettingsSpec: QuickSpec {
         describe("MenuSettings") {
 
             // MenuSettings reads from AppEnvironment.current.defaults at init.
-            // Set the keys directly there, then construct, then assert.
-            let defaults = AppEnvironment.current.defaults
+            // Under Swift 6 strict concurrency, Quick's @Sendable `it` closures
+            // can't capture a shared `var` across before/afterEach — so each
+            // test snapshots / restores its own keys via a local helper.
 
-            // Snapshot keys the spec touches so an after-each can restore.
             let touchedKeys: [String] = [
                 Constants.UserDefaults.menuItemsAreMarkedWithNumbers,
                 Constants.UserDefaults.showToolTipOnMenuItem,
@@ -31,15 +31,15 @@ class MenuSettingsSpec: QuickSpec {
                 Constants.UserDefaults.thumbnailHeight
             ]
 
-            var savedValues: [String: Any?] = [:]
-
-            beforeEach {
-                savedValues = Dictionary(uniqueKeysWithValues:
-                    touchedKeys.map { ($0, defaults.object(forKey: $0)) })
+            // Local snapshot/restore so writes don't leak between tests.
+            func snapshot(_ keys: [String]) -> [String: Any?] {
+                let defaults = AppEnvironment.current.defaults
+                return Dictionary(uniqueKeysWithValues: keys.map { ($0, defaults.object(forKey: $0)) })
             }
 
-            afterEach {
-                for (key, value) in savedValues {
+            func restore(_ saved: [String: Any?]) {
+                let defaults = AppEnvironment.current.defaults
+                for (key, value) in saved {
                     if let value = value {
                         defaults.set(value, forKey: key)
                     } else {
@@ -49,6 +49,9 @@ class MenuSettingsSpec: QuickSpec {
             }
 
             it("reflects each toggled defaults key in the corresponding field") {
+                let saved = snapshot(touchedKeys)
+                defer { restore(saved) }
+                let defaults = AppEnvironment.current.defaults
                 defaults.set(true,  forKey: Constants.UserDefaults.menuItemsAreMarkedWithNumbers)
                 defaults.set(false, forKey: Constants.UserDefaults.showToolTipOnMenuItem)
                 defaults.set(true,  forKey: Constants.UserDefaults.showImageInTheMenu)
@@ -72,6 +75,9 @@ class MenuSettingsSpec: QuickSpec {
             }
 
             it("reads integer settings (lengths / counts / thumbnail size)") {
+                let saved = snapshot(touchedKeys)
+                defer { restore(saved) }
+                let defaults = AppEnvironment.current.defaults
                 defaults.set(42,  forKey: Constants.UserDefaults.maxLengthOfToolTip)
                 defaults.set(60,  forKey: Constants.UserDefaults.maxMenuItemTitleLength)
                 defaults.set(15,  forKey: Constants.UserDefaults.numberOfItemsPlaceInline)

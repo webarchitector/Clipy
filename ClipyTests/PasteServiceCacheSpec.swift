@@ -12,30 +12,25 @@ class PasteServiceCacheSpec: QuickSpec {
 
             // CPYClip's primary key is dataHash; cachedClipData uses dataPath
             // (the on-disk archive) as the cache key. We need a realm to hold
-            // the clip and a temp file to back it.
-            var tmpDir: URL!
-            var service: PasteService!
+            // the clip and a temp file to back it. Each test owns its own
+            // (Swift 6 strict concurrency rejects spec-scoped `var`s through
+            // Quick's @Sendable `it` closures).
 
-            beforeEach {
+            func makeFixture() -> (PasteService, URL) {
                 Realm.Configuration.defaultConfiguration = Realm.Configuration(
                     inMemoryIdentifier: UUID().uuidString,
                     objectTypes: [CPYClip.self, CPYFolder.self, CPYSnippet.self]
                 )
-                tmpDir = FileManager.default.temporaryDirectory
+                let tmpDir = FileManager.default.temporaryDirectory
                     .appendingPathComponent("PasteServiceCacheSpec-\(UUID().uuidString)")
                 try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-                service = PasteService()
-            }
-
-            afterEach {
-                try? FileManager.default.removeItem(at: tmpDir)
-                service = nil
+                return (PasteService(), tmpDir)
             }
 
             // Helper: create a clip whose dataPath holds an archived CPYClipData
             // we can decode back. dataPath uniqueness keeps cache keys distinct
             // between tests.
-            func makeClipOnDisk(stringValue: String) -> CPYClip {
+            func makeClipOnDisk(stringValue: String, in tmpDir: URL) -> CPYClip {
                 let payload = CPYClipData(image: NSImage())
                 payload.types = [.string]
                 payload.stringValue = stringValue
@@ -55,6 +50,8 @@ class PasteServiceCacheSpec: QuickSpec {
             }
 
             it("returns nil when the underlying file is missing") {
+                let (service, tmpDir) = makeFixture()
+                defer { try? FileManager.default.removeItem(at: tmpDir) }
                 let realm = try! Realm()
                 let clip = CPYClip()
                 clip.dataHash = "missing"
@@ -64,14 +61,18 @@ class PasteServiceCacheSpec: QuickSpec {
             }
 
             it("decodes the archive on first lookup") {
-                let clip = makeClipOnDisk(stringValue: "hello")
+                let (service, tmpDir) = makeFixture()
+                defer { try? FileManager.default.removeItem(at: tmpDir) }
+                let clip = makeClipOnDisk(stringValue: "hello", in: tmpDir)
                 let result = service.cachedClipData(for: clip)
                 expect(result).toNot(beNil())
                 expect(result?.stringValue) == "hello"
             }
 
             it("caches the decoded value so a second lookup doesn't re-read disk") {
-                let clip = makeClipOnDisk(stringValue: "cacheable")
+                let (service, tmpDir) = makeFixture()
+                defer { try? FileManager.default.removeItem(at: tmpDir) }
+                let clip = makeClipOnDisk(stringValue: "cacheable", in: tmpDir)
                 let first = service.cachedClipData(for: clip)
                 expect(first).toNot(beNil())
 
@@ -84,8 +85,10 @@ class PasteServiceCacheSpec: QuickSpec {
             }
 
             it("treats different clips with different dataPaths as separate cache entries") {
-                let a = makeClipOnDisk(stringValue: "alpha")
-                let b = makeClipOnDisk(stringValue: "beta")
+                let (service, tmpDir) = makeFixture()
+                defer { try? FileManager.default.removeItem(at: tmpDir) }
+                let a = makeClipOnDisk(stringValue: "alpha", in: tmpDir)
+                let b = makeClipOnDisk(stringValue: "beta", in: tmpDir)
                 let resultA = service.cachedClipData(for: a)
                 let resultB = service.cachedClipData(for: b)
                 expect(resultA?.stringValue) == "alpha"

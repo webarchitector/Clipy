@@ -46,18 +46,19 @@ class LegacyKeyedArchiveSpec: QuickSpec {
 
             describe("archiveRootObject(_:toFile:) / unarchivedObject(of:fromFile:)") {
 
-                var tmpURL: URL!
+                // Each test owns its own URL — Swift 6 strict concurrency
+                // doesn't let Quick's @Sendable `it` closures share a `var`
+                // across before/afterEach, so cleanup happens inline via
+                // a defer or at the end of each test.
 
-                beforeEach {
-                    tmpURL = FileManager.default.temporaryDirectory
+                func makeTmpURL() -> URL {
+                    FileManager.default.temporaryDirectory
                         .appendingPathComponent("LegacyKeyedArchiveSpec-\(UUID().uuidString).archive")
                 }
 
-                afterEach {
-                    try? FileManager.default.removeItem(at: tmpURL)
-                }
-
                 it("writes a file and reads it back") {
+                    let tmpURL = makeTmpURL()
+                    defer { try? FileManager.default.removeItem(at: tmpURL) }
                     let original = NSArray(array: ["a", "b", "c"])
                     let ok = LegacyKeyedArchive.archiveRootObject(original, toFile: tmpURL.path)
                     expect(ok) == true
