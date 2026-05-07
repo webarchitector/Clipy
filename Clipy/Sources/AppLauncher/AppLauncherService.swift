@@ -50,6 +50,11 @@ final class AppLauncherService: NSObject {
         let didRegister = hotKey.register()
         if !didRegister {
             NSLog("AppLauncherService: failed to register hotkey \(keyCombo)")
+            // Roll the persisted value back so the next launch doesn't
+            // re-attempt registration on a combo HotKeyCenter rejected
+            // (typically a collision with another global hotkey).
+            AppEnvironment.current.defaults.removeObject(forKey: Constants.HotKey.appLauncherKeyCombo)
+            self.keyCombo = nil
         }
     }
 

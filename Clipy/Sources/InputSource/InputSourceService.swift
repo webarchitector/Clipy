@@ -136,6 +136,11 @@ final class InputSourceService: NSObject {
         let didRegister = hotKey.register()
         if !didRegister {
             NSLog("InputSourceService: failed to register hotkey for \(source.identifier)")
+            // Drop the persisted combo + in-memory binding so the next
+            // launch doesn't re-try the rejected combo, leaving the user
+            // with an apparently configured shortcut that never fires.
+            AppEnvironment.current.defaults.removeObject(forKey: defaultsKey(for: source.identifier))
+            registrations[source.identifier]?.keyCombo = nil
         }
     }
 
