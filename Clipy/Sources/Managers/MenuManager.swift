@@ -68,25 +68,9 @@ final class MenuManager: NSObject {
     }
 
     func setup() {
-        mmDiag("setup() called — diag logger working")
         bind()
     }
 
-}
-
-// MARK: - Diagnostic file logger (temp)
-// Bypasses Swift / Foundation entirely — writes via Darwin's open(2)/write(2)
-// so Release-mode whole-module optimisation can't dead-code these calls.
-@inline(never)
-private func mmDiag(_ message: String) {
-    let stamp = ISO8601DateFormatter().string(from: Date())
-    let payload = "\(stamp) [mm] \(message)\n"
-    payload.withCString { ptr in
-        let fd = open("/tmp/clipy-diag.log", O_WRONLY | O_CREAT | O_APPEND, 0o644)
-        guard fd >= 0 else { return }
-        _ = write(fd, ptr, strlen(ptr))
-        close(fd)
-    }
 }
 
 // MARK: - Event Tap Callback
@@ -94,7 +78,6 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
     guard let refcon = refcon else { return Unmanaged.passUnretained(event) }
     let manager = Unmanaged<MenuManager>.fromOpaque(refcon).takeUnretainedValue()
 
-    mmDiag("tap fired type=\(type.rawValue) popup=\(manager.currentPopupMenu == nil ? "nil" : "set")")
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
         if let tap = manager.eventTap {
             CGEvent.tapEnable(tap: tap, enable: true)
@@ -108,18 +91,12 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
     // tap does. We're already on the main runloop here, so direct AppKit
     // access is safe.
     if type == .rightMouseDown {
-        let menu = manager.currentPopupMenu
-        let item = menu?.highlightedItem
-        let actionName = item?.action.map { NSStringFromSelector($0) } ?? "nil"
-        let repObj = item?.representedObject
-        mmDiag("rightMouseDown menu=\(menu == nil ? "nil" : "set") highlight=\(item?.title ?? "nil") action=\(actionName) repObj=\(String(describing: repObj))")
-        guard let menu = menu,
-              let item = item,
+        guard let menu = manager.currentPopupMenu,
+              let item = menu.highlightedItem,
               item.action == #selector(AppDelegate.selectClipMenuItem(_:)),
               let primaryKey = item.representedObject as? String else {
             return Unmanaged.passUnretained(event)
         }
-        mmDiag("rightMouseDown matched primaryKey=\(primaryKey)")
         menu.cancelTrackingWithoutAnimation()
         DispatchQueue.main.async {
             CPYClipboardHistoryWindowController.openClipInDefaultApp(primaryKey: primaryKey)
@@ -173,6 +150,22 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
     return Unmanaged.passUnretained(event)
 }
 
+/// Build an NSEvent for an arrow keyDown that NSMenu's tracking loop will
+/// pick up via `NSApp.postEvent(_:atStart:)`. Used by the local-monitor
+/// j/k → ↓/↑ translation so vim-style navigation works in popup menus.
+private func makeArrowKeyEvent(keyCode: UInt16, source: NSEvent) -> NSEvent? {
+    // Build the arrow as a CGEvent first (with the same numericPad +
+    // secondaryFn flags real hardware sends) and convert to NSEvent so all
+    // low-level fields — including subtype, source, characters — match a
+    // genuine arrow press. Synthesising NSEvent.keyEvent(...) directly loses
+    // some of those bits and NSMenu's tracker falls back to type-to-search.
+    guard let cgEvent = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true) else {
+        return nil
+    }
+    cgEvent.flags = [.maskNumericPad, .maskSecondaryFn]
+    return NSEvent(cgEvent: cgEvent)
+}
+
 // MARK: - Popup Menu
 extension MenuManager {
     func menuTypeForCGEvent(keyCode: Int64, flags: CGEventFlags) -> MenuType? {
@@ -197,7 +190,6 @@ extension MenuManager {
     private func installEventTap(for menuType: MenuType) {
         removeEventTap()
         currentMenuType = menuType
-        mmDiag("installEventTap menuType=\(menuType) accessibility=\(AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: false))")
         // Local monitor — fires for keyDown events within Clipy's own process,
         // including events delivered to NSMenu popups in tracking mode. Works
         // without Accessibility (unlike CGEvent.tapCreate).
@@ -218,6 +210,28 @@ extension MenuManager {
                 self.pendingAppLauncher = true
                 self.currentPopupMenu?.cancelTrackingWithoutAnimation()
                 return nil
+            }
+            // Vim-style j/k navigation — keyCode 38 (j / Russian о) → down,
+            // keyCode 40 (k / Russian л) → up. addLocalMonitorForEvents
+            // lets the handler *replace* the dispatched event by returning a
+            // different NSEvent. We swap the original 'j'/'k' for a fully
+            // synthesised arrow-key NSEvent (CGEvent → NSEvent so all
+            // low-level fields match a real arrow press). NSApp.postEvent +
+            // CGEvent.post both got dropped or arrived after NSMenu's
+            // tracker had already consumed the original; replacement is the
+            // only reliable path.
+            let bareMods = event.modifierFlags.intersection([.command, .option, .control, .shift])
+            if bareMods.isEmpty {
+                let arrowKeyCode: UInt16?
+                switch event.keyCode {
+                case 38:  arrowKeyCode = 125  // down
+                case 40:  arrowKeyCode = 126  // up
+                default:  arrowKeyCode = nil
+                }
+                if let arrowKeyCode = arrowKeyCode,
+                   let arrowEvent = makeArrowKeyEvent(keyCode: arrowKeyCode, source: event) {
+                    return arrowEvent
+                }
             }
             return event
         }
@@ -240,11 +254,7 @@ extension MenuManager {
                                           | (1 << CGEventType.rightMouseDown.rawValue)),
             callback: menuManagerEventTapCallback,
             userInfo: refcon
-        ) else {
-            mmDiag("tapCreate returned nil — tap NOT installed")
-            return
-        }
-        mmDiag("tapCreate ok — tap installed")
+        ) else { return }
         eventTap = tap
         let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         eventTapSource = source
@@ -303,7 +313,6 @@ extension MenuManager {
     }
 
     func popUpMenu(_ type: MenuType) {
-        mmDiag("popUpMenu type=\(type)")
         // If the standalone history window is up, hide it synchronously
         // (orderOut, not close) so the new popup actually appears as the
         // focal UI. close() schedules animation that may run after popUp(),
@@ -537,14 +546,12 @@ extension MenuManager: NSMenuDelegate {
         // Only act on the top-level clipMenu — submenus also fire this and
         // we don't want to clobber state mid-tracking.
         guard menu === clipMenu else { return }
-        mmDiag("menuWillOpen — installing tap for clipMenu")
         currentPopupMenu = menu
         installEventTap(for: .main)
     }
 
     func menuDidClose(_ menu: NSMenu) {
         guard menu === clipMenu else { return }
-        mmDiag("menuDidClose — removing tap for clipMenu")
         removeEventTap()
         currentPopupMenu = nil
     }

@@ -198,7 +198,7 @@ final class ClipboardHistoryTableView: NSTableView {
 
     private func moveSelection(by delta: Int) {
         let count = numberOfRows
-        guard count > 0 else { return }
+        guard count >= 1 else { return }
         let current = selectedRow
         let target: Int
         if current < 0 {
