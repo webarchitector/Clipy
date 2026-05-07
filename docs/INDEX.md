@@ -41,6 +41,7 @@ Adding a new service requires updating all three `AppEnvironment` sites: `Enviro
 - **Vendored deps under `vendor/`.** No CocoaPods/SPM/Bundler/Fastlane in toolchain. `vendor/` and the only build-phase script `Scripts/strip-non-arm64-slices.sh` are tracked.
 - **Ported features** (`AppLauncher/`, `InputSource/`) keep Selector style — `// swiftlint:disable identifier_name` headers preserved for drop-in cherry-picks. Source-of-truth at `/Users/ank/dev/selector/selector/{ShortcutCellView,InputSourceManager}.swift`.
 - **Ported singletons by design**: `AppLauncher.shared`, `AppIndex.shared`, `Calculator.shared` — multiple instances would fight over the cache file and the panel.
+- **Popup NSMenu key overrides go through the HID-level CGEvent tap, not the local NSEvent monitor.** NSMenu's tracker pulls events directly from the OS event queue, so `addLocalMonitorForEvents` substitutes and `NSApp.postEvent` never reach it (the local monitor is fine for `cancelTrackingWithoutAnimation()` side effects — menu-type switching, app-launcher hotkey — but cannot rewrite or suppress what NSMenu sees). `menuManagerEventTapCallback` rewrites `j`/`k` (keyCode 38/40) to ↓/↑ (125/126) in place and consumes `O`/right-click to open clips in the default app. Requires Accessibility; without it those overrides degrade silently.
 
 ## Preferences Shortcuts pane (XIB invariant)
 
