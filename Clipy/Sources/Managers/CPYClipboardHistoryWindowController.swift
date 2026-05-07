@@ -146,6 +146,7 @@ final class ClipboardHistoryTableView: NSTableView {
     var cancelHandler: (() -> Void)?
     var openInDefaultAppHandler: (() -> Void)?
     var quickLookHandler: (() -> Void)?
+    var deleteHandler: (() -> Void)?
     var contextMenuProvider: ((Int) -> NSMenu?)?
 
     override func mouseDown(with event: NSEvent) {
@@ -169,6 +170,9 @@ final class ClipboardHistoryTableView: NSTableView {
             return
         case 49:  // space — Quick Look toggle
             quickLookHandler?()
+            return
+        case 51, 117:  // delete (backspace) / forward-delete
+            deleteHandler?()
             return
         default:
             break
@@ -339,6 +343,7 @@ private extension CPYClipboardHistoryWindowController {
         tableView.intercellSpacing = .zero
         tableView.backgroundColor = .controlBackgroundColor
         tableView.focusRingType = .none
+        tableView.allowsMultipleSelection = true
         tableView.delegate = self
         tableView.dataSource = self
         tableView.target = self
@@ -354,6 +359,9 @@ private extension CPYClipboardHistoryWindowController {
         }
         tableView.quickLookHandler = { [weak self] in
             self?.toggleQuickLook()
+        }
+        tableView.deleteHandler = { [weak self] in
+            self?.deleteSelectedEntries()
         }
         tableView.contextMenuProvider = { [weak self] row in
             self?.makeContextMenu(forRow: row)
@@ -824,6 +832,22 @@ private extension CPYClipboardHistoryWindowController {
             return
         }
         openEntryInDefaultApp(entry)
+    }
+
+    /// Delete every clip currently selected in the table (Backspace key).
+    /// Re-resolves primary keys before deleting so a Realm reload can't
+    /// invalidate the clip references mid-loop.
+    func deleteSelectedEntries() {
+        let indexes = tableView.selectedRowIndexes
+        guard !indexes.isEmpty else { NSSound.beep(); return }
+        let primaryKeys = indexes
+            .compactMap { $0 < filteredEntries.count ? filteredEntries[$0].primaryKey : nil }
+        guard let realm = Realm.safeInstance() else { return }
+        let clipService = AppEnvironment.current.clipService
+        for primaryKey in primaryKeys {
+            guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else { continue }
+            clipService.delete(with: clip)
+        }
     }
 
     /// Cmd+1..9/0 quick-paste: select the Nth visible row and reuse the
