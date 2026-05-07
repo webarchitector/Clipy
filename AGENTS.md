@@ -10,9 +10,9 @@ For finding classes, methods, call paths, references — query the `codebase-mem
 
 - Clipy is a macOS menu bar clipboard manager built with Swift and AppKit.
 - Core app code lives in `Clipy/`; tests live in `ClipyTests/`.
-- Persistence uses Realm. Reactive behavior uses RxSwift/RxCocoa. Global hotkeys use Magnet.
-- Third-party code is vendored locally under `vendor/`.
-- This fork is intentionally offline-first: update checks, analytics, and general remote network access are disabled in the app runtime.
+- Persistence uses Realm 20.x via Swift Package Manager. Reactive behavior uses Combine (no RxSwift). Test stack is Quick 7.x + Nimble 14.x via SPM. Global hotkeys use Magnet.
+- Most third-party code is still vendored locally under `vendor/` (AEXML, KeyHolder, LoginServiceKit, Magnet, Sauce, Screeen). Realm/Quick/Nimble were migrated off vendor and now resolve via SPM.
+- This fork is intentionally offline-first: update checks (Sparkle is fully removed), analytics, and general remote network access are disabled in the app runtime.
 
 ## Repo Map
 
@@ -31,10 +31,10 @@ For finding classes, methods, call paths, references — query the `codebase-mem
 ## Working Rules
 
 - Open `Clipy.xcworkspace`, not only `Clipy.xcodeproj`, when building or debugging the app.
-- Stay within the current stack: AppKit, XIBs, Realm, RxSwift, and vendored dependencies. Do not introduce SwiftUI, SPM migrations, or dependency manager changes unless explicitly requested.
+- Stay within the current stack: AppKit, XIBs, Realm (SPM), Combine, and the remaining vendored dependencies. Do not reintroduce RxSwift/RxCocoa/RxRelay/RxScreeen — they were removed in favor of Combine and a small `UserDefaults+Combine` helper that mirrors the prior KVO-based initial-value semantics. Do not introduce SwiftUI without a request.
 - Prefer editing app code in `Clipy/` and tests in `ClipyTests/`. Avoid touching `vendor/` unless the task is explicitly about a vendored dependency.
 - Treat `Clipy/Generated/*.swift` as generated artifacts. If names, assets, colors, or strings change, update the source inputs (`swiftgen.yml`, `Clipy/Resources/Images.xcassets`, `Clipy/Resources/colors.txt`, `Clipy/Resources/en.lproj/Localizable.strings`) and regenerate through the existing SwiftGen workflow/build phase.
-- Preserve the offline security posture. Do not reintroduce Sparkle, telemetry, update polling, or general network access unless explicitly requested.
+- Preserve the offline security posture. Sparkle is removed entirely (no `Sparkle.framework`, no `SU*` defaults registration, no `UpdateService`). Do not reintroduce Sparkle, telemetry, update polling, or general network access unless explicitly requested.
 - Keep Apple Silicon assumptions intact. The project excludes `x86_64` for macOS builds and strips non-`arm64` slices after build.
 - Respect Realm threading rules. Do not pass live Realm objects across queues; re-open Realm on the destination thread or pass plain values.
 - Many behaviors are wired through `AppEnvironment.current` and `Constants.UserDefaults`. When changing clipboard, menu, preferences, or hotkey behavior, keep service logic, defaults keys, and UI in sync. New services live on the `Environment` struct and must be added to all three call sites: the `init`, `replaceCurrent(...)` parameters in `AppEnvironment.swift`, and the `fromStorage(...)` pass-through.

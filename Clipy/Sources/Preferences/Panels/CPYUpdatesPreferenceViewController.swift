@@ -22,7 +22,7 @@ class CPYUpdatesPreferenceViewController: NSViewController {
     override func loadView() {
         super.loadView()
         versionTextField.stringValue = "v\(Bundle.main.appVersion ?? "")"
-        lastUpdateCheckTextField.stringValue = AppEnvironment.current.updateService.statusDescription()
+        lastUpdateCheckTextField.stringValue = "Network access is disabled in this build."
         hideNetworkControls()
     }
 

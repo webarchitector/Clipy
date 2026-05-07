@@ -14,6 +14,7 @@
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
 		FA0157AB1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157AA1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift */; };
+		FA0157B11E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157B01E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift */; };
 		FA0157061E48A0C7000DEDA1 /* Quick in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157041E48A0C7000DEDA1 /* Quick */; };
 		FA0157071E48A0C7000DEDA1 /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157051E48A0C7000DEDA1 /* Nimble */; };
 		FA01570B1E48A0C7000DEDA1 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157091E48A0C7000DEDA1 /* RealmSwift */; };
@@ -101,7 +102,6 @@
 		FAC43E2B1B35DFDF00C06102 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAC43E2A1B35DFDF00C06102 /* WebKit.framework */; };
 		FAE911B91DE045E2008A4BEC /* HotKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE911B81DE045E2008A4BEC /* HotKeyService.swift */; };
 		FAE911BB1DE054F1008A4BEC /* NSCoding+Archive.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE911BA1DE054F1008A4BEC /* NSCoding+Archive.swift */; };
-		FB1234567890ABCDEF123457 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1234567890ABCDEF123456 /* UpdateService.swift */; };
 		FB2345678901BCDEF2345679 /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2345678901BCDEF2345678 /* ThumbnailCache.swift */; };
 		FB3456789012CDEF34567891 /* HIDHotKeyTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */; };
 /* End PBXBuildFile section */
@@ -135,6 +135,7 @@
 		06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LauncherPanel.swift; sourceTree = "<group>"; };
 		0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalculatorMathSpec.swift; sourceTree = "<group>"; };
 		FA0157AA1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputSourceServiceDedupSpec.swift; sourceTree = "<group>"; };
+		FA0157B01E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserDefaultsCombineSpec.swift; sourceTree = "<group>"; };
 		19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYClipDataSpec.swift; sourceTree = "<group>"; };
 		1C2D23FF23B07B76585DC610 /* Dependencies-ClipyTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.release.xcconfig"; sourceTree = "<group>"; };
 		1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "MenuManager+MenuBuilders.swift"; sourceTree = "<group>"; };
@@ -264,7 +265,6 @@
 		FAC43E2A1B35DFDF00C06102 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		FAE911B81DE045E2008A4BEC /* HotKeyService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HotKeyService.swift; sourceTree = "<group>"; };
 		FAE911BA1DE054F1008A4BEC /* NSCoding+Archive.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSCoding+Archive.swift"; sourceTree = "<group>"; };
-		FB1234567890ABCDEF123456 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		FB2345678901BCDEF2345678 /* ThumbnailCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCache.swift; sourceTree = "<group>"; };
 		FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HIDHotKeyTap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -377,7 +377,6 @@
 				FAC0DCF01DE576F300309C49 /* PasteService.swift */,
 				FA1189321E4CD58C00244F12 /* ExcludeAppService.swift */,
 				FAA4BCCB2163DC9100FF5D18 /* AccessibilityService.swift */,
-				FB1234567890ABCDEF123456 /* UpdateService.swift */,
 				FB2345678901BCDEF2345678 /* ThumbnailCache.swift */,
 				FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */,
 			);
@@ -622,9 +621,19 @@
 				FAC43DDC1B35D8B100C06102 /* Supporting Files */,
 				9E713A47C4F6F391C4C93C0E /* AppLauncher */,
 				FA0157A91E48A0C7000DEDA1 /* InputSource */,
+				FA0157A81E48A0C7000DEDA2 /* Extensions */,
 				19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */,
 			);
 			path = ClipyTests;
+			sourceTree = "<group>";
+		};
+		FA0157A81E48A0C7000DEDA2 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				FA0157B01E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift */,
+			);
+			name = Extensions;
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		FA0157A91E48A0C7000DEDA1 /* InputSource */ = {
@@ -888,7 +897,6 @@
 				FA1DB4E51DDCB49C007F95C8 /* CPYUtilities.swift in Sources */,
 				FA1DB4B81DDCB452007F95C8 /* NSLock+Clipy.swift in Sources */,
 				FAA4BCCC2163DC9100FF5D18 /* AccessibilityService.swift in Sources */,
-				FB1234567890ABCDEF123457 /* UpdateService.swift in Sources */,
 				FB2345678901BCDEF2345679 /* ThumbnailCache.swift in Sources */,
 				FA1DB4D31DDCB479007F95C8 /* CPYClip.swift in Sources */,
 				FAC0DCE91DE15FD900309C49 /* DataCleanService.swift in Sources */,
@@ -955,6 +963,7 @@
 				E1826F7CDEF9ED3824C7BBE3 /* CalculatorCurrencySpec.swift in Sources */,
 				A191E67DF15E40E758ECD23F /* CPYClipDataSpec.swift in Sources */,
 				FA0157AB1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift in Sources */,
+				FA0157B11E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

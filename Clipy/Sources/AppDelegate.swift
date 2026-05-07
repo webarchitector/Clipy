@@ -59,7 +59,7 @@ private final class RemoteNetworkBlockerURLProtocol: URLProtocol {
     override func startLoading() {
         let error = NSError(domain: NSURLErrorDomain,
                             code: NSURLErrorDataNotAllowed,
-                            userInfo: [NSLocalizedDescriptionKey: UpdateService.disabledMessage])
+                            userInfo: [NSLocalizedDescriptionKey: "Network access is disabled in this build."])
         client?.urlProtocol(self, didFailWithError: error)
     }
 
