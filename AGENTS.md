@@ -112,6 +112,28 @@ xcodebuild \
   test
 ```
 
+- Alternative shorter Release build that drops the `.app` straight into `build/Release/Clipy.app` (no nested DerivedData layout). Used when the next step is a `cp` into `/Applications`:
+
+```sh
+xcodebuild \
+  -workspace Clipy.xcworkspace \
+  -scheme Clipy \
+  -configuration Release \
+  CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release \
+  build
+```
+
+- Replace the running app and relaunch (the user's daily workflow). `killall` is silenced so it's safe even when no Clipy is running; `rm -rf` is necessary because `cp -R` over an existing bundle leaves stale Frameworks alive:
+
+```sh
+killall Clipy 2>/dev/null
+rm -rf /Applications/Clipy.app
+cp -R /Users/ank/dev/clipy/build/Release/Clipy.app /Applications/
+open /Applications/Clipy.app
+```
+
+- Don't run `xcodebuild clean` between iterations — it forces a Realm header rebuild that breaks the next incremental build. `rm -rf build/Release/Clipy.app` is the targeted reset when frameworks change (e.g. after dropping a vendored dependency).
+
 - SwiftLint settings live in `.swiftlint.yml`. Run SwiftLint only if it is available in the local environment.
 
 ## Change Checklist
