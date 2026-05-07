@@ -65,5 +65,41 @@ class AppIndexTranslitSpec: QuickSpec {
                 }
             }
         }
+
+        describe("edge cases") {
+
+            it("handles empty input") {
+                expect(AppIndex.translitLatinToCyrillic("")) == ""
+                expect(AppIndex.translitCyrillicToLatin("")) == ""
+            }
+
+            it("preserves whitespace") {
+                expect(AppIndex.translitLatinToCyrillic("hello world")) == "руддщ цщкдв"
+                expect(AppIndex.translitCyrillicToLatin("привет мир")) == "ghbdtn vbh"
+            }
+
+            it("passes punctuation through") {
+                expect(AppIndex.translitLatinToCyrillic("a,b!d?")) == "ф,и!в?"
+                expect(AppIndex.translitCyrillicToLatin("ф,и!в?")) == "a,b!d?"
+            }
+
+            it("passes emoji through") {
+                expect(AppIndex.translitLatinToCyrillic("a🎉b")) == "ф🎉и"
+                expect(AppIndex.translitCyrillicToLatin("ф🎉и")) == "a🎉b"
+            }
+
+            it("handles mixed alphabets") {
+                // 'm' has Latin → Cyrillic mapping ('ь'), 'ф' has Cyrillic
+                // → Latin mapping ('a'). The two functions only look at
+                // their own input alphabet, so the cross-script chars stay.
+                expect(AppIndex.translitLatinToCyrillic("mф")) == "ьф"
+                expect(AppIndex.translitCyrillicToLatin("mф")) == "ma"
+            }
+
+            it("does not crash on long input") {
+                let long = String(repeating: "a", count: 10_000)
+                expect(AppIndex.translitLatinToCyrillic(long).count) == 10_000
+            }
+        }
     }
 }

@@ -9,10 +9,10 @@ class DraggedDataSpec: QuickSpec {
         describe("NSCoding") {
 
             it("Archive data") {
-                let draggedData = CPYDraggedData(type: .folder, folderIdentifier: NSUUID().uuidString, snippetIdentifier: nil, index: 10)
-                let data = NSKeyedArchiver.archivedData(withRootObject: draggedData)
+                let draggedData = CPYDraggedData(type: .folder, folderIdentifier: UUID().uuidString, snippetIdentifier: nil, index: 10)
+                let data = try NSKeyedArchiver.archivedData(withRootObject: draggedData, requiringSecureCoding: true)
 
-                let unarchiveData = NSKeyedUnarchiver.unarchiveObject(with: data) as? CPYDraggedData
+                let unarchiveData = try NSKeyedUnarchiver.unarchivedObject(ofClass: CPYDraggedData.self, from: data)
                 expect(unarchiveData).toNot(beNil())
                 expect(unarchiveData?.type) == draggedData.type
                 expect(unarchiveData?.folderIdentifier) == draggedData.folderIdentifier
