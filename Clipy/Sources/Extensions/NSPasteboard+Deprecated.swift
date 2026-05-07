@@ -12,11 +12,16 @@
 
 import Cocoa
 
-/**
- *  The contents of PasteboardType has been changed with swift 4.
- *  However, we will use the swift 3 style to keep compatibility with existing items
- *  Help wanted - If there is a good implementation I would like to replace it.
- **/
+/// Legacy pasteboard type names from the pre-Swift-4 era ("NSStringPboardType" etc.).
+/// They remain in use because clips persisted before the modern UTI-based names
+/// (`.string`, `.tiff`, `.fileURL` …) carry these raw strings in their archived
+/// `CPYClipData.types`, and unarchiving + matching still has to recognise them.
+/// Modern code should always read AND write the modern equivalents — the
+/// deprecated names are only ever consumed when reading legacy data or when
+/// matching against a pasteboard that still posts the old keys (some apps do).
+///
+/// Sunset path: drop a deprecated alias only after a Realm migration that
+/// rewrites every clip's `types` array; until then they stay.
 extension NSPasteboard.PasteboardType {
 
     static var deprecatedString: NSPasteboard.PasteboardType {
