@@ -15,7 +15,10 @@ import RealmSwift
 
 extension Realm {
     static func migration() {
-        var config = Realm.Configuration(schemaVersion: 7, migrationBlock: { migration, oldSchemaVersion in
+        // Schema 8 added CPYClip.isPinned and CPYClip.sourceBundleID. Both
+        // default to false / "" so no per-object migration is needed; just
+        // a version bump tells Realm the new schema is intentional.
+        var config = Realm.Configuration(schemaVersion: 8, migrationBlock: { migration, oldSchemaVersion in
             if oldSchemaVersion <= 2 {
                 // Add identifier in CPYSnippet
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in

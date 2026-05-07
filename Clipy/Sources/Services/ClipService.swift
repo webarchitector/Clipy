@@ -195,9 +195,15 @@ extension ClipService {
         // Skip strings that look like passwords (mixed case + digits + special chars, no spaces)
         if let string = pasteboard.string(forType: .string), Self.looksLikePassword(string) { return }
 
+        // Capture the source app *before* we ever touch our own panels.
+        // `frontmostApplication` reflects the app the user copied from
+        // because Clipy is `.accessory` and never becomes frontmost during
+        // a normal Cmd+C from another app.
+        let sourceBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? ""
+
         // Create data
         let data = CPYClipData(pasteboard: pasteboard, types: types)
-        save(with: data)
+        save(with: data, sourceBundleID: sourceBundleID)
     }
     // swiftlint:enable empty_enum_arguments
 
@@ -228,10 +234,10 @@ extension ClipService {
 
         // Create only image data
         let data = CPYClipData(image: image)
-        save(with: data)
+        save(with: data, sourceBundleID: NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "")
     }
 
-    fileprivate func save(with data: CPYClipData) {
+    fileprivate func save(with data: CPYClipData, sourceBundleID: String) {
         guard let realm = Realm.safeInstance() else { return }
         let contentHash = data.contentHash
 
@@ -299,6 +305,7 @@ extension ClipService {
                 clip.primaryType = primaryType
                 clip.thumbnailPath = thumbnailPath
                 clip.isColorCode = isColorCode
+                clip.sourceBundleID = sourceBundleID
                 guard let writeRealm = Realm.safeInstance() else { return }
                 writeRealm.transaction { writeRealm.add(clip, update: .all) }
             }

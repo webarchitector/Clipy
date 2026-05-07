@@ -23,6 +23,12 @@ final class CPYClip: Object {
     @objc dynamic var updateTime = 0
     @objc dynamic var thumbnailPath = ""
     @objc dynamic var isColorCode = false
+    /// User-toggled pin. Pinned clips sort to the top of the history
+    /// window and survive `maxHistorySize` trimming.
+    @objc dynamic var isPinned = false
+    /// Bundle identifier of the app that was frontmost when this clip was
+    /// captured. Empty when unknown (legacy clips, anonymous sources).
+    @objc dynamic var sourceBundleID = ""
 
     // MARK: Primary Key
     override static func primaryKey() -> String? {

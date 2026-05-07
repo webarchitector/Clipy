@@ -37,6 +37,25 @@ final class ClipboardHistoryCellView: NSTableCellView {
         imageView.layer?.masksToBounds = true
         return imageView
     }()
+    /// Tiny app-icon strip on the very left of each row indicating which
+    /// app produced the clip. 16×16 to match macOS menu-icon conventions.
+    private let sourceIconView: NSImageView = {
+        let view = NSImageView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.imageScaling = .scaleProportionallyUpOrDown
+        return view
+    }()
+    /// SF Symbol pin badge, shown next to the timestamp when the clip is
+    /// pinned. Filled vs empty is handled at configure time.
+    private let pinView: NSImageView = {
+        let view = NSImageView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.imageScaling = .scaleProportionallyUpOrDown
+        view.contentTintColor = .systemYellow
+        view.image = NSImage(systemSymbolName: "pin.fill",
+                             accessibilityDescription: "Pinned")
+        return view
+    }()
     private let titleField = NSTextField(labelWithString: "")
     private let timeLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
@@ -84,12 +103,14 @@ final class ClipboardHistoryCellView: NSTableCellView {
         titleField.font = NSFont.systemFont(ofSize: 13)
         titleField.textColor = .labelColor
 
+        addSubview(sourceIconView)
         addSubview(thumbnailView)
         addSubview(titleField)
+        addSubview(pinView)
         addSubview(timeLabel)
 
         let withImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
-        let withoutImage = titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12)
+        let withoutImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
         titleLeadingWithImage = withImage
         titleLeadingWithoutImage = withoutImage
 
@@ -99,15 +120,30 @@ final class ClipboardHistoryCellView: NSTableCellView {
         thumbnailHeightConstraint = heightC
 
         NSLayoutConstraint.activate([
-            thumbnailView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            // 16×16 source-app badge at the very left, vertically centered.
+            sourceIconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            sourceIconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            sourceIconView.widthAnchor.constraint(equalToConstant: 16),
+            sourceIconView.heightAnchor.constraint(equalToConstant: 16),
+
+            thumbnailView.leadingAnchor.constraint(equalTo: sourceIconView.trailingAnchor, constant: 8),
             thumbnailView.centerYAnchor.constraint(equalTo: centerYAnchor),
             widthC,
             heightC,
             withoutImage,
             // Title fills horizontally up to the timestamp; timestamp sits
             // flush to the right edge of the row.
-            titleField.trailingAnchor.constraint(lessThanOrEqualTo: timeLabel.leadingAnchor, constant: -8),
+            titleField.trailingAnchor.constraint(lessThanOrEqualTo: pinView.leadingAnchor, constant: -6),
             titleField.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            // Pin badge sits between the title and the timestamp. Hidden
+            // for unpinned rows; the constraint keeps width fixed either
+            // way so the layout doesn't shift on toggle.
+            pinView.trailingAnchor.constraint(equalTo: timeLabel.leadingAnchor, constant: -4),
+            pinView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            pinView.widthAnchor.constraint(equalToConstant: 12),
+            pinView.heightAnchor.constraint(equalToConstant: 12),
+
             timeLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             timeLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
             // Hard cap so a long timestamp can't push the title to nothing.
@@ -137,6 +173,14 @@ final class ClipboardHistoryCellView: NSTableCellView {
             : nil
 
         timeLabel.stringValue = ClipboardHistoryCellView.formatTimestamp(entry.updateTime)
+
+        // Source-app icon: small badge on the very left. Empty bundle ID
+        // (legacy clips, anonymous sources) hides the slot but keeps the
+        // 16-pt offset so all rows share an identical title indent.
+        sourceIconView.image = ClipboardHistoryCellView.iconForBundleID(entry.sourceBundleID)
+        sourceIconView.toolTip = entry.sourceBundleID.isEmpty ? nil : entry.sourceBundleID
+
+        pinView.isHidden = !entry.isPinned
 
         let wantsThumbnail = !entry.thumbnailPath.isEmpty &&
             ((!entry.isColorCode && settings.isShowImage) || (entry.isColorCode && settings.isShowColorCode))
@@ -188,6 +232,31 @@ final class ClipboardHistoryCellView: NSTableCellView {
             return relativeFormatter.localizedString(for: date, relativeTo: Date())
         }
         return absoluteFormatter.string(from: date)
+    }
+
+    /// Resolve a bundle identifier to the running / installed app's icon.
+    /// Cached per bundle so we don't hit Launch Services on every redraw.
+    /// Returns nil for unknown / empty bundle IDs so callers can hide
+    /// the slot.
+    private static let bundleIconCache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 100
+        return cache
+    }()
+
+    static func iconForBundleID(_ bundleID: String) -> NSImage? {
+        guard !bundleID.isEmpty else { return nil }
+        let key = bundleID as NSString
+        if let cached = bundleIconCache.object(forKey: key) {
+            return cached
+        }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            return nil
+        }
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        icon.size = NSSize(width: 16, height: 16)
+        bundleIconCache.setObject(icon, forKey: key)
+        return icon
     }
 
     static func firstFilePath(from entry: ClipboardHistoryEntry) -> String? {

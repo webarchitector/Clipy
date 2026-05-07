@@ -22,6 +22,8 @@ struct ClipboardHistoryEntry: Equatable {
     let dataPath: String
     let primaryType: String
     let updateTime: Int
+    let isPinned: Bool
+    let sourceBundleID: String
 
     init(clip: CPYClip) {
         primaryKey = clip.dataHash
@@ -30,6 +32,8 @@ struct ClipboardHistoryEntry: Equatable {
         dataPath = clip.dataPath
         primaryType = clip.primaryType
         updateTime = clip.updateTime
+        isPinned = clip.isPinned
+        sourceBundleID = clip.sourceBundleID
 
         // Use title stored in Realm (already contains preferredTitle from ClipService.save)
         let clipTitle = ClipboardHistoryEntry.sanitizedStoredTitle(clip.title)
@@ -467,8 +471,15 @@ private extension CPYClipboardHistoryWindowController {
     func reloadEntries() {
         guard let realm = realm else { return }
         let ascending = !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
+        // Pinned clips always sort to the top; within each group, the user's
+        // existing order preference (newest first vs reorder-after-paste)
+        // is preserved.
+        let descriptors: [RealmSwift.SortDescriptor] = [
+            RealmSwift.SortDescriptor(keyPath: #keyPath(CPYClip.isPinned), ascending: false),
+            RealmSwift.SortDescriptor(keyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
+        ]
         entries = realm.objects(CPYClip.self)
-            .sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
+            .sorted(by: descriptors)
             .map(ClipboardHistoryEntry.init)
         applyFilter(searchField.stringValue)
     }
@@ -609,6 +620,32 @@ extension CPYClipboardHistoryWindowController: NSTableViewDataSource, NSTableVie
             panel.reloadData()
         }
     }
+
+    /// Drag-out: let the user pick up a row and drop it into any other app.
+    /// Text-like clips drag as `NSString` (lands cleanly in text fields);
+    /// file/image/PDF clips materialise to a temp file URL (the same one
+    /// Quick Look uses), which Finder/other apps consume as a copyable file.
+    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+        guard row >= 0, row < filteredEntries.count else { return nil }
+        let entry = filteredEntries[row]
+        let type = NSPasteboard.PasteboardType(rawValue: entry.primaryType)
+
+        switch type {
+        case .deprecatedTIFF, .tiff, .png, .deprecatedPDF, .pdf,
+             .deprecatedFilenames, .fileURL:
+            if let url = quickLookURL(for: entry) {
+                return url as NSURL
+            }
+            return nil
+        default:
+            if let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: entry.dataPath),
+               !clipData.stringValue.isEmpty {
+                return NSString(string: clipData.stringValue)
+            }
+            // Last resort: drag the visible title rather than nothing.
+            return entry.displayTitle.isEmpty ? nil : NSString(string: entry.displayTitle)
+        }
+    }
 }
 
 // MARK: - NSSplitViewDelegate
@@ -646,14 +683,29 @@ private extension CPYClipboardHistoryWindowController {
     func makeContextMenu(forRow row: Int) -> NSMenu? {
         guard row >= 0, row < filteredEntries.count else { return nil }
         let entry = filteredEntries[row]
-        guard isOpenableEntry(entry) else { return nil }
         let menu = NSMenu()
-        let item = NSMenuItem(title: "Open in Default App",
-                              action: #selector(openContextMenuAction(_:)),
-                              keyEquivalent: "")
-        item.target = self
-        item.representedObject = entry.primaryKey
-        menu.addItem(item)
+
+        // Pin / Unpin is always available — pinned clips survive trimming
+        // and float to the top of the list.
+        let pinTitle = entry.isPinned ? "Unpin" : "Pin"
+        let pinItem = NSMenuItem(title: pinTitle,
+                                 action: #selector(togglePinContextMenuAction(_:)),
+                                 keyEquivalent: "")
+        pinItem.target = self
+        pinItem.representedObject = entry.primaryKey
+        menu.addItem(pinItem)
+
+        // Open-in-default-app only makes sense for openable types.
+        if isOpenableEntry(entry) {
+            menu.addItem(NSMenuItem.separator())
+            let openItem = NSMenuItem(title: "Open in Default App",
+                                      action: #selector(openContextMenuAction(_:)),
+                                      keyEquivalent: "")
+            openItem.target = self
+            openItem.representedObject = entry.primaryKey
+            menu.addItem(openItem)
+        }
+
         return menu
     }
 
@@ -661,6 +713,15 @@ private extension CPYClipboardHistoryWindowController {
         guard let primaryKey = sender.representedObject as? String,
               let entry = filteredEntries.first(where: { $0.primaryKey == primaryKey }) else { return }
         openEntryInDefaultApp(entry)
+    }
+
+    @objc func togglePinContextMenuAction(_ sender: NSMenuItem) {
+        guard let primaryKey = sender.representedObject as? String else { return }
+        guard let realm = Realm.safeInstance(),
+              let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else { return }
+        realm.transaction { clip.isPinned.toggle() }
+        // Realm notification → scheduleReload picks the new state up,
+        // resort + redraw happens automatically.
     }
 
     func openSelectedInDefaultApp() {
