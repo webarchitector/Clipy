@@ -266,7 +266,7 @@ extension MenuManager {
         currentPopupMenu = nil
         removeEventTap()
         pendingMenuType = nil
-        CPYClipboardHistoryWindowController.sharedController.showWindow(self)
+        CPYClipboardHistoryWindowController.sharedController.showWindow(nil)
     }
 
     /// Close any Clipy-driven popup menu or window so a different UI surface

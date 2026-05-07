@@ -20,7 +20,10 @@ final class CPYUtilities {
         case snippets
     }
 
-    private static var interactiveWindows = Set<String>()
+    // All accesses go through static funcs that the app calls from the
+    // main thread (UI window present/close paths). Marked unsafe to keep
+    // Swift 6 happy without wrapping a tiny pure-main-thread set in an actor.
+    nonisolated(unsafe) private static var interactiveWindows = Set<String>()
 
     static func initSDKs() {
         AppEnvironment.current.defaults.register(defaults: ["NSApplicationCrashOnExceptions": true])

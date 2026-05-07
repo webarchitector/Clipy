@@ -159,7 +159,10 @@ final class InputSourceService: NSObject {
 /// One instance per registered source. Retained by the HotKey via
 /// objc_setAssociatedObject.
 private final class HotKeyTarget: NSObject {
-    static var associationKey: UInt8 = 0
+    // Address-of UInt8 used as a unique key for objc_setAssociatedObject;
+    // never read for its value, never mutated after launch. Annotated for
+    // Swift 6 strict concurrency since address-stability is what matters.
+    nonisolated(unsafe) static var associationKey: UInt8 = 0
 
     private let source: InputSource
 
@@ -168,8 +171,11 @@ private final class HotKeyTarget: NSObject {
     }
 
     @objc func fire() {
-        DispatchQueue.main.async { [source] in
-            source.select()
+        // InputSource holds a TISInputSource (non-Sendable CF type); box
+        // it for the queue hop. Selection always runs on main.
+        let sourceBox = MainThreadBox(source)
+        DispatchQueue.main.async {
+            sourceBox.value.select()
         }
     }
 }

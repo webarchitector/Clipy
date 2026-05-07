@@ -48,8 +48,13 @@ final class InputSource {
         // pick up the change until a second nudge. Re-fire after 50ms — for
         // plain keyboard layouts the second call is a harmless no-op because
         // the current source already matches.
-        let source = tisInputSource
+        // TISInputSource is a CF type without Sendable conformance. The
+        // same reference produced this call site, and we use it again on
+        // main 50 ms later — boxing it through MainThreadBox preserves the
+        // contract that we touch it only on main.
+        let sourceBox = MainThreadBox(tisInputSource)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            let source = sourceBox.value
             if let current = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
                current.inputSourceID == source.inputSourceID {
                 return
@@ -66,7 +71,10 @@ extension InputSource: Equatable {
 }
 
 extension InputSource {
-    private static var _sources: [InputSource]?
+    // Process-lifetime cache, populated lazily on first access from main
+    // thread (Preferences UI). Carbon TIS isn't watched for changes here,
+    // so writes happen at most once per process.
+    nonisolated(unsafe) private static var _sources: [InputSource]?
 
     /// Cached list of selectable keyboard input sources. Carbon TIS doesn't
     /// fire change notifications when the user adds/removes layouts via

@@ -257,10 +257,17 @@ extension MenuManager {
         let showThumbnail = !clip.thumbnailPath.isEmpty &&
             ((!clip.isColorCode && settings.isShowImage) || (clip.isColorCode && settings.isShowColorCode))
         if showThumbnail {
-            ThumbnailCache.shared.object(forKeyAsync: clip.thumbnailPath) { [weak menuItem] image in
+            // Wrap the non-Sendable NSMenuItem / NSImage refs in main-thread
+            // boxes so Swift 6 strict concurrency lets us cross the cache's
+            // async boundary. WeakBox preserves the prior `[weak menuItem]`
+            // semantics — stale callbacks on a rebuilt menu drop quietly.
+            let menuBox = MainThreadWeakBox(menuItem)
+            ThumbnailCache.shared.object(forKeyAsync: clip.thumbnailPath) { image in
+                guard let image = image else { return }
+                let imageBox = MainThreadBox(image)
                 DispatchQueue.main.async {
-                    guard let menuItem = menuItem, let image = image else { return }
-                    MenuManager.setInlineImage(image, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 288)
+                    guard let menuItem = menuBox.value else { return }
+                    MenuManager.setInlineImage(imageBox.value, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 288)
                 }
             }
         } else if settings.isShowIcon && (primaryPboardType == .deprecatedFilenames || primaryPboardType == .fileURL) {
@@ -272,14 +279,16 @@ extension MenuManager {
                 MenuManager.setInlineImage(icon, on: menuItem, listNumber: listNumber, isMarkWithNumber: isMarkWithNumber, imageHeight: 16)
             } else {
                 let dataPath = clip.dataPath
-                DispatchQueue.global(qos: .userInitiated).async { [weak self, weak menuItem] in
+                let menuBox = MainThreadWeakBox(menuItem)
+                DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                     let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: dataPath)
                     guard let filePath = clipData?.fileNames.first else { return }
                     self?.filePathCache.setObject(filePath as NSString, forKey: cacheKey)
                     let icon = NSWorkspace.shared.icon(forFile: filePath)
+                    let iconBox = MainThreadBox(icon)
                     DispatchQueue.main.async {
-                        guard let menuItem = menuItem else { return }
-                        MenuManager.setInlineImage(icon, on: menuItem, listNumber: listNumber, isMarkWithNumber: isMarkWithNumber, imageHeight: 16)
+                        guard let menuItem = menuBox.value else { return }
+                        MenuManager.setInlineImage(iconBox.value, on: menuItem, listNumber: listNumber, isMarkWithNumber: isMarkWithNumber, imageHeight: 16)
                     }
                 }
             }

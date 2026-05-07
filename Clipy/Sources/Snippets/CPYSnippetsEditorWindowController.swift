@@ -12,7 +12,8 @@
 
 import Cocoa
 import RealmSwift
-import KeyHolder
+// See CPYShortcutsPreferenceViewController for why @preconcurrency.
+@preconcurrency import KeyHolder
 import UniformTypeIdentifiers
 import Magnet
 import AEXML
@@ -365,7 +366,8 @@ extension CPYSnippetsEditorWindowController: NSWindowDelegate {
 }
 
 // MARK: - RecordView Delegate
-extension CPYSnippetsEditorWindowController: RecordViewDelegate {
+// See CPYShortcutsPreferenceViewController for why @preconcurrency.
+@MainActor extension CPYSnippetsEditorWindowController: @preconcurrency RecordViewDelegate {
     func recordViewShouldBeginRecording(_ recordView: RecordView) -> Bool {
         guard selectedFolder != nil else { return false }
         return true

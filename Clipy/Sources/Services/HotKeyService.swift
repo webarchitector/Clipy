@@ -18,14 +18,18 @@ import RealmSwift
 final class HotKeyService: NSObject {
 
     // MARK: - Properties
-    static var defaultKeyCombos: [String: Any] = {
+    // Tightened from [String: Any] to a Sendable concrete type so Swift 6
+    // strict concurrency doesn't reject the static. Consumed only by
+    // CPYUtilities.registerUserDefaultKeys → defaults.register, which
+    // accepts [String: Any] via dictionary widening.
+    static let defaultKeyCombos: [String: [String: Int]] = [
         // MainMenu:    ⌘ + Shift + V
+        Constants.Menu.clip: ["keyCode": 9, "modifiers": 768],
         // HistoryMenu: ⌘ + Control + V
-        // SnipeetMenu: ⌘ + Shift B
-        return [Constants.Menu.clip: ["keyCode": 9, "modifiers": 768],
-                Constants.Menu.history: ["keyCode": 9, "modifiers": 4352],
-                Constants.Menu.snippet: ["keyCode": 11, "modifiers": 768]]
-    }()
+        Constants.Menu.history: ["keyCode": 9, "modifiers": 4352],
+        // SnippetMenu: ⌘ + Shift + B
+        Constants.Menu.snippet: ["keyCode": 11, "modifiers": 768]
+    ]
 
     fileprivate(set) var mainKeyCombo: KeyCombo?
     fileprivate(set) var historyKeyCombo: KeyCombo?

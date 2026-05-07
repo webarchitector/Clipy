@@ -66,7 +66,7 @@ private final class RemoteNetworkBlockerURLProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
-@NSApplicationMain
+@main
 class AppDelegate: NSObject, NSMenuItemValidation {
 
     // MARK: - Properties
@@ -104,12 +104,12 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     // MARK: - Menu Actions
     @objc func showPreferenceWindow() {
         NSApp.activate(ignoringOtherApps: true)
-        CPYPreferencesWindowController.sharedController.showWindow(self)
+        CPYPreferencesWindowController.sharedController.showWindow(nil)
     }
 
     @objc func showSnippetEditorWindow() {
         NSApp.activate(ignoringOtherApps: true)
-        CPYSnippetsEditorWindowController.sharedController.showWindow(self)
+        CPYSnippetsEditorWindowController.sharedController.showWindow(nil)
     }
 
     @objc func showClipboardHistoryWindow() {

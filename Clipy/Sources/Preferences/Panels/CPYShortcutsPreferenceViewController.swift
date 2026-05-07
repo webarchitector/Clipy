@@ -13,7 +13,12 @@
 // swiftlint:disable identifier_name
 
 import Cocoa
-import KeyHolder
+// @preconcurrency: KeyHolder's RecordViewDelegate isn't annotated for
+// Swift 6 strict concurrency, so its main-actor crossing surfaces as a
+// data-race error in our conformance. The protocol callbacks already
+// fire on main from KeyHolder's NSView subclass; the import opt-out
+// suppresses the warning until KeyHolder ships @MainActor annotations.
+@preconcurrency import KeyHolder
 import Magnet
 
 class CPYShortcutsPreferenceViewController: NSViewController {
@@ -201,7 +206,10 @@ private extension CPYShortcutsPreferenceViewController {
 }
 
 // MARK: - RecordView Delegate
-extension CPYShortcutsPreferenceViewController: RecordViewDelegate {
+// Conformance is unsafe-bridged because RecordViewDelegate isn't yet
+// marked @MainActor in KeyHolder; the callbacks fire from KeyHolder's
+// own main-thread NSView.
+@MainActor extension CPYShortcutsPreferenceViewController: @preconcurrency RecordViewDelegate {
     func recordViewShouldBeginRecording(_ recordView: RecordView) -> Bool {
         return true
     }

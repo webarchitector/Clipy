@@ -15,8 +15,12 @@ enum LauncherItem {
     case status(String)
 }
 
+// Driven entirely from the main thread (NSPanel UI). @unchecked Sendable
+// is the cheapest valid Swift 6 mark — actor isolation would cascade
+// through every NSWindowDelegate/NSSearchFieldDelegate/NSTableViewDataSource
+// method we already serialize on main.
 final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
-                         NSTableViewDataSource, NSTableViewDelegate {
+                         NSTableViewDataSource, NSTableViewDelegate, @unchecked Sendable {
 
     static let shared = AppLauncher()
 

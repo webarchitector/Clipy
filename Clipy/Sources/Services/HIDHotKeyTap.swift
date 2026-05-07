@@ -28,7 +28,11 @@ import Carbon
 import IOKit.hid
 import Magnet
 
-final class HIDHotKeyTap {
+// install() and tap state are touched only on the main thread. The
+// CGEventTap callback runs on a kernel-side thread but reaches the
+// instance via Unmanaged.fromOpaque, never via Swift-managed isolation.
+// @unchecked Sendable keeps this dual-life pattern intact under Swift 6.
+final class HIDHotKeyTap: @unchecked Sendable {
 
     static let shared = HIDHotKeyTap()
 

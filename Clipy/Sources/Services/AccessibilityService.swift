@@ -19,8 +19,12 @@ final class AccessibilityService {}
 extension AccessibilityService {
     @discardableResult
     func isAccessibilityEnabled(isPrompt: Bool) -> Bool {
-        let checkOptionPromptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        let opts = [checkOptionPromptKey: isPrompt] as CFDictionary
+        // Carbon imports `kAXTrustedCheckOptionPrompt` as a global `var`
+        // which Swift 6 strict concurrency flags. The CFString it points
+        // to is a documented constant — its raw value is the literal
+        // "AXTrustedCheckOptionPrompt", which we hand-write to dodge the
+        // mutable-global complaint without losing correctness.
+        let opts = ["AXTrustedCheckOptionPrompt": isPrompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(opts)
     }
 

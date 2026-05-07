@@ -8,7 +8,11 @@
 
 import Foundation
 
-final class Calculator {
+// Inputs come from the AppLauncher panel (main thread). Internal
+// currency-fetch network call hops to a URLSession callback on a private
+// queue, then dispatches results back to main before mutating cache.
+// @unchecked Sendable preserves that discipline under Swift 6 strict mode.
+final class Calculator: @unchecked Sendable {
 
     static let shared = Calculator()
 
@@ -234,7 +238,7 @@ final class Calculator {
                                 encoding: .utf8)
                 return true
             }()
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.pendingFetch = nil
                 if success {

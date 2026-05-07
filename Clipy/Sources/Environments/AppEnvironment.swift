@@ -15,7 +15,11 @@ import Foundation
 struct AppEnvironment {
 
     // MARK: - Properties
-    private static var _current = Environment()
+    // Single shared environment, swapped only by tests via replaceCurrent.
+    // App code reads it from main thread; tests mutate it before launching
+    // any service that captures it. nonisolated(unsafe) keeps the existing
+    // pattern under Swift 6 strict concurrency without an actor wrapper.
+    nonisolated(unsafe) private static var _current = Environment()
 
     static var current: Environment { _current }
 

@@ -205,15 +205,12 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        clipToken?.invalidate()
-        if let workspaceObserver = workspaceObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(workspaceObserver)
-        }
-        if let defaultsObserver = defaultsObserver {
-            NotificationCenter.default.removeObserver(defaultsObserver)
-        }
-    }
+    // No deinit cleanup: this is a `static let sharedController` singleton
+    // that lives for the process lifetime. Realm NotificationToken auto-
+    // invalidates with the Realm; block-based NSWorkspace / NotificationCenter
+    // observers auto-release on shutdown. Swift 6's nonisolated deinit can't
+    // touch main-actor properties anyway, and a Task hop here would race
+    // with process teardown.
 
     override func showWindow(_ sender: Any?) {
         rememberReturnApplication(NSWorkspace.shared.frontmostApplication)

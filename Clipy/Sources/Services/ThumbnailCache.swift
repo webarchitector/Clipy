@@ -9,7 +9,12 @@
 import AppKit
 import Foundation
 
-final class ThumbnailCache {
+// Thread-safe by construction: NSCache is internally lock-free, all
+// disk IO is funneled through `writeQueue`/`readQueue`, and other
+// fields are immutable after init. @unchecked Sendable keeps the
+// queue-based design intact under Swift 6 strict concurrency without
+// rewriting the cache as an actor.
+final class ThumbnailCache: @unchecked Sendable {
 
     static let shared = ThumbnailCache()
 
