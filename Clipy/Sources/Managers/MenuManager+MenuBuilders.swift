@@ -102,7 +102,7 @@ extension MenuManager {
         return (isMarkWithNumber) ? "\(listNumber). \(title)" : title
     }
 
-    static func setInlineImage(_ image: NSImage, on menuItem: NSMenuItem, listNumber: Int, isMarkWithNumber: Bool, imageHeight: CGFloat = 32) {
+    static func setInlineImage(_ image: NSImage, on menuItem: NSMenuItem, listNumber: Int, isMarkWithNumber: Bool, imageHeight: CGFloat = 32, maxWidth: CGFloat? = nil) {
         let font = menuItem.menu?.font ?? NSFont.menuFont(ofSize: 0)
         let result = NSMutableAttributedString()
         if isMarkWithNumber {
@@ -110,10 +110,18 @@ extension MenuManager {
         }
         let attachment = NSTextAttachment()
         attachment.image = image
-        // Scale proportionally to requested height
-        let aspect = image.size.width > 0 ? image.size.height / image.size.width : 1
-        let imageWidth = aspect > 0 ? imageHeight / aspect : imageHeight
-        attachment.bounds = CGRect(x: 0, y: font.descender, width: imageWidth, height: imageHeight)
+        let displayWidth: CGFloat
+        let displayHeight: CGFloat
+        if let maxWidth, image.size.width > 0, image.size.height > 0 {
+            let scale = min(maxWidth / image.size.width, imageHeight / image.size.height)
+            displayWidth = image.size.width * scale
+            displayHeight = image.size.height * scale
+        } else {
+            let aspect = image.size.width > 0 ? image.size.height / image.size.width : 1
+            displayWidth = aspect > 0 ? imageHeight / aspect : imageHeight
+            displayHeight = imageHeight
+        }
+        attachment.bounds = CGRect(x: 0, y: font.descender, width: displayWidth, height: displayHeight)
         result.append(NSAttributedString(attachment: attachment))
         result.append(NSAttributedString(string: " ", attributes: [.font: font]))
         let prefix = "\(listNumber). "
@@ -267,7 +275,9 @@ extension MenuManager {
                 let imageBox = MainThreadBox(image)
                 DispatchQueue.main.async {
                     guard let menuItem = menuBox.value else { return }
-                    MenuManager.setInlineImage(imageBox.value, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: 288)
+                    let thumbW = CGFloat(max(16, settings.thumbnailWidth))
+                    let thumbH = CGFloat(max(16, settings.thumbnailHeight))
+                    MenuManager.setInlineImage(imageBox.value, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: thumbH, maxWidth: thumbW)
                 }
             }
         } else if settings.isShowIcon && (primaryPboardType == .deprecatedFilenames || primaryPboardType == .fileURL) {
