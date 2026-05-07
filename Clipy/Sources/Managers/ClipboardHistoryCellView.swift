@@ -13,6 +13,21 @@ import Cocoa
 final class ClipboardHistoryCellView: NSTableCellView {
     static let reuseIdentifier = NSUserInterfaceItemIdentifier("ClipboardHistoryCellView")
 
+    // Relative-time formatters used by the timestamp label. Created once
+    // per process; both are thread-safe.
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        formatter.formattingContext = .standalone
+        return formatter
+    }()
+    private static let absoluteFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     private let thumbnailView: NSImageView = {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -23,6 +38,20 @@ final class ClipboardHistoryCellView: NSTableCellView {
         return imageView
     }()
     private let titleField = NSTextField(labelWithString: "")
+    private let timeLabel: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = NSFont.systemFont(ofSize: 11)
+        label.textColor = .secondaryLabelColor
+        label.alignment = .right
+        label.lineBreakMode = .byTruncatingTail
+        label.maximumNumberOfLines = 1
+        // Weak hugging horizontal so it gives space to the title when room
+        // is tight, but stays at its natural size most of the time.
+        label.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        label.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        return label
+    }()
     private var titleLeadingWithImage: NSLayoutConstraint?
     private var titleLeadingWithoutImage: NSLayoutConstraint?
     private var thumbnailWidthConstraint: NSLayoutConstraint?
@@ -34,7 +63,12 @@ final class ClipboardHistoryCellView: NSTableCellView {
 
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet {
-            titleField.textColor = backgroundStyle == .emphasized ? .alternateSelectedControlTextColor : .labelColor
+            let emphasized = backgroundStyle == .emphasized
+            titleField.textColor = emphasized ? .alternateSelectedControlTextColor : .labelColor
+            // Lighter shade of the same role so the timestamp stays
+            // legible-but-secondary in both regular and selected rows.
+            timeLabel.textColor = emphasized ? .alternateSelectedControlTextColor.withAlphaComponent(0.75)
+                                             : .secondaryLabelColor
         }
     }
 
@@ -52,6 +86,7 @@ final class ClipboardHistoryCellView: NSTableCellView {
 
         addSubview(thumbnailView)
         addSubview(titleField)
+        addSubview(timeLabel)
 
         let withImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
         let withoutImage = titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12)
@@ -69,8 +104,14 @@ final class ClipboardHistoryCellView: NSTableCellView {
             widthC,
             heightC,
             withoutImage,
-            titleField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            titleField.centerYAnchor.constraint(equalTo: centerYAnchor)
+            // Title fills horizontally up to the timestamp; timestamp sits
+            // flush to the right edge of the row.
+            titleField.trailingAnchor.constraint(lessThanOrEqualTo: timeLabel.leadingAnchor, constant: -8),
+            titleField.centerYAnchor.constraint(equalTo: centerYAnchor),
+            timeLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            timeLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            // Hard cap so a long timestamp can't push the title to nothing.
+            timeLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 96)
         ])
     }
 
@@ -94,6 +135,8 @@ final class ClipboardHistoryCellView: NSTableCellView {
         titleField.toolTip = settings.isShowToolTip
             ? String(entry.toolTip.prefix(settings.maxLengthOfToolTip))
             : nil
+
+        timeLabel.stringValue = ClipboardHistoryCellView.formatTimestamp(entry.updateTime)
 
         let wantsThumbnail = !entry.thumbnailPath.isEmpty &&
             ((!entry.isColorCode && settings.isShowImage) || (entry.isColorCode && settings.isShowColorCode))
@@ -133,6 +176,19 @@ final class ClipboardHistoryCellView: NSTableCellView {
         cache.countLimit = 200
         return cache
     }()
+
+    /// Compact timestamp for the right edge of each row. Recent clips read
+    /// as "5m"/"2h"/"yesterday"; anything older than a week falls back to a
+    /// short absolute date so the eye doesn't have to translate "8 weeks ago".
+    private static func formatTimestamp(_ unixTime: Int) -> String {
+        guard unixTime > 0 else { return "" }
+        let date = Date(timeIntervalSince1970: TimeInterval(unixTime))
+        let secondsAgo = Date().timeIntervalSince(date)
+        if secondsAgo < 7 * 86400 {
+            return relativeFormatter.localizedString(for: date, relativeTo: Date())
+        }
+        return absoluteFormatter.string(from: date)
+    }
 
     static func firstFilePath(from entry: ClipboardHistoryEntry) -> String? {
         let ptype = NSPasteboard.PasteboardType(rawValue: entry.primaryType)

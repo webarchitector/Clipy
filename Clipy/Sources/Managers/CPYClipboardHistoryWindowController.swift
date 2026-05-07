@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import Quartz
 import RealmSwift
 
 // MARK: - Data Model
@@ -20,6 +21,7 @@ struct ClipboardHistoryEntry: Equatable {
     let isColorCode: Bool
     let dataPath: String
     let primaryType: String
+    let updateTime: Int
 
     init(clip: CPYClip) {
         primaryKey = clip.dataHash
@@ -27,6 +29,7 @@ struct ClipboardHistoryEntry: Equatable {
         isColorCode = clip.isColorCode
         dataPath = clip.dataPath
         primaryType = clip.primaryType
+        updateTime = clip.updateTime
 
         // Use title stored in Realm (already contains preferredTitle from ClipService.save)
         let clipTitle = ClipboardHistoryEntry.sanitizedStoredTitle(clip.title)
@@ -100,19 +103,32 @@ struct ClipboardHistoryEntry: Equatable {
 
 // MARK: - Panel
 
-/// NSPanel subclass that adds a single key equivalent: Cmd+O fires
-/// "open in default app" so the user doesn't have to focus the table
-/// (they can stay in the search field and still trigger it). Matches
-/// the Cyrillic equivalent (Russian "о") too.
+/// NSPanel subclass that wires panel-level key equivalents:
+/// - Cmd+O / Cmd+О → open the selected entry in the default app
+/// - Cmd+1…9 / Cmd+0 → confirm the Nth visible entry (0 = 10th)
+///
+/// Both fire regardless of whether the search field or the table view is
+/// the first responder, so the user can quick-paste straight after
+/// hitting the history hotkey without ever moving focus.
 final class ClipboardHistoryPanel: NSPanel {
     var openInDefaultAppHandler: (() -> Void)?
+    var quickPasteHandler: ((Int) -> Void)?
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
-        if mods == .command,
-           let chars = event.charactersIgnoringModifiers?.lowercased(),
-           chars == "o" || chars == "о" {
+        guard mods == .command, let chars = event.charactersIgnoringModifiers?.lowercased() else {
+            return super.performKeyEquivalent(with: event)
+        }
+        if chars == "o" || chars == "о" {
             openInDefaultAppHandler?()
+            return true
+        }
+        // Cmd+1…9 → row index 0…8; Cmd+0 → row index 9. Matches the original
+        // NSMenu behaviour of `addNumericKeyEquivalents` so muscle memory
+        // carries over when users switch between menu and history window.
+        if let digit = Int(chars), (0...9).contains(digit) {
+            let index = (digit == 0) ? 9 : digit - 1
+            quickPasteHandler?(index)
             return true
         }
         return super.performKeyEquivalent(with: event)
@@ -125,6 +141,7 @@ final class ClipboardHistoryTableView: NSTableView {
     var confirmHandler: (() -> Void)?
     var cancelHandler: (() -> Void)?
     var openInDefaultAppHandler: (() -> Void)?
+    var quickLookHandler: (() -> Void)?
     var contextMenuProvider: ((Int) -> NSMenu?)?
 
     override func mouseDown(with event: NSEvent) {
@@ -151,6 +168,9 @@ final class ClipboardHistoryTableView: NSTableView {
             return
         case 53:
             cancelHandler?()
+            return
+        case 49:  // space — Quick Look toggle
+            quickLookHandler?()
             return
         default:
             break
@@ -219,6 +239,9 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         super.init(window: panel)
         panel.openInDefaultAppHandler = { [weak self] in
             self?.openSelectedInDefaultApp()
+        }
+        panel.quickPasteHandler = { [weak self] index in
+            self?.quickPaste(at: index)
         }
         configureWindow()
         configureContentView()
@@ -305,6 +328,9 @@ private extension CPYClipboardHistoryWindowController {
         }
         tableView.openInDefaultAppHandler = { [weak self] in
             self?.openSelectedInDefaultApp()
+        }
+        tableView.quickLookHandler = { [weak self] in
+            self?.toggleQuickLook()
         }
         tableView.contextMenuProvider = { [weak self] row in
             self?.makeContextMenu(forRow: row)
@@ -592,6 +618,19 @@ private extension CPYClipboardHistoryWindowController {
         openEntryInDefaultApp(entry)
     }
 
+    /// Cmd+1..9/0 quick-paste: select the Nth visible row and reuse the
+    /// existing confirmSelection flow so all the side effects (copy to
+    /// pasteboard, close window) match a normal Enter/click. Beep on miss.
+    func quickPaste(at index: Int) {
+        guard index >= 0, index < filteredEntries.count else {
+            NSSound.beep()
+            return
+        }
+        tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+        tableView.scrollRowToVisible(index)
+        confirmSelection(nil)
+    }
+
     func isOpenableEntry(_ entry: ClipboardHistoryEntry) -> Bool {
         return CPYClipboardHistoryWindowController.isOpenablePrimaryType(entry.primaryType)
     }
@@ -670,5 +709,100 @@ private extension CPYClipboardHistoryWindowController {
         } catch {
             return nil
         }
+    }
+}
+
+// MARK: - Quick Look
+
+/// QLPreviewItem wrapper. We give Quick Look a single item per invocation
+/// (the currently-selected row), materialised lazily as a temp file URL.
+private final class HistoryQuickLookItem: NSObject, QLPreviewItem {
+    let url: URL
+    let title: String
+    init(url: URL, title: String) {
+        self.url = url
+        self.title = title
+    }
+    var previewItemURL: URL? { url }
+    var previewItemTitle: String? { title }
+}
+
+// QLPreviewPanelDataSource ships pre-Swift-6 isolation; the panel only
+// ever calls these on main, so @preconcurrency suppresses the warning.
+@MainActor extension CPYClipboardHistoryWindowController: @preconcurrency QLPreviewPanelDataSource, @preconcurrency QLPreviewPanelDelegate {
+
+    /// Toggle Quick Look for the selected row. Bound to Space in the table.
+    /// Falls back to a beep when the entry can't be materialised — the user
+    /// should still feel a response rather than silent inaction.
+    func toggleQuickLook() {
+        guard selectedEntry != nil else { NSSound.beep(); return }
+        let panel = QLPreviewPanel.shared()!
+        if panel.isVisible {
+            panel.orderOut(nil)
+        } else {
+            panel.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
+
+    override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        panel.dataSource = self
+        panel.delegate = self
+    }
+
+    override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        panel.dataSource = nil
+        panel.delegate = nil
+    }
+
+    func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+        return selectedEntry == nil ? 0 : 1
+    }
+
+    func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> (any QLPreviewItem)! {
+        guard let entry = selectedEntry,
+              let url = quickLookURL(for: entry) else {
+            return nil
+        }
+        return HistoryQuickLookItem(url: url, title: entry.displayTitle)
+    }
+
+    /// Materialise an entry for Quick Look. Files reuse their original
+    /// path (lossless, no temp); image/PDF/text/url clips drop to a temp
+    /// file alongside the existing open-in-default-app temp files.
+    private func quickLookURL(for entry: ClipboardHistoryEntry) -> URL? {
+        let type = NSPasteboard.PasteboardType(rawValue: entry.primaryType)
+
+        if type == .deprecatedFilenames || type == .fileURL,
+           let path = ClipboardHistoryCellView.firstFilePath(from: entry) {
+            return URL(fileURLWithPath: path)
+        }
+
+        guard let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: entry.dataPath) else {
+            return nil
+        }
+
+        if type == .deprecatedTIFF || type == .tiff || type == .png,
+           let image = clipData.image,
+           let tiff = image.tiffRepresentation,
+           let bitmap = NSBitmapImageRep(data: tiff),
+           let png = bitmap.representation(using: .png, properties: [:]) {
+            return writeToTemp(data: png, ext: "png")
+        }
+
+        if type == .deprecatedPDF || type == .pdf, let data = clipData.PDF {
+            return writeToTemp(data: data, ext: "pdf")
+        }
+
+        // Fallback: any clip with a string body — including URLs and
+        // RTF-with-string-fallback — gets a quick `.txt` so QL renders a
+        // readable preview without needing per-format converters.
+        if !clipData.stringValue.isEmpty,
+           let body = clipData.stringValue.data(using: .utf8) {
+            return writeToTemp(data: body, ext: "txt")
+        }
+
+        return nil
     }
 }
