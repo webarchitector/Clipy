@@ -45,9 +45,6 @@
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
-                    <connections>
-                        <binding destination="Z9l-MW-Uqh" name="value" keyPath="values.kCPYEnableAutomaticCheckKey" id="tjj-eC-R6d"/>
-                    </connections>
                 </button>
                 <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NFR-pd-uFi">
                     <rect key="frame" x="333" y="98" width="116" height="26"/>
@@ -63,10 +60,6 @@
                             </items>
                         </menu>
                     </popUpButtonCell>
-                    <connections>
-                        <binding destination="Z9l-MW-Uqh" name="enabled" keyPath="values.kCPYEnableAutomaticCheckKey" id="OR6-xP-VwT"/>
-                        <binding destination="Z9l-MW-Uqh" name="selectedTag" keyPath="values.kCPYUpdateCheckIntervalKey" id="QmO-Rj-lIC"/>
-                    </connections>
                 </popUpButton>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="IJH-aY-lUJ">
                     <rect key="frame" x="171" y="12" width="140" height="17"/>

@@ -25,6 +25,10 @@ final class ClipboardHistoryCellView: NSTableCellView {
     private let titleField = NSTextField(labelWithString: "")
     private var titleLeadingWithImage: NSLayoutConstraint?
     private var titleLeadingWithoutImage: NSLayoutConstraint?
+    // Bumped on every configure() / prepareForReuse() so an in-flight async
+    // thumbnail load from a *previous* configure can't re-show an image after
+    // the user toggled Show Image / Show color preview off.
+    private var configureToken: UInt64 = 0
 
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet {
@@ -68,6 +72,9 @@ final class ClipboardHistoryCellView: NSTableCellView {
     }
 
     func configure(with entry: ClipboardHistoryEntry, settings: MenuSettings) {
+        configureToken &+= 1
+        let token = configureToken
+
         titleField.stringValue = entry.displayTitle
         titleField.toolTip = settings.isShowToolTip
             ? String(entry.toolTip.prefix(settings.maxLengthOfToolTip))
@@ -79,7 +86,7 @@ final class ClipboardHistoryCellView: NSTableCellView {
         if wantsThumbnail {
             ThumbnailCache.shared.object(forKeyAsync: entry.thumbnailPath) { [weak self] image in
                 DispatchQueue.main.async {
-                    guard let self = self, let image = image else { return }
+                    guard let self = self, self.configureToken == token, let image = image else { return }
                     self.showThumbnail(image)
                 }
             }
@@ -129,6 +136,7 @@ final class ClipboardHistoryCellView: NSTableCellView {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        configureToken &+= 1
         hideThumbnail()
     }
 }

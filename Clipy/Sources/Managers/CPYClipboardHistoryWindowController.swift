@@ -104,7 +104,6 @@ final class ClipboardHistoryTableView: NSTableView {
     var confirmHandler: (() -> Void)?
     var cancelHandler: (() -> Void)?
     var openInDefaultAppHandler: (() -> Void)?
-    var contextMenuProvider: ((Int) -> NSMenu?)?
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -130,16 +129,6 @@ final class ClipboardHistoryTableView: NSTableView {
         default:
             super.keyDown(with: event)
         }
-    }
-
-    override func menu(for event: NSEvent) -> NSMenu? {
-        let point = convert(event.locationInWindow, from: nil)
-        let clickedRow = row(at: point)
-        guard clickedRow >= 0 else { return nil }
-        // Mirror Finder/Mail UX: right-click selects the row before showing
-        // the context menu so the action's target is unambiguous.
-        selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
-        return contextMenuProvider?(clickedRow)
     }
 }
 
@@ -266,9 +255,12 @@ private extension CPYClipboardHistoryWindowController {
         tableView.openInDefaultAppHandler = { [weak self] in
             self?.openSelectedInDefaultApp()
         }
-        tableView.contextMenuProvider = { [weak self] row in
-            self?.makeContextMenu(forRow: row)
-        }
+        // Right-click context menu. AppKit walks up to NSTableView.menu when
+        // the cell has none, then asks the delegate to populate it lazily so
+        // we can switch items by row type at the moment of opening.
+        let contextMenu = NSMenu()
+        contextMenu.delegate = self
+        tableView.menu = contextMenu
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.borderType = .noBorder
@@ -489,21 +481,25 @@ extension CPYClipboardHistoryWindowController: NSTableViewDataSource, NSTableVie
 
 // MARK: - Open In Default App
 
-private extension CPYClipboardHistoryWindowController {
-    func makeContextMenu(forRow row: Int) -> NSMenu? {
-        guard row >= 0, row < filteredEntries.count else { return nil }
+extension CPYClipboardHistoryWindowController: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        let row = tableView.clickedRow
+        guard row >= 0, row < filteredEntries.count else { return }
         let entry = filteredEntries[row]
-        guard isOpenableEntry(entry) else { return nil }
-        let menu = NSMenu()
+        // Select the right-clicked row so the user sees what they're acting on.
+        tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        guard isOpenableEntry(entry) else { return }
         let item = NSMenuItem(title: "Open in Default App",
                               action: #selector(openContextMenuAction(_:)),
                               keyEquivalent: "")
         item.target = self
         item.representedObject = entry.primaryKey
         menu.addItem(item)
-        return menu
     }
+}
 
+private extension CPYClipboardHistoryWindowController {
     @objc func openContextMenuAction(_ sender: NSMenuItem) {
         guard let primaryKey = sender.representedObject as? String,
               let entry = filteredEntries.first(where: { $0.primaryKey == primaryKey }) else { return }
