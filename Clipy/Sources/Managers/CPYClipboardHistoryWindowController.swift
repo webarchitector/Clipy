@@ -130,6 +130,17 @@ final class ClipboardHistoryPanel: NSPanel {
             openInDefaultAppHandler?()
             return true
         }
+        // Cmd+C while the preview pane has a text selection: copy that
+        // text instead of the row. AppKit normally routes Cmd+C through
+        // the responder chain to NSTextView's `copy:`, but the table view
+        // tends to grab/restore first-responder around interaction so the
+        // chain isn't always hooked up by the time the keystroke arrives.
+        if chars == "c" || chars == "с",
+           let textView = firstResponder as? NSTextView,
+           textView.selectedRange().length > 0 {
+            textView.copy(nil)
+            return true
+        }
         // Cmd+Y mirrors Finder's Quick Look shortcut and works from any
         // focus — the table-view-level Space binding still works when the
         // table has focus, but Cmd+Y also fires while the search field is
