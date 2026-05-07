@@ -249,14 +249,17 @@ extension MenuManager {
 
     /// Map a vim-style nav keycode to the matching arrow-key keycode used
     /// by `menuManagerEventTapCallback` to rewrite events at the HID tap.
-    /// Latin 'j' (38) → ↓ (125), Latin 'k' (40) → ↑ (126); the same physical
-    /// keys produce 'о' / 'л' on JCUKEN, so keycode-based mapping covers
-    /// both layouts. nil = no mapping (pass through).
+    /// h (4) → ← (123), j (38) → ↓ (125), k (40) → ↑ (126), l (37) → → (124).
+    /// The same physical keys produce 'р' / 'о' / 'л' / 'д' on JCUKEN, so
+    /// keycode-based mapping covers both layouts. l/h enter and exit
+    /// submenus (snippet folders, "More clips" group). nil = pass through.
     /// Visible to tests via `@testable import Clipy`.
     func arrowKeyCodeForVimKey(_ keyCode: Int64) -> Int64? {
         switch keyCode {
-        case 38:  return 125
-        case 40:  return 126
+        case 4:   return 123  // h → ←
+        case 37:  return 124  // l → →
+        case 38:  return 125  // j → ↓
+        case 40:  return 126  // k → ↑
         default:  return nil
         }
     }
