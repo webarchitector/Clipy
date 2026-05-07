@@ -67,20 +67,23 @@ final class ClipboardHistoryCellView: NSTableCellView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(with entry: ClipboardHistoryEntry) {
+    func configure(with entry: ClipboardHistoryEntry, settings: MenuSettings) {
         titleField.stringValue = entry.displayTitle
-        titleField.toolTip = entry.toolTip
+        titleField.toolTip = settings.isShowToolTip
+            ? String(entry.toolTip.prefix(settings.maxLengthOfToolTip))
+            : nil
 
-        if !entry.thumbnailPath.isEmpty {
-            // Show cached thumbnail (image preview or color code)
+        let wantsThumbnail = !entry.thumbnailPath.isEmpty &&
+            ((!entry.isColorCode && settings.isShowImage) || (entry.isColorCode && settings.isShowColorCode))
+
+        if wantsThumbnail {
             ThumbnailCache.shared.object(forKeyAsync: entry.thumbnailPath) { [weak self] image in
                 DispatchQueue.main.async {
                     guard let self = self, let image = image else { return }
                     self.showThumbnail(image)
                 }
             }
-        } else if let filePath = ClipboardHistoryCellView.firstFilePath(from: entry) {
-            // Show system file icon for copied files
+        } else if settings.isShowIcon, let filePath = ClipboardHistoryCellView.firstFilePath(from: entry) {
             let icon = NSWorkspace.shared.icon(forFile: filePath)
             icon.size = NSSize(width: 32, height: 32)
             showThumbnail(icon)
