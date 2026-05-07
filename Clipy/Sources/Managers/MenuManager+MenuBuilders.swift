@@ -80,8 +80,17 @@ extension MenuManager {
             clipMenu.addItem(NSMenuItem(title: L10n.clearHistory, action: #selector(AppDelegate.clearAllHistory)))
         }
 
-        clipMenu.addItem(NSMenuItem(title: L10n.searchHistory + "...",
-                                    action: #selector(AppDelegate.showClipboardHistoryWindow)))
+        // ⌘F from inside the popup opens the searchable history window —
+        // NSMenu's built-in type-to-search only highlights by prefix and is
+        // capped at a 1-second buffer, so substring/multi-token search has
+        // to live in the standalone window. The keyEquivalent fires while
+        // the popup is up so the user reaches search without ever touching
+        // the mouse.
+        let searchItem = NSMenuItem(title: L10n.searchHistory + "...",
+                                    action: #selector(AppDelegate.showClipboardHistoryWindow),
+                                    keyEquivalent: "f")
+        searchItem.keyEquivalentModifierMask = [.command]
+        clipMenu.addItem(searchItem)
         clipMenu.addItem(NSMenuItem(title: L10n.editSnippets, action: #selector(AppDelegate.showSnippetEditorWindow)))
         clipMenu.addItem(NSMenuItem(title: L10n.preferences, action: #selector(AppDelegate.showPreferenceWindow)))
         clipMenu.addItem(NSMenuItem.separator())
