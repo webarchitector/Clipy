@@ -119,6 +119,7 @@ struct ClipboardHistoryEntry: Equatable {
 final class ClipboardHistoryPanel: NSPanel {
     var openInDefaultAppHandler: (() -> Void)?
     var quickPasteHandler: ((Int) -> Void)?
+    var quickLookHandler: (() -> Void)?
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
@@ -127,6 +128,14 @@ final class ClipboardHistoryPanel: NSPanel {
         }
         if chars == "o" || chars == "о" {
             openInDefaultAppHandler?()
+            return true
+        }
+        // Cmd+Y mirrors Finder's Quick Look shortcut and works from any
+        // focus — the table-view-level Space binding still works when the
+        // table has focus, but Cmd+Y also fires while the search field is
+        // focused (where Space is needed for typing).
+        if chars == "y" || chars == "н" {
+            quickLookHandler?()
             return true
         }
         // Cmd+1…9 → row index 0…8; Cmd+0 → row index 9. Matches the original
@@ -271,6 +280,9 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         }
         panel.quickPasteHandler = { [weak self] index in
             self?.quickPaste(at: index)
+        }
+        panel.quickLookHandler = { [weak self] in
+            self?.toggleQuickLook()
         }
         configureWindow()
         configureContentView()
