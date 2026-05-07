@@ -201,7 +201,9 @@ extension ClipService {
     }
     // swiftlint:enable empty_enum_arguments
 
-    private static func looksLikePassword(_ string: String) -> Bool {
+    // Visible to tests via `@testable import Clipy` — boundary is the
+     // ClipService module, not consumers of the public Clipy API.
+    static func looksLikePassword(_ string: String) -> Bool {
         if string.isEmpty { return false }
         let upper = CharacterSet.uppercaseLetters
         let lower = CharacterSet.lowercaseLetters

@@ -49,7 +49,8 @@ final class DataCleanService {
         cleanFiles(with: realm)
     }
 
-    private func overflowingClips(with realm: Realm) -> Results<CPYClip> {
+    // Visible to tests via `@testable import Clipy`.
+    func overflowingClips(with realm: Realm) -> Results<CPYClip> {
         let clips = realm.objects(CPYClip.self).sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: false)
         let maxHistorySize = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxHistorySize)
 

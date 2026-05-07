@@ -17,6 +17,11 @@
 		FA0157B11E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157B01E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift */; };
 		FA0157B31E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */; };
 		FA0157B51E48A0C7000DEDA4 /* RealmMigrationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */; };
+		AB01000000000000000A0002 /* ClipboardHistoryEntrySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */; };
+		AB01000000000000000A0004 /* DataCleanOverflowSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */; };
+		AB01000000000000000A0006 /* ClipServicePasswordHeuristicSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */; };
+		AB01000000000000000A0008 /* MenuSettingsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0007 /* MenuSettingsSpec.swift */; };
+		AB01000000000000000A000A /* ExcludeAppServiceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0009 /* ExcludeAppServiceSpec.swift */; };
 		FA0157061E48A0C7000DEDA1 /* Quick in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157041E48A0C7000DEDA1 /* Quick */; };
 		FA0157071E48A0C7000DEDA1 /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157051E48A0C7000DEDA1 /* Nimble */; };
 		FA01570B1E48A0C7000DEDA1 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = FA0157091E48A0C7000DEDA1 /* RealmSwift */; };
@@ -140,6 +145,11 @@
 		FA0157B01E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserDefaultsCombineSpec.swift; sourceTree = "<group>"; };
 		FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoryOpenInDefaultAppSpec.swift; sourceTree = "<group>"; };
 		FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RealmMigrationSpec.swift; sourceTree = "<group>"; };
+		AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryEntrySpec.swift; sourceTree = "<group>"; };
+		AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataCleanOverflowSpec.swift; sourceTree = "<group>"; };
+		AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipServicePasswordHeuristicSpec.swift; sourceTree = "<group>"; };
+		AB01000000000000000A0007 /* MenuSettingsSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuSettingsSpec.swift; sourceTree = "<group>"; };
+		AB01000000000000000A0009 /* ExcludeAppServiceSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExcludeAppServiceSpec.swift; sourceTree = "<group>"; };
 		19A258C00A4EBB4BA95FA4A5 /* CPYClipDataSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYClipDataSpec.swift; sourceTree = "<group>"; };
 		1C2D23FF23B07B76585DC610 /* Dependencies-ClipyTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.release.xcconfig"; sourceTree = "<group>"; };
 		1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "MenuManager+MenuBuilders.swift"; sourceTree = "<group>"; };
@@ -624,6 +634,11 @@
 				FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */,
 				FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */,
 				FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */,
+				AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */,
+				AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */,
+				AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */,
+				AB01000000000000000A0007 /* MenuSettingsSpec.swift */,
+				AB01000000000000000A0009 /* ExcludeAppServiceSpec.swift */,
 				FAC43DDC1B35D8B100C06102 /* Supporting Files */,
 				9E713A47C4F6F391C4C93C0E /* AppLauncher */,
 				FA0157A91E48A0C7000DEDA1 /* InputSource */,
@@ -972,6 +987,11 @@
 				FA0157B11E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift in Sources */,
 				FA0157B31E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift in Sources */,
 				FA0157B51E48A0C7000DEDA4 /* RealmMigrationSpec.swift in Sources */,
+				AB01000000000000000A0002 /* ClipboardHistoryEntrySpec.swift in Sources */,
+				AB01000000000000000A0004 /* DataCleanOverflowSpec.swift in Sources */,
+				AB01000000000000000A0006 /* ClipServicePasswordHeuristicSpec.swift in Sources */,
+				AB01000000000000000A0008 /* MenuSettingsSpec.swift in Sources */,
+				AB01000000000000000A000A /* ExcludeAppServiceSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
