@@ -140,12 +140,17 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
 
     private var clipToken: NotificationToken?
     private var workspaceObserver: NSObjectProtocol?
+    private var defaultsObserver: NSObjectProtocol?
     private var entries = [ClipboardHistoryEntry]()
     private var filteredEntries = [ClipboardHistoryEntry]()
     private var returnApplication: NSRunningApplication?
     private var isWindowVisible = false
     private var pendingReload = false
     private var reloadWorkItem: DispatchWorkItem?
+    // Mirrors the menu's preview settings (Show Image / Show color preview /
+    // Show tool tip / Show icon / max tooltip length) so the cell view honors
+    // the same Preferences > Menu toggles. Refreshed on didChange.
+    private var settings = MenuSettings()
 
     init() {
         // NSPanel (not NSWindow) so showing the history doesn't require
@@ -161,6 +166,7 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         configureContentView()
         observeWorkspace()
         observeClips()
+        observeDefaults()
     }
 
     required init?(coder: NSCoder) {
@@ -172,6 +178,9 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         if let workspaceObserver = workspaceObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(workspaceObserver)
         }
+        if let defaultsObserver = defaultsObserver {
+            NotificationCenter.default.removeObserver(defaultsObserver)
+        }
     }
 
     override func showWindow(_ sender: Any?) {
@@ -181,6 +190,7 @@ final class CPYClipboardHistoryWindowController: NSWindowController {
         pendingReload = false
         reloadWorkItem?.cancel()
         reloadWorkItem = nil
+        settings = MenuSettings()
         reloadEntries()
         super.showWindow(sender)
         window?.backgroundColor = .windowBackgroundColor
@@ -292,6 +302,20 @@ private extension CPYClipboardHistoryWindowController {
         }
         reloadWorkItem = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: item)
+    }
+
+    func observeDefaults() {
+        defaultsObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            self.settings = MenuSettings()
+            if self.isWindowVisible {
+                self.tableView.reloadData()
+            }
+        }
     }
 
     func observeWorkspace() {
@@ -436,7 +460,7 @@ extension CPYClipboardHistoryWindowController: NSTableViewDataSource, NSTableVie
         let entry = filteredEntries[row]
         let cellView = (tableView.makeView(withIdentifier: ClipboardHistoryCellView.reuseIdentifier, owner: nil) as? ClipboardHistoryCellView)
             ?? ClipboardHistoryCellView(frame: .zero)
-        cellView.configure(with: entry)
+        cellView.configure(with: entry, settings: settings)
         return cellView
     }
 }
