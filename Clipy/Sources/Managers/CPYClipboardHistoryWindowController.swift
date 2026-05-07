@@ -537,16 +537,7 @@ private extension CPYClipboardHistoryWindowController {
 
     func applyFilter(_ query: String) {
         let selectedPrimaryKey = selectedEntry?.primaryKey
-        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if trimmedQuery.isEmpty {
-            filteredEntries = entries
-        } else {
-            filteredEntries = entries.filter {
-                $0.searchText.localizedCaseInsensitiveContains(trimmedQuery)
-            }
-        }
-
+        filteredEntries = CPYClipboardHistoryWindowController.filter(entries: entries, query: query)
         tableView.reloadData()
         updateEmptyState()
         restoreSelection(primaryKey: selectedPrimaryKey)
@@ -718,6 +709,17 @@ extension CPYClipboardHistoryWindowController: NSSplitViewDelegate {
 // MARK: - Open In Default App
 
 extension CPYClipboardHistoryWindowController {
+    /// Pure filter — empty / whitespace-only query passes everything through,
+    /// otherwise locale-aware case-insensitive substring match against
+    /// `ClipboardHistoryEntry.searchText` (which already carries title +
+    /// content). Extracted from the instance-level `applyFilter` so tests
+    /// can exercise the matching rules without spinning up the panel.
+    static func filter(entries: [ClipboardHistoryEntry], query: String) -> [ClipboardHistoryEntry] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return entries }
+        return entries.filter { $0.searchText.localizedCaseInsensitiveContains(trimmed) }
+    }
+
     /// Whether a clip with this pasteboard type can be opened in an external
     /// app. Pure (no instance state), so the spec exercises it directly.
     static func isOpenablePrimaryType(_ rawType: String) -> Bool {

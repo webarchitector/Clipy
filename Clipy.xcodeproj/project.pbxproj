@@ -14,6 +14,7 @@
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
 		3FA2F63A208748C582EF3A31 /* AppLauncherServicePersistenceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC2B70A04994CAABA2BEF2E /* AppLauncherServicePersistenceSpec.swift */; };
+		2D9986BC68C844CB9C79A521 /* HistoryFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A87CC5D99B04C87B7D8CDF0 /* HistoryFilterSpec.swift */; };
 		FA0157AB1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157AA1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift */; };
 		FA0157B11E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157B01E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift */; };
 		FA0157B31E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */; };
@@ -153,6 +154,7 @@
 		06FE7CFE9A728D565FAD6CB7 /* LauncherPanel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LauncherPanel.swift; sourceTree = "<group>"; };
 		0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalculatorMathSpec.swift; sourceTree = "<group>"; };
 		2CC2B70A04994CAABA2BEF2E /* AppLauncherServicePersistenceSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLauncherServicePersistenceSpec.swift; sourceTree = "<group>"; };
+		3A87CC5D99B04C87B7D8CDF0 /* HistoryFilterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoryFilterSpec.swift; sourceTree = "<group>"; };
 		FA0157AA1E48A0C7000DEDA1 /* InputSourceServiceDedupSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputSourceServiceDedupSpec.swift; sourceTree = "<group>"; };
 		FA0157B01E48A0C7000DEDA2 /* UserDefaultsCombineSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserDefaultsCombineSpec.swift; sourceTree = "<group>"; };
 		FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoryOpenInDefaultAppSpec.swift; sourceTree = "<group>"; };
@@ -660,6 +662,7 @@
 				FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */,
 				FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */,
 				AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */,
+				3A87CC5D99B04C87B7D8CDF0 /* HistoryFilterSpec.swift */,
 				AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */,
 				AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */,
 				AB01000000000000000A0007 /* MenuSettingsSpec.swift */,
@@ -1024,6 +1027,7 @@
 				FA0157B31E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift in Sources */,
 				FA0157B51E48A0C7000DEDA4 /* RealmMigrationSpec.swift in Sources */,
 				AB01000000000000000A0002 /* ClipboardHistoryEntrySpec.swift in Sources */,
+				2D9986BC68C844CB9C79A521 /* HistoryFilterSpec.swift in Sources */,
 				AB01000000000000000A0004 /* DataCleanOverflowSpec.swift in Sources */,
 				AB01000000000000000A0006 /* ClipServicePasswordHeuristicSpec.swift in Sources */,
 				AB01000000000000000A0008 /* MenuSettingsSpec.swift in Sources */,
