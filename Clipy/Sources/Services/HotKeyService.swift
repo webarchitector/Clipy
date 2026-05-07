@@ -197,6 +197,17 @@ extension HotKeyService {
     }
 
     func registerSnippetHotKey(with identifier: String, keyCombo: KeyCombo) {
+        // Drop any other folder already bound to this exact combo so the
+        // last write wins consistently both in HotKeyCenter and in stored
+        // defaults — without this dedup the orphaned identifier stays in
+        // `folderKeyCombos` and HotKeyCenter has no way to fire it back.
+        if let existing = folderKeyCombos {
+            for (otherIdentifier, otherCombo) in existing where otherIdentifier != identifier
+                && otherCombo.currentKeyCode == keyCombo.currentKeyCode
+                && otherCombo.modifiers == keyCombo.modifiers {
+                unregisterSnippetHotKey(with: otherIdentifier)
+            }
+        }
         // Reset hotkey
         unregisterSnippetHotKey(with: identifier)
         // Register new hotkey
