@@ -85,6 +85,25 @@ private func menuManagerEventTapCallback(proxy: CGEventTapProxy, type: CGEventTy
         return Unmanaged.passUnretained(event)
     }
 
+    // Right-click on a clip menu item → open in default app, swallow the
+    // event so NSMenu doesn't dismiss into nothingness. Local NSEvent
+    // monitors don't see mouse events during NSMenu tracking; the CGEvent
+    // tap does. We're already on the main runloop here, so direct AppKit
+    // access is safe.
+    if type == .rightMouseDown {
+        guard let menu = manager.currentPopupMenu,
+              let item = menu.highlightedItem,
+              item.action == #selector(AppDelegate.selectClipMenuItem(_:)),
+              let primaryKey = item.representedObject as? String else {
+            return Unmanaged.passUnretained(event)
+        }
+        menu.cancelTrackingWithoutAnimation()
+        DispatchQueue.main.async {
+            CPYClipboardHistoryWindowController.openClipInDefaultApp(primaryKey: primaryKey)
+        }
+        return nil
+    }
+
     guard type == .keyDown else { return Unmanaged.passUnretained(event) }
     guard manager.currentPopupMenu != nil else { return Unmanaged.passUnretained(event) }
 
@@ -172,7 +191,8 @@ extension MenuManager {
             tap: .cghidEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
-            eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
+            eventsOfInterest: CGEventMask((1 << CGEventType.keyDown.rawValue)
+                                          | (1 << CGEventType.rightMouseDown.rawValue)),
             callback: menuManagerEventTapCallback,
             userInfo: refcon
         ) else { return }
@@ -254,11 +274,38 @@ extension MenuManager {
         currentPopupMenu = menu
         pendingMenuType = nil
         installEventTap(for: type)
+        let rightClickMonitor = installPopupRightClickMonitor()
         menu?.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+        if let rightClickMonitor = rightClickMonitor {
+            NSEvent.removeMonitor(rightClickMonitor)
+        }
         currentPopupMenu = nil
         removeEventTap()
         handlePendingMenu()
         flushPendingRebuildIfNeeded()
+    }
+
+    /// While a clipboard popup is up, watch for right-mouse-down on the
+    /// highlighted item. If it's a clip-menu item with a known primary key
+    /// and the clip is openable (image / PDF / file) — open it in the
+    /// default app and cancel menu tracking. NSMenu has no native
+    /// right-click hook on its items, so we bolt one on with a local event
+    /// monitor that fires during NSMenu's own modal tracking loop.
+    private func installPopupRightClickMonitor() -> Any? {
+        return NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
+            guard let self = self,
+                  let menu = self.currentPopupMenu,
+                  let item = menu.highlightedItem,
+                  item.action == #selector(AppDelegate.selectClipMenuItem(_:)),
+                  let primaryKey = item.representedObject as? String else {
+                return event
+            }
+            menu.cancelTrackingWithoutAnimation()
+            DispatchQueue.main.async {
+                CPYClipboardHistoryWindowController.openClipInDefaultApp(primaryKey: primaryKey)
+            }
+            return nil
+        }
     }
 
     func showClipboardHistoryWindow() {

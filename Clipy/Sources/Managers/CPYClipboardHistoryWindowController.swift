@@ -656,6 +656,76 @@ extension CPYClipboardHistoryWindowController {
             return false
         }
     }
+
+    /// Open a clip's payload in the default app by primary key. Shared by the
+    /// history window's right-click + Cmd+O surfaces and the menu-bar popup
+    /// menu's right-click monitor (`MenuManager.installPopupRightClickMonitor`).
+    static func openClipInDefaultApp(primaryKey: String) {
+        guard let realm = Realm.safeInstance(),
+              let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else {
+            NSSound.beep()
+            return
+        }
+        openClipInDefaultApp(rawType: clip.primaryType, dataPath: clip.dataPath, primaryKey: primaryKey)
+    }
+
+    static func openClipInDefaultApp(rawType: String, dataPath: String, primaryKey: String) {
+        let type = NSPasteboard.PasteboardType(rawValue: rawType)
+
+        if type == .deprecatedFilenames || type == .fileURL {
+            if let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: dataPath),
+               let path = clipData.fileNames.first {
+                openURL(URL(fileURLWithPath: path))
+                return
+            }
+            NSSound.beep()
+            return
+        }
+
+        guard let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: dataPath) else {
+            NSLog("CPYClipboardHistoryWindow: failed to unarchive clip at \(dataPath)")
+            NSSound.beep()
+            return
+        }
+
+        if type == .deprecatedTIFF || type == .tiff || type == .png {
+            guard let image = clipData.image,
+                  let tiff = image.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiff),
+                  let png = bitmap.representation(using: .png, properties: [:]),
+                  let url = writeToTempFile(data: png, ext: "png") else {
+                NSLog("CPYClipboardHistoryWindow: failed to materialise PNG for clip \(primaryKey)")
+                NSSound.beep()
+                return
+            }
+            openURL(url)
+            return
+        }
+
+        if type == .deprecatedPDF || type == .pdf {
+            guard let data = clipData.PDF, let url = writeToTempFile(data: data, ext: "pdf") else {
+                NSLog("CPYClipboardHistoryWindow: failed to materialise PDF for clip \(primaryKey)")
+                NSSound.beep()
+                return
+            }
+            openURL(url)
+            return
+        }
+
+        NSLog("CPYClipboardHistoryWindow: nothing to open for type \(rawType)")
+        NSSound.beep()
+    }
+
+    static func writeToTempFile(data: Data, ext: String) -> URL? {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clipy-\(UUID().uuidString).\(ext)")
+        do {
+            try data.write(to: url)
+            return url
+        } catch {
+            return nil
+        }
+    }
 }
 
 private extension CPYClipboardHistoryWindowController {
@@ -729,59 +799,18 @@ private extension CPYClipboardHistoryWindowController {
     }
 
     func openEntryInDefaultApp(_ entry: ClipboardHistoryEntry) {
-        let type = NSPasteboard.PasteboardType(rawValue: entry.primaryType)
-
-        // File-type clips: open the underlying file/URL directly so the
-        // user gets the real file (covers images, video, audio, anything).
-        if type == .deprecatedFilenames || type == .fileURL {
-            if let path = ClipboardHistoryCellView.firstFilePath(from: entry) {
-                Self.openURL(URL(fileURLWithPath: path))
-                return
-            }
-            NSSound.beep()
-            return
-        }
-
-        guard let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: entry.dataPath) else {
-            NSLog("CPYClipboardHistoryWindow: failed to unarchive clip at \(entry.dataPath)")
-            NSSound.beep()
-            return
-        }
-
-        // Image-data clips (e.g. screenshots) — dump to a temp PNG and let
-        // LaunchServices route to the user's default image viewer.
-        if type == .deprecatedTIFF || type == .tiff || type == .png {
-            guard let image = clipData.image,
-                  let tiff = image.tiffRepresentation,
-                  let bitmap = NSBitmapImageRep(data: tiff),
-                  let png = bitmap.representation(using: .png, properties: [:]),
-                  let url = writeToTemp(data: png, ext: "png") else {
-                NSLog("CPYClipboardHistoryWindow: failed to materialise PNG for clip \(entry.primaryKey)")
-                NSSound.beep()
-                return
-            }
-            Self.openURL(url)
-            return
-        }
-
-        if type == .deprecatedPDF || type == .pdf {
-            guard let data = clipData.PDF, let url = writeToTemp(data: data, ext: "pdf") else {
-                NSLog("CPYClipboardHistoryWindow: failed to materialise PDF for clip \(entry.primaryKey)")
-                NSSound.beep()
-                return
-            }
-            Self.openURL(url)
-            return
-        }
-
-        NSLog("CPYClipboardHistoryWindow: nothing to open for type \(entry.primaryType)")
-        NSSound.beep()
+        Self.openClipInDefaultApp(rawType: entry.primaryType,
+                                  dataPath: entry.dataPath,
+                                  primaryKey: entry.primaryKey)
     }
+}
 
+private extension CPYClipboardHistoryWindowController {
     /// Open a URL through LaunchServices. Logs the underlying error if it
     /// fails (silent failures are otherwise indistinguishable from "user
-    /// app refused to launch").
-    private static func openURL(_ url: URL) {
+    /// app refused to launch"). File-private; both static and instance
+    /// open-paths funnel through here.
+    static func openURL(_ url: URL) {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
         NSWorkspace.shared.open(url, configuration: configuration) { app, error in
@@ -790,17 +819,6 @@ private extension CPYClipboardHistoryWindowController {
             } else if app == nil {
                 NSLog("CPYClipboardHistoryWindow: NSWorkspace.open(\(url.path)) returned nil app, no error")
             }
-        }
-    }
-
-    func writeToTemp(data: Data, ext: String) -> URL? {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clipy-\(UUID().uuidString).\(ext)")
-        do {
-            try data.write(to: url)
-            return url
-        } catch {
-            return nil
         }
     }
 }
@@ -881,11 +899,11 @@ private final class HistoryQuickLookItem: NSObject, QLPreviewItem {
            let tiff = image.tiffRepresentation,
            let bitmap = NSBitmapImageRep(data: tiff),
            let png = bitmap.representation(using: .png, properties: [:]) {
-            return writeToTemp(data: png, ext: "png")
+            return Self.writeToTempFile(data: png, ext: "png")
         }
 
         if type == .deprecatedPDF || type == .pdf, let data = clipData.PDF {
-            return writeToTemp(data: data, ext: "pdf")
+            return Self.writeToTempFile(data: data, ext: "pdf")
         }
 
         // Fallback: any clip with a string body — including URLs and
@@ -893,7 +911,7 @@ private final class HistoryQuickLookItem: NSObject, QLPreviewItem {
         // readable preview without needing per-format converters.
         if !clipData.stringValue.isEmpty,
            let body = clipData.stringValue.data(using: .utf8) {
-            return writeToTemp(data: body, ext: "txt")
+            return Self.writeToTempFile(data: body, ext: "txt")
         }
 
         return nil
