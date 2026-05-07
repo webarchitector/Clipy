@@ -152,8 +152,8 @@ final class ClipboardHistoryPanel: NSPanel {
         // Cmd+1…9 → row index 0…8; Cmd+0 → row index 9. Matches the original
         // NSMenu behaviour of `addNumericKeyEquivalents` so muscle memory
         // carries over when users switch between menu and history window.
-        if let digit = Int(chars), (0...9).contains(digit) {
-            let index = (digit == 0) ? 9 : digit - 1
+        if let digit = Int(chars),
+           let index = CPYClipboardHistoryWindowController.quickPasteIndex(forDigit: digit) {
             quickPasteHandler?(index)
             return true
         }
@@ -550,20 +550,13 @@ private extension CPYClipboardHistoryWindowController {
     }
 
     func restoreSelection(primaryKey: String?) {
-        guard !filteredEntries.isEmpty else {
+        guard let row = CPYClipboardHistoryWindowController
+                .restoreIndex(in: filteredEntries, primaryKey: primaryKey) else {
             tableView.deselectAll(nil)
             return
         }
-
-        if let primaryKey = primaryKey,
-           let row = filteredEntries.firstIndex(where: { $0.primaryKey == primaryKey }) {
-            tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-            tableView.scrollRowToVisible(row)
-            return
-        }
-
-        tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
-        tableView.scrollRowToVisible(0)
+        tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        tableView.scrollRowToVisible(row)
     }
 
     var selectedEntry: ClipboardHistoryEntry? {
@@ -910,10 +903,9 @@ private extension CPYClipboardHistoryWindowController {
     /// Re-resolves primary keys before deleting so a Realm reload can't
     /// invalidate the clip references mid-loop.
     func deleteSelectedEntries() {
-        let indexes = tableView.selectedRowIndexes
-        guard !indexes.isEmpty else { NSSound.beep(); return }
-        let primaryKeys = indexes
-            .compactMap { $0 < filteredEntries.count ? filteredEntries[$0].primaryKey : nil }
+        let primaryKeys = CPYClipboardHistoryWindowController
+            .primaryKeysToDelete(at: tableView.selectedRowIndexes, in: filteredEntries)
+        guard !primaryKeys.isEmpty else { NSSound.beep(); return }
         guard let realm = Realm.safeInstance() else { return }
         let clipService = AppEnvironment.current.clipService
         for primaryKey in primaryKeys {
