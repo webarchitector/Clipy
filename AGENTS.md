@@ -10,6 +10,7 @@ For finding classes, methods, call paths, references — query the `codebase-mem
 
 - Clipy is a macOS menu bar clipboard manager built with Swift and AppKit.
 - Core app code lives in `Clipy/`; tests live in `ClipyTests/`.
+- **Swift 6.0 language mode** with strict concurrency enabled (`SWIFT_VERSION = 6.0`). Toolchain is whatever Xcode ships; min macOS deployment target stays at 13.0.
 - Persistence uses Realm 20.x via Swift Package Manager. Reactive behavior uses Combine (no RxSwift). Test stack is Quick 7.x + Nimble 14.x via SPM. Global hotkeys use Magnet.
 - Most third-party code is still vendored locally under `vendor/` (AEXML, KeyHolder, LoginServiceKit, Magnet, Sauce, Screeen). Realm/Quick/Nimble were migrated off vendor and now resolve via SPM.
 - This fork is intentionally offline-first: update checks (Sparkle is fully removed), analytics, and general remote network access are disabled in the app runtime.
@@ -42,8 +43,19 @@ For finding classes, methods, call paths, references — query the `codebase-mem
 - App Launcher and Input Source services bootstrap from `AppDelegate.applicationDidFinishLaunching`, called sequentially after `hotKeyService.setupDefaultHotKeys()`. `AppLauncherService.setupHotKey()` schedules a 200 ms `AppLauncher.shared.preload()` so the first ⌘Space allocation isn't on the critical path. `InputSourceService.setupHotKeys()` iterates every `InputSource.sources` entry and re-registers from stored KeyCombos.
 - The Shortcuts preference XIB carries five static rows (App Launcher / Main / History / Snippets at the top inside container `uTq-IP-dYk`, Clear History at the bottom inside container `zgf-1z-HW3`). Layouts rows are appended programmatically by `CPYShortcutsPreferenceViewController.appendInputSourcesSection()` after the XIB loads — the parent view is resized and existing subviews slide up via `flexibleMinY` autoresizing, freeing low-y space for the dynamic section. If the source count would push the section past 360 px, the rows are wrapped in an `NSScrollView`.
 - `MenuManager` rebuilds menus from Realm notifications with debounce. If clips, snippets, or related preferences change, verify menu refresh behavior still works.
-- Prefer adding or updating Quick/Nimble specs for behavior changes. Existing tests often clean up `UserDefaults` explicitly in `beforeEach` and `afterEach`.
+- Prefer adding or updating Quick/Nimble specs for behavior changes. Under Swift 6 Quick's `it` closures are `@Sendable` — **don't capture spec-scoped `var`s** (Realm/UserDefaults/service instances) across `it` closures. Build per-test fixtures with local `func makeRealm() -> Realm`, `func makeIsolatedDefaults()`, etc., and clean up via `defer` inside the `it`. The pattern is established across `DataCleanOverflowSpec`, `PasteServiceCacheSpec`, `UserDefaultsCombineSpec`, etc.
 - For localization work, keep English/base UI in XIBs and update localized `.strings` for other languages. See `.github/CONTRIBUTING.md` for the repository’s localization convention.
+
+## Swift 6 / Sendable Conventions
+
+- The migration is complete; new code is expected to type-check under strict concurrency. The escape hatches we already use:
+  - **`@unchecked Sendable`** on long-lived singletons whose internals are queue-protected (`ThumbnailCache`, `HIDHotKeyTap`, `AppIndex`, `AppLauncher`, `Calculator`). Each is documented at the declaration with the thread-safety contract.
+  - **`nonisolated(unsafe)` on static globals** (`AppEnvironment._current`, `CPYUtilities.interactiveWindows`, `HotKeyService.defaultKeyCombos` was tightened to `[String: [String: Int]]` and is `let`, `InputSource._sources`, `InputSourceService.HotKeyTarget.associationKey`).
+  - **`@preconcurrency import KeyHolder`** + `@MainActor extension … @preconcurrency RecordViewDelegate` on the two `CPY*Controller`s — KeyHolder hasn't shipped Swift 6 annotations yet, this is the supported workaround.
+- **`Clipy/Sources/Utility/MainThreadBox.swift`** provides `MainThreadBox<T>` (struct, strong) and `MainThreadWeakBox<T: AnyObject>` (class, weak) for handing non-Sendable AppKit/Foundation references (`NSMenuItem`, `NSImage`, `TISInputSource`) across `DispatchQueue` boundaries when the receiver only ever consumes them on main. Use these instead of unsafe casts. Existing call sites: `MenuManager+MenuBuilders` (thumbnail + file-icon paths), `InputSource.select()`, `InputSourceService.HotKeyTarget.fire`.
+- `NSWindowController.showWindow(_:)` is `@MainActor` — pass `nil`, not `self`, when `self` isn't Sendable. See `MenuManager.showClipboardHistoryWindow` and `AppDelegate.showPreferenceWindow` / `showSnippetEditorWindow`.
+- `NSWindowController.deinit` is `nonisolated`, so it can't touch main-actor stored properties under Swift 6. The shared singletons we have (`CPYClipboardHistoryWindowController.sharedController`) live for the process lifetime — leave their `deinit` empty rather than reaching for `MainActor.assumeIsolated` from teardown.
+- Do not introduce `static var` shared mutable state without a Sendable contract; either make it `let`, wrap it in an actor, or annotate `nonisolated(unsafe)` with a comment justifying the thread access pattern.
 
 ## Build And Test
 
