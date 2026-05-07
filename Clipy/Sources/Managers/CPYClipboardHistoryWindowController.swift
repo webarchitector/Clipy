@@ -103,6 +103,8 @@ struct ClipboardHistoryEntry: Equatable {
 final class ClipboardHistoryTableView: NSTableView {
     var confirmHandler: (() -> Void)?
     var cancelHandler: (() -> Void)?
+    var openInDefaultAppHandler: (() -> Void)?
+    var contextMenuProvider: ((Int) -> NSMenu?)?
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -116,14 +118,28 @@ final class ClipboardHistoryTableView: NSTableView {
     }
 
     override func keyDown(with event: NSEvent) {
+        let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
         switch event.keyCode {
         case 36, 76:
             confirmHandler?()
         case 53:
             cancelHandler?()
+        case 31 where mods.isEmpty:
+            // 'O' — open in default app for the selected row
+            openInDefaultAppHandler?()
         default:
             super.keyDown(with: event)
         }
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let point = convert(event.locationInWindow, from: nil)
+        let clickedRow = row(at: point)
+        guard clickedRow >= 0 else { return nil }
+        // Mirror Finder/Mail UX: right-click selects the row before showing
+        // the context menu so the action's target is unambiguous.
+        selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
+        return contextMenuProvider?(clickedRow)
     }
 }
 
@@ -246,6 +262,12 @@ private extension CPYClipboardHistoryWindowController {
         }
         tableView.cancelHandler = { [weak self] in
             self?.close()
+        }
+        tableView.openInDefaultAppHandler = { [weak self] in
+            self?.openSelectedInDefaultApp()
+        }
+        tableView.contextMenuProvider = { [weak self] row in
+            self?.makeContextMenu(forRow: row)
         }
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -462,5 +484,105 @@ extension CPYClipboardHistoryWindowController: NSTableViewDataSource, NSTableVie
             ?? ClipboardHistoryCellView(frame: .zero)
         cellView.configure(with: entry, settings: settings)
         return cellView
+    }
+}
+
+// MARK: - Open In Default App
+
+private extension CPYClipboardHistoryWindowController {
+    func makeContextMenu(forRow row: Int) -> NSMenu? {
+        guard row >= 0, row < filteredEntries.count else { return nil }
+        let entry = filteredEntries[row]
+        guard isOpenableEntry(entry) else { return nil }
+        let menu = NSMenu()
+        let item = NSMenuItem(title: "Open in Default App",
+                              action: #selector(openContextMenuAction(_:)),
+                              keyEquivalent: "")
+        item.target = self
+        item.representedObject = entry.primaryKey
+        menu.addItem(item)
+        return menu
+    }
+
+    @objc func openContextMenuAction(_ sender: NSMenuItem) {
+        guard let primaryKey = sender.representedObject as? String,
+              let entry = filteredEntries.first(where: { $0.primaryKey == primaryKey }) else { return }
+        openEntryInDefaultApp(entry)
+    }
+
+    func openSelectedInDefaultApp() {
+        guard let entry = selectedEntry else {
+            NSSound.beep()
+            return
+        }
+        openEntryInDefaultApp(entry)
+    }
+
+    func isOpenableEntry(_ entry: ClipboardHistoryEntry) -> Bool {
+        let type = NSPasteboard.PasteboardType(rawValue: entry.primaryType)
+        switch type {
+        case .deprecatedTIFF, .tiff, .png, .deprecatedPDF, .pdf,
+             .deprecatedFilenames, .fileURL:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func openEntryInDefaultApp(_ entry: ClipboardHistoryEntry) {
+        let type = NSPasteboard.PasteboardType(rawValue: entry.primaryType)
+
+        // File-type clips: open the underlying file/URL directly so the
+        // user gets the real file (covers images, video, audio, anything).
+        if type == .deprecatedFilenames || type == .fileURL {
+            if let path = ClipboardHistoryCellView.firstFilePath(from: entry) {
+                NSWorkspace.shared.open(URL(fileURLWithPath: path))
+                return
+            }
+            NSSound.beep()
+            return
+        }
+
+        guard let clipData = LegacyKeyedArchive.unarchivedObject(of: CPYClipData.self, fromFile: entry.dataPath) else {
+            NSSound.beep()
+            return
+        }
+
+        // Image-data clips (e.g. screenshots) — dump to a temp PNG and let
+        // LaunchServices route to the user's default image viewer.
+        if type == .deprecatedTIFF || type == .tiff || type == .png {
+            guard let image = clipData.image,
+                  let tiff = image.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiff),
+                  let png = bitmap.representation(using: .png, properties: [:]),
+                  let url = writeToTemp(data: png, ext: "png") else {
+                NSSound.beep()
+                return
+            }
+            NSWorkspace.shared.open(url)
+            return
+        }
+
+        if type == .deprecatedPDF || type == .pdf {
+            guard let data = clipData.PDF, let url = writeToTemp(data: data, ext: "pdf") else {
+                NSSound.beep()
+                return
+            }
+            NSWorkspace.shared.open(url)
+            return
+        }
+
+        NSSound.beep()
+    }
+
+    func writeToTemp(data: Data, ext: String) -> URL? {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clipy-\(UUID().uuidString).\(ext)")
+        do {
+            try data.write(to: url)
+            return url
+        } catch {
+            return nil
+        }
     }
 }
