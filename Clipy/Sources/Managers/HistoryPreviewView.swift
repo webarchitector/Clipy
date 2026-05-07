@@ -107,6 +107,15 @@ final class HistoryPreviewView: NSView {
             return
         }
 
+        // RTF/RTFD: render the styled bytes via NSAttributedString so the
+        // pane shows formatting, not the plain-text fallback. RTFD lives in
+        // the same RTFData blob (NSPasteboard normalises to RTF).
+        if let rtfData = clipData.RTFData,
+           let attributed = NSAttributedString(rtf: rtfData, documentAttributes: nil) {
+            showAttributed(attributed)
+            return
+        }
+
         if !clipData.stringValue.isEmpty {
             showText(clipData.stringValue)
             return
@@ -123,7 +132,17 @@ final class HistoryPreviewView: NSView {
     }
 
     private func showText(_ string: String) {
+        textView.isRichText = false
         textView.string = string
+        textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
+        textScrollView.isHidden = false
+        imageView.isHidden = true
+        emptyLabel.isHidden = true
+    }
+
+    private func showAttributed(_ string: NSAttributedString) {
+        textView.isRichText = true
+        textView.textStorage?.setAttributedString(string)
         textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
         textScrollView.isHidden = false
         imageView.isHidden = true
