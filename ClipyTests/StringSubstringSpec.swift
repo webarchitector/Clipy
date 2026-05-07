@@ -1,3 +1,5 @@
+// swiftlint:disable identifier_name
+
 import Quick
 import Nimble
 import Foundation

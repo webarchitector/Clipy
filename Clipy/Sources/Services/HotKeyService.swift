@@ -159,6 +159,12 @@ private extension HotKeyService {
         }
     }
 
+}
+
+// Visible to tests via `@testable import Clipy`. Pulled out of the
+// `private extension` above so the migration parser is reachable from
+// the spec without exposing the rest of the migration glue.
+extension HotKeyService {
     func parse(with keyCombos: [String: Any], forKey key: String) -> (Int, Int)? {
         guard let combos = keyCombos[key] as? [String: Any] else { return nil }
         guard let keyCode = combos["keyCode"] as? Int, let modifiers = combos["modifiers"] as? Int else { return nil }
