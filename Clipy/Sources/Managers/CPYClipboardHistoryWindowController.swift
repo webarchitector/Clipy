@@ -720,6 +720,40 @@ extension CPYClipboardHistoryWindowController {
         return entries.filter { $0.searchText.localizedCaseInsensitiveContains(trimmed) }
     }
 
+    /// Resolve the row index that should be selected after a list reload.
+    /// Tries to keep focus on the previously-selected clip (matched by
+    /// primaryKey, since row positions shift when filtering); falls back to
+    /// the first row when the prior key is gone or wasn't set; returns nil
+    /// for an empty list (caller should clear selection).
+    static func restoreIndex(in entries: [ClipboardHistoryEntry], primaryKey: String?) -> Int? {
+        guard !entries.isEmpty else { return nil }
+        if let primaryKey = primaryKey,
+           let row = entries.firstIndex(where: { $0.primaryKey == primaryKey }) {
+            return row
+        }
+        return 0
+    }
+
+    /// Map a Cmd+digit keystroke to a 0-based row index. The popup menu
+    /// labels its first 10 clips 1…9, 0 — so Cmd+1 → row 0, Cmd+9 → row 8,
+    /// Cmd+0 → row 9. nil for digits outside that band.
+    static func quickPasteIndex(forDigit digit: Int) -> Int? {
+        switch digit {
+        case 0:        return 9
+        case 1...9:    return digit - 1
+        default:       return nil
+        }
+    }
+
+    /// Resolve the primary keys for clips that should be deleted given the
+    /// table's current `selectedRowIndexes` and the live `entries` array.
+    /// Out-of-range indexes are silently dropped so a stale selection (from
+    /// a Realm reload that landed mid-keystroke) can't crash the delete.
+    static func primaryKeysToDelete(at indexes: IndexSet,
+                                    in entries: [ClipboardHistoryEntry]) -> [String] {
+        return indexes.compactMap { $0 < entries.count ? entries[$0].primaryKey : nil }
+    }
+
     /// Whether a clip with this pasteboard type can be opened in an external
     /// app. Pure (no instance state), so the spec exercises it directly.
     static func isOpenablePrimaryType(_ rawType: String) -> Bool {
