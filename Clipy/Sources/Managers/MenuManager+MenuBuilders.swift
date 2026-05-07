@@ -66,6 +66,10 @@ extension MenuManager {
         let settings = currentSettings()
 
         guard let clipMenu = clipMenu else { return }
+        // Install/remove the right-click tap for *both* entry points (status
+        // item click & Cmd+Shift+V hotkey) — popUpMenu's explicit install only
+        // covered the hotkey path.
+        clipMenu.delegate = self
 
         addHistoryItems(clipMenu, settings: settings)
         addSnippetItems(clipMenu, separateMenu: true, settings: settings)

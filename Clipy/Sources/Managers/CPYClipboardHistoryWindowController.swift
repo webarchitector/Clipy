@@ -173,11 +173,41 @@ final class ClipboardHistoryTableView: NSTableView {
         default:
             break
         }
+        // Vim-style j/k navigation when the table has focus. Russian-layout
+        // aliases (о/л) are honored so muscle memory survives a layout
+        // switch — same pattern as the panel's Cmd+O / Cmd+О binding.
+        // Search-field input is unaffected: when the search field is the
+        // first responder, this method never fires.
+        let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
+        if mods.isEmpty, let chars = event.charactersIgnoringModifiers?.lowercased() {
+            if chars == "j" || chars == "о" {
+                moveSelection(by: 1)
+                return
+            }
+            if chars == "k" || chars == "л" {
+                moveSelection(by: -1)
+                return
+            }
+        }
         // Bare 'o' is *not* an Open-in-Default-App shortcut: it'd swallow
         // type-to-search and bare-letter typing that users expect from a
         // table view. The only Open-in-Default-App entry point is Cmd+O,
         // captured at the panel level via performKeyEquivalent.
         super.keyDown(with: event)
+    }
+
+    private func moveSelection(by delta: Int) {
+        let count = numberOfRows
+        guard count > 0 else { return }
+        let current = selectedRow
+        let target: Int
+        if current < 0 {
+            target = delta > 0 ? 0 : count - 1
+        } else {
+            target = max(0, min(count - 1, current + delta))
+        }
+        selectRowIndexes(IndexSet(integer: target), byExtendingSelection: false)
+        scrollRowToVisible(target)
     }
 
     // Build the menu per-event from the click location. Returning nil for
