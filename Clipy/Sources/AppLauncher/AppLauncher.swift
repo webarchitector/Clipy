@@ -152,6 +152,11 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         sf.delegate = self
         sf.placeholderString = "App, math (`(1+2)=`), or currency (`15 usd thb=`)"
         sf.font = NSFont.systemFont(ofSize: 16)
+        if let cell = sf.cell as? NSTextFieldCell {
+            cell.isScrollable = true
+            cell.usesSingleLineMode = true
+            cell.wraps = false
+        }
         sf.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(sf)
 
