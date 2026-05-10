@@ -99,16 +99,11 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
         }
         reloadOutline()
         if let parent = item as? CPYFolder { outlineView.expandItem(parent) }
-        let movedItem: Any?
-        if dragged.type == .folder {
-            movedItem = realm.object(ofType: CPYFolder.self, forPrimaryKey: dragged.identifier)
-        } else {
-            movedItem = realm.object(ofType: CPYSnippet.self, forPrimaryKey: dragged.identifier)
-        }
-        if let movedItem = movedItem {
-            outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: movedItem)), byExtendingSelection: false)
-            changeItemFocus()
-        }
+        // Selection is best-effort (the row map may not contain the moved item
+        // if its ancestors aren't expanded). The right-hand pane is rendered
+        // from the explicit identifier so it stays correct either way.
+        selectRow(forItemID: dragged.identifier)
+        changeItemFocus(forItemID: dragged.identifier)
         return true
     }
 }

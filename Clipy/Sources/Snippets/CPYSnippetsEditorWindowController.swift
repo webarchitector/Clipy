@@ -50,6 +50,12 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
     /// methods. Invalidated by `reloadOutline()` before every reload.
     private var childrenCache: [String: [Object]] = [:]
 
+    /// Identifier (CPYFolder or CPYSnippet primary key) currently rendered in the
+    /// right-hand pane. Source of truth for "what is the user looking at?". Updated
+    /// only by `changeItemFocus`; consulted by the textView write path to refuse
+    /// edits that would land on a different snippet than the one the user sees.
+    private var displayedItemID: String?
+
     func children(parentId: String) -> [Object] {
         if let cached = childrenCache[parentId] { return cached }
         guard let realm = Realm.safeInstance() else { return [] }
@@ -96,6 +102,8 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         folderShortcutRecordView.tintColor = .controlAccentColor
         folderShortcutRecordView.borderColor = .separatorColor
         CPYUtilities.applyAdaptiveAppearance(to: window?.contentView)
+        outlineView.target = self
+        outlineView.action = #selector(outlineViewClicked(_:))
         reloadOutline()
         // Select first root folder
         if let realm = Realm.safeInstance(),
@@ -103,8 +111,8 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
                .filter("parentIdentifier == ''")
                .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
                .first {
-            outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: firstRoot)), byExtendingSelection: false)
-            changeItemFocus()
+            selectRow(forItemID: firstRoot.identifier)
+            changeItemFocus(forItemID: firstRoot.identifier)
         }
     }
 
@@ -129,11 +137,12 @@ extension CPYSnippetsEditorWindowController {
         snippet.title = "untitled snippet"
         snippet.parentIdentifier = host.identifier
         snippet.index = children(parentId: host.identifier).count
+        let snippetID = snippet.identifier
         try? realm.write { realm.add(snippet) }
         reloadOutline()
         outlineView.expandItem(host)
-        outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: snippet)), byExtendingSelection: false)
-        changeItemFocus()
+        selectRow(forItemID: snippetID)
+        changeItemFocus(forItemID: snippetID)
     }
 
     @IBAction private func addFolderButtonTapped(_ sender: AnyObject) {
@@ -146,11 +155,12 @@ extension CPYSnippetsEditorWindowController {
         folder.title = "untitled folder"
         folder.parentIdentifier = host?.identifier ?? ""
         folder.index = children(parentId: folder.parentIdentifier).count
+        let folderID = folder.identifier
         try? realm.write { realm.add(folder) }
         reloadOutline()
         if let host = host { outlineView.expandItem(host) }
-        outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: folder)), byExtendingSelection: false)
-        changeItemFocus()
+        selectRow(forItemID: folderID)
+        changeItemFocus(forItemID: folderID)
     }
 
     @IBAction private func deleteButtonTapped(_ sender: AnyObject) {
@@ -269,29 +279,96 @@ extension CPYSnippetsEditorWindowController {
 
 // MARK: - Item Selected
 extension CPYSnippetsEditorWindowController {
-    func changeItemFocus() {
-        // Reset TextView Undo/Redo history
+    /// Refresh the right-hand pane to reflect either an explicitly named item
+    /// (`forItemID`) or, if nil, whatever the outline view currently reports as
+    /// selected. The explicit form is the defensive entry point used after
+    /// mutations (add / delete / drag-drop) where the outline view's row→item
+    /// map may briefly disagree with the Realm state we just wrote — passing
+    /// the identifier directly bypasses any stale row lookup. Always re-fetches
+    /// the live Realm object by primary key, then records the displayed ID in
+    /// `displayedItemID` so the textView write path can refuse edits aimed at a
+    /// different snippet than the one on screen.
+    func changeItemFocus(forItemID: String? = nil) {
         textView.undoManager?.removeAllActions()
-        guard let item = outlineView.item(atRow: outlineView.selectedRow) else {
-            folderSettingView.isHidden = true
-            textView.isHidden = true
-            folderShortcutRecordView.keyCombo = nil
-            folderTitleTextField.stringValue = ""
+        let id = forItemID ?? selectedItemIdentifier()
+        guard let id = id, let realm = Realm.safeInstance() else {
+            renderEmptyFocus()
             return
         }
-        if let folder = item as? CPYFolder {
+        if let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: id) {
             textView.string = ""
             folderTitleTextField.stringValue = folder.title
             folderShortcutRecordView.keyCombo = AppEnvironment.current.hotKeyService.snippetKeyCombo(forIdentifier: folder.identifier)
             folderSettingView.isHidden = false
             textView.isHidden = true
-        } else if let snippet = item as? CPYSnippet {
+            displayedItemID = id
+        } else if let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: id) {
             textView.string = snippet.content
             folderTitleTextField.stringValue = ""
             folderShortcutRecordView.keyCombo = nil
             folderSettingView.isHidden = true
             textView.isHidden = false
+            displayedItemID = id
+        } else {
+            renderEmptyFocus()
         }
+    }
+
+    private func renderEmptyFocus() {
+        folderSettingView.isHidden = true
+        textView.isHidden = true
+        folderShortcutRecordView.keyCombo = nil
+        folderTitleTextField.stringValue = ""
+        textView.string = ""
+        displayedItemID = nil
+    }
+
+    private func selectedItemIdentifier() -> String? {
+        guard let item = outlineView.item(atRow: outlineView.selectedRow) else { return nil }
+        if let folder = item as? CPYFolder { return folder.identifier }
+        if let snippet = item as? CPYSnippet { return snippet.identifier }
+        return nil
+    }
+
+    /// Best-effort row selection by item identifier. Walks the outline view's
+    /// row→item map (`row(forItem:)` returns -1 if the item is not currently
+    /// laid out — e.g., its ancestors aren't expanded). When that happens we
+    /// silently skip the AppKit selection step; the right-hand pane is still
+    /// rendered correctly via `changeItemFocus(forItemID:)` in the caller.
+    @discardableResult
+    func selectRow(forItemID id: String) -> Bool {
+        guard let realm = Realm.safeInstance() else { return false }
+        let item: Any? = realm.object(ofType: CPYFolder.self, forPrimaryKey: id) as Any?
+            ?? realm.object(ofType: CPYSnippet.self, forPrimaryKey: id) as Any?
+        guard let item = item else { return false }
+        let row = outlineView.row(forItem: item)
+        guard row >= 0 else { return false }
+        outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        return true
+    }
+
+    @objc func outlineViewClicked(_ sender: Any?) {
+        // Force a refresh even when selection didn't change (clicking the
+        // currently-selected row). Defensive against any state where the
+        // textView fell out of sync with the actual selection.
+        changeItemFocus()
+    }
+}
+
+// MARK: - SnippetEditorSelectionGuard
+
+/// Pure helper that decides whether a textView write should be allowed.
+/// Extracted so the editor's "is the user editing the snippet they think
+/// they're editing?" defense can be unit-tested without instantiating
+/// the controller.
+enum SnippetEditorSelectionGuard {
+    /// `true` only when both IDs are non-nil and identical. A nil on either
+    /// side (or a mismatch) means the textView is showing content for a
+    /// different snippet than the outline view currently has selected; the
+    /// caller should reject the write and re-sync the UI.
+    static func writeIsSafe(displayedID: String?, selectedID: String?) -> Bool {
+        guard let displayedID = displayedID, let selectedID = selectedID else { return false }
+        return displayedID == selectedID
     }
 }
 
@@ -329,11 +406,18 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDelegate {
         guard let outlineView = control as? NSOutlineView else { return false }
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else { return false }
         guard let realm = Realm.safeInstance() else { return false }
+        let itemID: String
+        if let folder = item as? CPYFolder { itemID = folder.identifier }
+        else if let snippet = item as? CPYSnippet { itemID = snippet.identifier }
+        else { return false }
         try? realm.write {
-            if let folder = item as? CPYFolder { folder.title = text }
-            else if let snippet = item as? CPYSnippet { snippet.title = text }
+            if let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: itemID) {
+                folder.title = text
+            } else if let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: itemID) {
+                snippet.title = text
+            }
         }
-        changeItemFocus()
+        changeItemFocus(forItemID: itemID)
         return true
     }
 }
@@ -342,8 +426,18 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDelegate {
 extension CPYSnippetsEditorWindowController: NSTextViewDelegate {
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
         guard let replacementString = replacementString else { return false }
-        let text = textView.string
         guard let snippet = selectedSnippet else { return false }
+        // Defense against textView/selection desync: if the snippet currently
+        // in the right pane is not the snippet the outline view reports as
+        // selected, we'd be writing the user's keystroke into the wrong row.
+        // Refuse the write and resync instead — the user's input is dropped
+        // (one keystroke), but no data corruption occurs.
+        guard SnippetEditorSelectionGuard.writeIsSafe(displayedID: displayedItemID,
+                                                      selectedID: snippet.identifier) else {
+            changeItemFocus()
+            return false
+        }
+        let text = textView.string
         guard let realm = Realm.safeInstance() else { return false }
         guard let range = Range(affectedCharRange, in: text) else { return false }
         var string = text
