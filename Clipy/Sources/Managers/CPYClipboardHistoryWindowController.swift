@@ -126,7 +126,9 @@ final class ClipboardHistoryPanel: NSPanel {
         guard mods == .command, let chars = event.charactersIgnoringModifiers?.lowercased() else {
             return super.performKeyEquivalent(with: event)
         }
-        if chars == "o" || chars == "о" {
+        // Russian-layout pair: physical 'O' produces Cyrillic 'щ', not 'о'.
+        // (Cyrillic 'о' lives under physical 'J' — that's the j/о nav binding.)
+        if chars == "o" || chars == "щ" {
             openInDefaultAppHandler?()
             return true
         }
