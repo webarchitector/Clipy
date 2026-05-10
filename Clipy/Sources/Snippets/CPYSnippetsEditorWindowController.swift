@@ -92,7 +92,24 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
 
     func reloadOutline() {
         childrenCache.removeAll()
+        // When a filter is active, refresh the visible-id set against the
+        // current Realm state. Without this, deletes leave stale IDs in the
+        // set and moves can drop visible items from the rendered tree.
+        if visibleIdentifiers != nil, let realm = Realm.safeInstance() {
+            visibleIdentifiers = SnippetSearchFilter.visibleIdentifiers(query: searchField.stringValue, in: realm)
+        }
         outlineView.reloadData()
+    }
+
+    /// Drop any active filter (search field text, visible-id set, expansion
+    /// snapshot). Used after `addSnippet`/`addFolder` so a freshly created
+    /// item is not hidden by a no-longer-relevant query — the user clearly
+    /// wants to see what they just made.
+    private func clearActiveFilter() {
+        guard visibleIdentifiers != nil else { return }
+        searchField.stringValue = ""
+        visibleIdentifiers = nil
+        savedExpandedIDs = nil
     }
 
     private var selectedSnippet: CPYSnippet? {
@@ -169,6 +186,7 @@ extension CPYSnippetsEditorWindowController {
         snippet.index = children(parentId: host.identifier).count
         let snippetID = snippet.identifier
         try? realm.write { realm.add(snippet) }
+        clearActiveFilter()
         reloadOutline()
         outlineView.expandItem(host)
         selectRow(forItemID: snippetID)
@@ -187,6 +205,7 @@ extension CPYSnippetsEditorWindowController {
         folder.index = children(parentId: folder.parentIdentifier).count
         let folderID = folder.identifier
         try? realm.write { realm.add(folder) }
+        clearActiveFilter()
         reloadOutline()
         if let host = host { outlineView.expandItem(host) }
         selectRow(forItemID: folderID)
@@ -374,6 +393,7 @@ extension CPYSnippetsEditorWindowController {
         let row = outlineView.row(forItem: item)
         guard row >= 0 else { return false }
         outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        outlineView.scrollRowToVisible(row)
         return true
     }
 
