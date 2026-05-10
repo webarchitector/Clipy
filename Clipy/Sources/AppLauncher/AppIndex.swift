@@ -217,15 +217,26 @@ final class AppIndex: @unchecked Sendable {
     }
 
     private func scanAppNames() -> [String] {
-        let fm = FileManager.default
         var names = Set<String>()
-
         for (root, maxDepth) in AppIndex.appSourceRoots {
-            guard let en = fm.enumerator(
-                at: URL(fileURLWithPath: root),
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles, .skipsPackageDescendants]
-            ) else { continue }
+            names.formUnion(AppIndex.collectAppNames(at: root, maxDepth: maxDepth))
+        }
+        return Array(names).sorted()
+    }
+
+    /// Names of `.app` bundles under `root`, up to `maxDepth` levels deep.
+    /// Combines the recursive URL enumerator with a top-level
+    /// `contentsOfDirectory(atPath:)` pass: on recent macOS the URL
+    /// enumerator silently drops `/Applications/Safari.app` because it is
+    /// a symlink into `/System/Cryptexes/` and resource-value fetch fails
+    /// on the cryptex target. The supplemental pass restores it.
+    static func collectAppNames(at root: String, maxDepth: Int, fileManager fm: FileManager = .default) -> Set<String> {
+        var names = Set<String>()
+        if let en = fm.enumerator(
+            at: URL(fileURLWithPath: root),
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) {
             for case let url as URL in en {
                 if en.level > maxDepth {
                     en.skipDescendants()
@@ -237,7 +248,12 @@ final class AppIndex: @unchecked Sendable {
                 }
             }
         }
-        return Array(names).sorted()
+        if let entries = try? fm.contentsOfDirectory(atPath: root) {
+            for entry in entries where entry.hasSuffix(".app") {
+                names.insert(String(entry.dropLast(4)))
+            }
+        }
+        return names
     }
 
     private func writeAppsFile(names: [String]) {

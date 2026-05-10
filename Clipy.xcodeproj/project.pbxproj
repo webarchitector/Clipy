@@ -10,6 +10,7 @@
 		1F077973EC8AEA1CD7B2DED8 /* InputSourceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FCD4CA2D2997016DE6E24BF /* InputSourceService.swift */; };
 		242EC2327861D35B7C3AE84E /* Pods_ClipyTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00A4B450122D7FCE6BD57E77 /* Pods_ClipyTests.framework */; };
 		2CD1E22BE38F6D29158CC909 /* AppIndexFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */; };
+		AB05000000000000000A0002 /* AppIndexScanRootSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000000A0001 /* AppIndexScanRootSpec.swift */; };
 		389CB265D2D6FF14FD4F7149 /* MenuManager+MenuBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */; };
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
@@ -178,6 +179,7 @@
 		1C2D23FF23B07B76585DC610 /* Dependencies-ClipyTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-ClipyTests.release.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-ClipyTests/Pods-ClipyTests.release.xcconfig"; sourceTree = "<group>"; };
 		1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "MenuManager+MenuBuilders.swift"; sourceTree = "<group>"; };
 		21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIndexFilterSpec.swift; sourceTree = "<group>"; };
+		AB05000000000000000A0001 /* AppIndexScanRootSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIndexScanRootSpec.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
 		31064F137CFB046737D1709D /* Dependencies-Clipy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.debug.xcconfig"; sourceTree = "<group>"; };
 		314B299D1EC49AD5004DD070 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/CPYSnippetsEditorWindowController.xib; sourceTree = "<group>"; };
@@ -357,6 +359,7 @@
 			children = (
 				5C0A3A5E9212B8EBB981DEDB /* AppIndexTranslitSpec.swift */,
 				21668FB55E02584A09B074F3 /* AppIndexFilterSpec.swift */,
+				AB05000000000000000A0001 /* AppIndexScanRootSpec.swift */,
 				0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */,
 				36D4163620B8B1A4CDCA70ED /* CalculatorCurrencySpec.swift */,
 				2CC2B70A04994CAABA2BEF2E /* AppLauncherServicePersistenceSpec.swift */,
@@ -1021,6 +1024,7 @@
 				FA6167941D3ACCB90049FA14 /* DraggedDataSpec.swift in Sources */,
 				F6B24C097D26610A40919734 /* AppIndexTranslitSpec.swift in Sources */,
 				2CD1E22BE38F6D29158CC909 /* AppIndexFilterSpec.swift in Sources */,
+				AB05000000000000000A0002 /* AppIndexScanRootSpec.swift in Sources */,
 				3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */,
 				3FA2F63A208748C582EF3A31 /* AppLauncherServicePersistenceSpec.swift in Sources */,
 				E1826F7CDEF9ED3824C7BBE3 /* CalculatorCurrencySpec.swift in Sources */,
