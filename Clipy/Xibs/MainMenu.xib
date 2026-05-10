@@ -132,6 +132,14 @@
                                     <action selector="selectAll:" target="-1" id="FdT-97-lqG"/>
                                 </connections>
                             </menuItem>
+                            <menuItem isSeparatorItem="YES" id="fnd-00-0001">
+                                <modifierMask key="keyEquivalentModifierMask" command="YES"/>
+                            </menuItem>
+                            <menuItem title="Find" keyEquivalent="f" id="fnd-00-0002">
+                                <connections>
+                                    <action selector="findInSnippets:" target="-1" id="fnd-00-0003"/>
+                                </connections>
+                            </menuItem>
                         </items>
                     </menu>
                 </menuItem>
