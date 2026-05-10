@@ -634,12 +634,12 @@ Append the following describe block at the end of `NestedDragDropSpec.spec()` (j
         describe("Move execution with active filter") {
 
             it("places the moved item at the visible-position-N slot, preserving hidden anchors") {
-                // Parent with 4 siblings A B C D in indices 0..3.
-                // Visible set is {A, C}. Move A to atIndex=1 (after C in the visible view).
-                // Expected new full order:
-                //   B is anchored "before A" (no prev visible) -> goes before all visibles.
-                //   D is anchored "after C" -> stays after C.
-                // Visible view becomes [C, A]. Full order [B, C, A, D].
+                // Parent has 4 siblings A B C D (indices 0..3). Visible = {A, C}.
+                // Move A to atIndex=1 in the visible view -> visible becomes [C, A].
+                // Hidden siblings stay glued to their preceding visible neighbour:
+                //   B's preceding visible is A -> B follows A.
+                //   D's preceding visible is C -> D follows C (C did not move).
+                // Final full order: [C, D, A, B].
                 let realm = try! Realm()
                 let parent = CPYFolder(); parent.index = 0
                 try! realm.write { realm.add(parent) }
@@ -656,10 +656,10 @@ Append the following describe block at the end of `NestedDragDropSpec.spec()` (j
                                             visibleIDs: visible, in: realm)
                 }
 
-                expect(folderB.index) == 0
-                expect(folderC.index) == 1
+                expect(folderC.index) == 0
+                expect(folderD.index) == 1
                 expect(folderA.index) == 2
-                expect(folderD.index) == 3
+                expect(folderB.index) == 3
             }
 
             it("nil visibleIDs preserves the existing full-set behaviour") {
@@ -680,24 +680,28 @@ Append the following describe block at the end of `NestedDragDropSpec.spec()` (j
             }
 
             it("hidden item with no preceding visible anchor goes to the front") {
-                // Order: H V (hidden then visible). Move V to atIndex=0 in the visible view.
-                // Visible view is unchanged (only one visible item).
-                // Final order: H V (H still in front because its anchor was nil).
+                // Original order: H V1 V2 (indices 0..2). Visible = {V1, V2}.
+                // H has no preceding visible -> anchor is nil -> belongs in hiddenAtFront.
+                // Move V2 to atIndex=0 in the visible view -> visible becomes [V2, V1].
+                // Reconstruction: hiddenAtFront [H] first, then visibleOrdered [V2, V1].
+                // Final full order: [H, V2, V1] -> H=0, V2=1, V1=2.
                 let realm = try! Realm()
                 let parent = CPYFolder(); parent.index = 0
                 try! realm.write { realm.add(parent) }
                 let hidden = CPYFolder(); hidden.title = "H"; hidden.parentIdentifier = parent.identifier; hidden.index = 0
-                let visible = CPYFolder(); visible.title = "V"; visible.parentIdentifier = parent.identifier; visible.index = 1
-                try! realm.write { realm.add(hidden); realm.add(visible) }
+                let visible1 = CPYFolder(); visible1.title = "V1"; visible1.parentIdentifier = parent.identifier; visible1.index = 1
+                let visible2 = CPYFolder(); visible2.title = "V2"; visible2.parentIdentifier = parent.identifier; visible2.index = 2
+                try! realm.write { realm.add(hidden); realm.add(visible1); realm.add(visible2) }
 
-                let visibleIDs: Set<String> = [visible.identifier]
+                let visibleIDs: Set<String> = [visible1.identifier, visible2.identifier]
                 try! realm.write {
-                    NestedMoveExecutor.move(itemId: visible.identifier, isFolder: true,
+                    NestedMoveExecutor.move(itemId: visible2.identifier, isFolder: true,
                                             toParentId: parent.identifier, atIndex: 0,
                                             visibleIDs: visibleIDs, in: realm)
                 }
                 expect(hidden.index) == 0
-                expect(visible.index) == 1
+                expect(visible2.index) == 1
+                expect(visible1.index) == 2
             }
         }
 ```
