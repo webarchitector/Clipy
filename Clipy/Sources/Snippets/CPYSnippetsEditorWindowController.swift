@@ -240,56 +240,17 @@ extension CPYSnippetsEditorWindowController {
             let lastRoot = realm.objects(CPYFolder.self)
                 .filter("parentIdentifier == ''")
                 .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true).last
-            var rootIndex = (lastRoot?.index ?? -1) + 1
-            var options = AEXMLOptions()
-            options.parserSettings.shouldTrimWhitespace = false
-            let xmlDocument = try AEXMLDocument(xml: data, options: options)
-            try realm.write {
-                xmlDocument[Constants.Xml.rootElement][Constants.Xml.folderElement].all?.forEach { folderElement in
-                    importFolder(folderElement, parentId: "", index: rootIndex, in: realm)
-                    rootIndex += 1
-                }
-            }
+            let startIndex = (lastRoot?.index ?? -1) + 1
+            _ = try SnippetXml.importDocument(data: data, into: realm, startingRootIndex: startIndex)
             reloadOutline()
         } catch {
             NSSound.beep()
         }
     }
 
-    private func importFolder(_ element: AEXMLElement, parentId: String, index: Int, in realm: Realm) {
-        let folder = CPYFolder()
-        folder.title = element[Constants.Xml.titleElement].value ?? "untitled folder"
-        folder.parentIdentifier = parentId
-        folder.index = index
-        realm.add(folder)
-        var snippetIndex = 0
-        element[Constants.Xml.snippetsElement][Constants.Xml.snippetElement].all?.forEach { sEl in
-            let snippet = CPYSnippet()
-            snippet.title = sEl[Constants.Xml.titleElement].value ?? "untitled snippet"
-            snippet.content = sEl[Constants.Xml.contentElement].value ?? ""
-            snippet.parentIdentifier = folder.identifier
-            snippet.index = snippetIndex
-            realm.add(snippet)
-            snippetIndex += 1
-        }
-        var childIndex = 0
-        element[Constants.Xml.foldersElement][Constants.Xml.folderElement].all?.forEach { childEl in
-            importFolder(childEl, parentId: folder.identifier, index: childIndex, in: realm)
-            childIndex += 1
-        }
-    }
-
     @IBAction private func exportSnippetButtonTapped(_ sender: AnyObject) {
-        let xmlDocument = AEXMLDocument()
-        let rootElement = xmlDocument.addChild(name: Constants.Xml.rootElement)
-
         guard let realm = Realm.safeInstance() else { return }
-        let roots = realm.objects(CPYFolder.self)
-            .filter("parentIdentifier == ''")
-            .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
-        for folder in roots {
-            exportFolder(folder, into: rootElement, realm: realm)
-        }
+        let xmlDocument = SnippetXml.exportDocument(from: realm)
 
         let panel = NSSavePanel()
         panel.accessoryView = nil
@@ -301,35 +262,8 @@ extension CPYSnippetsEditorWindowController {
         let returnCode = panel.runModal()
         if returnCode != NSApplication.ModalResponse.OK { return }
 
-        guard let xmlData = xmlDocument.xml.data(using: String.Encoding.utf8) else { return }
-        guard let url = panel.url else { return }
-
+        guard let xmlData = xmlDocument.xml.data(using: .utf8), let url = panel.url else { return }
         do { try xmlData.write(to: url, options: .atomic) } catch { NSSound.beep() }
-    }
-
-    private func exportFolder(_ folder: CPYFolder, into parent: AEXMLElement, realm: Realm) {
-        let folderElement = parent.addChild(name: Constants.Xml.folderElement)
-        folderElement.addChild(name: Constants.Xml.titleElement, value: folder.title)
-
-        let snippetsElement = folderElement.addChild(name: Constants.Xml.snippetsElement)
-        let snippets = realm.objects(CPYSnippet.self)
-            .filter("parentIdentifier == %@", folder.identifier)
-            .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
-        for snippet in snippets {
-            let sEl = snippetsElement.addChild(name: Constants.Xml.snippetElement)
-            sEl.addChild(name: Constants.Xml.titleElement, value: snippet.title)
-            sEl.addChild(name: Constants.Xml.contentElement, value: snippet.content)
-        }
-
-        let subfolders = realm.objects(CPYFolder.self)
-            .filter("parentIdentifier == %@", folder.identifier)
-            .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
-        if !subfolders.isEmpty {
-            let foldersElement = folderElement.addChild(name: Constants.Xml.foldersElement)
-            for sub in subfolders {
-                exportFolder(sub, into: foldersElement, realm: realm)
-            }
-        }
     }
 }
 
