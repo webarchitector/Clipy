@@ -151,6 +151,14 @@ final class ClipboardHistoryPanel: NSPanel {
             quickLookHandler?()
             return true
         }
+        // Cmd+Q normally routes through the responder chain to
+        // NSApp.terminate(_:), quitting Clipy entirely. Override here to
+        // mirror Cmd+W — closing this popup is what the user actually wants
+        // when dismissing the history. Russian-PC layout: physical 'Q' → 'й'.
+        if chars == "q" || chars == "й" {
+            close()
+            return true
+        }
         // Cmd+1…9 → row index 0…8; Cmd+0 → row index 9. Matches the original
         // NSMenu behaviour of `addNumericKeyEquivalents` so muscle memory
         // carries over when users switch between menu and history window.

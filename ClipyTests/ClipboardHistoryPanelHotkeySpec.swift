@@ -74,5 +74,54 @@ class ClipboardHistoryPanelHotkeySpec: QuickSpec {
                 expect(fired) == false
             }
         }
+
+        describe("ClipboardHistoryPanel.performKeyEquivalent — Cmd+Q closes window") {
+            // Cmd+Q normally routes through the responder chain to
+            // NSApp.terminate(_:), quitting Clipy entirely. In the search
+            // history window we override it to mirror Cmd+W so the user can
+            // dismiss the popup without quitting the whole app. Russian-PC
+            // layout: physical 'Q' produces Cyrillic 'й'.
+            func makeEvent(chars: String, mods: NSEvent.ModifierFlags) -> NSEvent {
+                return NSEvent.keyEvent(
+                    with: .keyDown,
+                    location: .zero,
+                    modifierFlags: mods,
+                    timestamp: 0,
+                    windowNumber: 0,
+                    context: nil,
+                    characters: chars,
+                    charactersIgnoringModifiers: chars,
+                    isARepeat: false,
+                    keyCode: 0
+                )!
+            }
+
+            it("handles Cmd+Q for Latin 'q'") {
+                let panel = ClipboardHistoryPanel(
+                    contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
+                    styleMask: [.borderless], backing: .buffered, defer: true
+                )
+                let handled = panel.performKeyEquivalent(with: makeEvent(chars: "q", mods: .command))
+                expect(handled) == true
+            }
+
+            it("handles Cmd+Q for Cyrillic 'й' (Russian-PC layout physical 'Q')") {
+                let panel = ClipboardHistoryPanel(
+                    contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
+                    styleMask: [.borderless], backing: .buffered, defer: true
+                )
+                let handled = panel.performKeyEquivalent(with: makeEvent(chars: "й", mods: .command))
+                expect(handled) == true
+            }
+
+            it("does NOT handle plain Q without Command") {
+                let panel = ClipboardHistoryPanel(
+                    contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
+                    styleMask: [.borderless], backing: .buffered, defer: true
+                )
+                let handled = panel.performKeyEquivalent(with: makeEvent(chars: "q", mods: []))
+                expect(handled) == false
+            }
+        }
     }
 }
