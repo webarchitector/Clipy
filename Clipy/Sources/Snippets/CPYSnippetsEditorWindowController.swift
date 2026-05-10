@@ -93,9 +93,10 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
         window?.backgroundColor = .windowBackgroundColor
-        splitView.separatorColor = .separatorColor
-        folderShortcutRecordView.tintColor = .controlAccentColor
-        folderShortcutRecordView.borderColor = .separatorColor
+        // Weak outlets can be nil on re-open if AppKit tore the view hierarchy down between showings.
+        splitView?.separatorColor = .separatorColor
+        folderShortcutRecordView?.tintColor = .controlAccentColor
+        folderShortcutRecordView?.borderColor = .separatorColor
         CPYUtilities.applyAdaptiveAppearance(to: window?.contentView)
         CPYUtilities.presentSnippetsWindow(window)
     }
