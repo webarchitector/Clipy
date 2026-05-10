@@ -135,5 +135,81 @@ class NestedDragDropSpec: QuickSpec {
                 expect(leaf.index) == 0
             }
         }
+
+        describe("Move execution with active filter") {
+
+            it("places the moved item at the visible-position-N slot, preserving hidden anchors") {
+                // Parent has 4 siblings A B C D (indices 0..3). Visible = {A, C}.
+                // User moves A to atIndex=1 in the visible view -> visible becomes [C, A].
+                // Hidden siblings stay glued to their preceding visible neighbour:
+                //   B's preceding visible is A -> B follows A.
+                //   D's preceding visible is C -> D follows C (C did not move).
+                // Final full order: [C, D, A, B].
+                let realm = try! Realm()
+                let parent = CPYFolder(); parent.index = 0
+                try! realm.write { realm.add(parent) }
+                let folderA = CPYFolder(); folderA.title = "A"; folderA.parentIdentifier = parent.identifier; folderA.index = 0
+                let folderB = CPYFolder(); folderB.title = "B"; folderB.parentIdentifier = parent.identifier; folderB.index = 1
+                let folderC = CPYFolder(); folderC.title = "C"; folderC.parentIdentifier = parent.identifier; folderC.index = 2
+                let folderD = CPYFolder(); folderD.title = "D"; folderD.parentIdentifier = parent.identifier; folderD.index = 3
+                try! realm.write { realm.add(folderA); realm.add(folderB); realm.add(folderC); realm.add(folderD) }
+
+                let visible: Set<String> = [folderA.identifier, folderC.identifier]
+                try! realm.write {
+                    NestedMoveExecutor.move(itemId: folderA.identifier, isFolder: true,
+                                            toParentId: parent.identifier, atIndex: 1,
+                                            visibleIDs: visible, in: realm)
+                }
+
+                expect(folderC.index) == 0
+                expect(folderD.index) == 1
+                expect(folderA.index) == 2
+                expect(folderB.index) == 3
+            }
+
+            it("nil visibleIDs preserves the existing full-set behaviour") {
+                let realm = try! Realm()
+                let parent1 = CPYFolder(); parent1.index = 0
+                let parent2 = CPYFolder(); parent2.index = 1
+                try! realm.write { realm.add(parent1); realm.add(parent2) }
+                let snippet = CPYSnippet(); snippet.parentIdentifier = parent1.identifier; snippet.index = 0
+                try! realm.write { realm.add(snippet) }
+
+                try! realm.write {
+                    NestedMoveExecutor.move(itemId: snippet.identifier, isFolder: false,
+                                            toParentId: parent2.identifier, atIndex: 0,
+                                            visibleIDs: nil, in: realm)
+                }
+                expect(snippet.parentIdentifier) == parent2.identifier
+                expect(snippet.index) == 0
+            }
+
+            it("hidden item with no preceding visible anchor goes to the front") {
+                // Original order: H V1 V2 (indices 0..2). Visible = {V1, V2}.
+                // H has no preceding visible -> anchor is nil -> belongs in hiddenAtFront.
+                // Move V2 to atIndex=0 in the visible view -> visible becomes [V2, V1].
+                // Reconstruction: hiddenAtFront [H] first, then visibleOrdered [V2, V1].
+                // Final full order: [H, V2, V1] -> H=0, V2=1, V1=2.
+                // (If the hiddenAtFront branch ever regressed and emitted H at the end
+                //  instead, this test would fail with H=2 / V2=0 / V1=1.)
+                let realm = try! Realm()
+                let parent = CPYFolder(); parent.index = 0
+                try! realm.write { realm.add(parent) }
+                let hidden = CPYFolder(); hidden.title = "H"; hidden.parentIdentifier = parent.identifier; hidden.index = 0
+                let visible1 = CPYFolder(); visible1.title = "V1"; visible1.parentIdentifier = parent.identifier; visible1.index = 1
+                let visible2 = CPYFolder(); visible2.title = "V2"; visible2.parentIdentifier = parent.identifier; visible2.index = 2
+                try! realm.write { realm.add(hidden); realm.add(visible1); realm.add(visible2) }
+
+                let visibleIDs: Set<String> = [visible1.identifier, visible2.identifier]
+                try! realm.write {
+                    NestedMoveExecutor.move(itemId: visible2.identifier, isFolder: true,
+                                            toParentId: parent.identifier, atIndex: 0,
+                                            visibleIDs: visibleIDs, in: realm)
+                }
+                expect(hidden.index) == 0
+                expect(visible2.index) == 1
+                expect(visible1.index) == 2
+            }
+        }
     }
 }

@@ -95,6 +95,7 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
                                     isFolder: dragged.type == .folder,
                                     toParentId: targetParentId,
                                     atIndex: index,
+                                    visibleIDs: visibleIdentifiersForMove(),
                                     in: realm)
         }
         reloadOutline()
@@ -142,7 +143,12 @@ enum NestedMoveExecutor {
     /// (a value of -1 means append at end). Renumbers the old and new parents'
     /// children so siblings stay 0..n-1. Caller must hold an open Realm write
     /// transaction.
-    static func move(itemId: String, isFolder: Bool, toParentId: String, atIndex: Int, in realm: Realm) {
+    static func move(itemId: String,
+                     isFolder: Bool,
+                     toParentId: String,
+                     atIndex: Int,
+                     visibleIDs: Set<String>? = nil,
+                     in realm: Realm) {
         let oldParentId: String
         if isFolder {
             guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: itemId) else { return }
@@ -153,18 +159,28 @@ enum NestedMoveExecutor {
             oldParentId = snippet.parentIdentifier
             snippet.parentIdentifier = toParentId
         }
-        let kids = CPYFolder.children(parentIdentifier: toParentId, in: realm)
-        var ordered: [Object] = []
-        for kid in kids where idOf(kid) != itemId { ordered.append(kid) }
+        let allKids = CPYFolder.children(parentIdentifier: toParentId, in: realm)
         let target: Object?
         if isFolder {
             target = realm.object(ofType: CPYFolder.self, forPrimaryKey: itemId)
         } else {
             target = realm.object(ofType: CPYSnippet.self, forPrimaryKey: itemId)
         }
-        if let target = target {
-            let pos = (atIndex < 0 || atIndex > ordered.count) ? ordered.count : atIndex
-            ordered.insert(target, at: pos)
+        let ordered: [Object]
+        if let visible = visibleIDs {
+            ordered = reorderRespectingHiddenAnchors(allKids: allKids,
+                                                    visible: visible,
+                                                    movedId: itemId,
+                                                    movedItem: target,
+                                                    atIndex: atIndex)
+        } else {
+            var working: [Object] = []
+            for kid in allKids where idOf(kid) != itemId { working.append(kid) }
+            if let target = target {
+                let pos = (atIndex < 0 || atIndex > working.count) ? working.count : atIndex
+                working.insert(target, at: pos)
+            }
+            ordered = working
         }
         for (idx, kid) in ordered.enumerated() {
             if let folder = kid as? CPYFolder { folder.index = idx }
@@ -173,6 +189,51 @@ enum NestedMoveExecutor {
         if oldParentId != toParentId {
             CPYFolder.renumberSiblings(of: oldParentId, in: realm)
         }
+    }
+
+    /// Build the new full order while keeping every hidden sibling next to
+    /// the same visible neighbour it had before. Each hidden sibling's
+    /// "anchor" is the closest visible sibling that came before it in
+    /// `allKids`; nil means it was before all visibles. After the moved
+    /// item is repositioned within the visible subset, hidden siblings are
+    /// re-emitted just after their anchor (or at the front for nil anchors).
+    private static func reorderRespectingHiddenAnchors(allKids: [Object],
+                                                       visible: Set<String>,
+                                                       movedId: String,
+                                                       movedItem: Object?,
+                                                       atIndex: Int) -> [Object] {
+        var hiddenByAnchor: [String: [Object]] = [:]
+        var hiddenAtFront: [Object] = []
+        var lastVisibleId: String?
+        for kid in allKids {
+            let kidId = idOf(kid)
+            if visible.contains(kidId) {
+                lastVisibleId = kidId
+            } else {
+                if let anchor = lastVisibleId {
+                    hiddenByAnchor[anchor, default: []].append(kid)
+                } else {
+                    hiddenAtFront.append(kid)
+                }
+            }
+        }
+        var visibleOrdered: [Object] = []
+        for kid in allKids where visible.contains(idOf(kid)) && idOf(kid) != movedId {
+            visibleOrdered.append(kid)
+        }
+        if let movedItem = movedItem {
+            let pos = (atIndex < 0 || atIndex > visibleOrdered.count) ? visibleOrdered.count : atIndex
+            visibleOrdered.insert(movedItem, at: pos)
+        }
+        var result: [Object] = []
+        result.append(contentsOf: hiddenAtFront)
+        for kid in visibleOrdered {
+            result.append(kid)
+            if let trailing = hiddenByAnchor[idOf(kid)] {
+                result.append(contentsOf: trailing)
+            }
+        }
+        return result
     }
 
     private static func idOf(_ obj: Object) -> String {
