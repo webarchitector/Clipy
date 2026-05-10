@@ -21,7 +21,6 @@ final class CPYFolder: Object {
     @objc dynamic var title = ""
     @objc dynamic var identifier = UUID().uuidString
     @objc dynamic var parentIdentifier = ""
-    let snippets = List<CPYSnippet>()
 
     // MARK: Primary Key
     override static func primaryKey() -> String? {
@@ -33,57 +32,7 @@ final class CPYFolder: Object {
 // MARK: - Copy
 extension CPYFolder {
     func deepCopy() -> CPYFolder {
-        let folder = CPYFolder(value: self)
-        var snippets = [CPYSnippet]()
-        if realm == nil {
-            self.snippets.forEach {
-                let snippet = CPYSnippet(value: $0)
-                snippets.append(snippet)
-            }
-        } else {
-            self.snippets.sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true).forEach {
-                let snippet = CPYSnippet(value: $0)
-                snippets.append(snippet)
-            }
-        }
-        folder.snippets.removeAll()
-        folder.snippets.append(objectsIn: snippets)
-        return folder
-    }
-}
-
-// MARK: - Add Snippet
-extension CPYFolder {
-    func createSnippet() -> CPYSnippet {
-        let snippet = CPYSnippet()
-        snippet.title = "untitled snippet"
-        snippet.index = Int(snippets.count)
-        snippet.parentIdentifier = identifier
-        return snippet
-    }
-
-    func mergeSnippet(_ snippet: CPYSnippet) {
-        guard let realm = Realm.safeInstance() else { return }
-        guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: identifier) else { return }
-        let copySnippet = CPYSnippet(value: snippet)
-        copySnippet.parentIdentifier = folder.identifier
-        folder.realm?.transaction { folder.snippets.append(copySnippet) }
-    }
-
-    func insertSnippet(_ snippet: CPYSnippet, index: Int) {
-        guard let realm = Realm.safeInstance() else { return }
-        guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: identifier) else { return }
-        guard let savedSnippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier) else { return }
-        folder.realm?.transaction { folder.snippets.insert(savedSnippet, at: index) }
-        folder.rearrangesSnippetIndex()
-    }
-
-    func removeSnippet(_ snippet: CPYSnippet) {
-        guard let realm = Realm.safeInstance() else { return }
-        guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: identifier) else { return }
-        guard let savedSnippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier), let index = folder.snippets.firstIndex(of: savedSnippet) else { return }
-        folder.realm?.transaction { folder.snippets.remove(at: index) }
-        folder.rearrangesSnippetIndex()
+        return CPYFolder(value: self)
     }
 }
 
@@ -119,10 +68,9 @@ extension CPYFolder {
     func remove() {
         guard let realm = Realm.safeInstance() else { return }
         guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: identifier) else { return }
-        folder.realm?.transaction {
-            folder.realm?.delete(folder.snippets)
-            folder.realm?.delete(folder)
-        }
+        // Snippet/subfolder cascade is the editor's responsibility now
+        // (see deleteFolderRecursively in CPYSnippetsEditorWindowController).
+        folder.realm?.transaction { folder.realm?.delete(folder) }
     }
 }
 
@@ -135,17 +83,6 @@ extension CPYFolder {
                 if folder.realm == nil { folder.index = index }
                 guard let savedFolder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folder.identifier) else { continue }
                 savedFolder.index = index
-            }
-        }
-    }
-
-    func rearrangesSnippetIndex() {
-        guard let realm = Realm.safeInstance() else { return }
-        realm.transaction {
-            for (index, snippet) in snippets.enumerated() {
-                if snippet.realm == nil { snippet.index = index }
-                guard let savedSnippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier) else { continue }
-                savedSnippet.index = index
             }
         }
     }

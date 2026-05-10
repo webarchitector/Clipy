@@ -348,7 +348,7 @@ extension MenuManager {
         }
     }
 
-    private func appendSnippetChildren(_ menu: NSMenu, parentId: String, realm: Realm, settings: MenuSettings) {
+    func appendSnippetChildren(_ menu: NSMenu, parentId: String, realm: Realm, settings: MenuSettings) {
         let firstIndex = settings.isStartFromZero ? 0 : 1
         var listNumber = firstIndex
         let kids = CPYFolder.children(parentIdentifier: parentId, in: realm)

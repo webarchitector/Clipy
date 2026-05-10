@@ -15,9 +15,9 @@ class RealmMigrationSpec: QuickSpec {
                 Realm.Configuration.defaultConfiguration.inMemoryIdentifier = UUID().uuidString
             }
 
-            it("installs schemaVersion 9 onto the default configuration") {
+            it("installs schemaVersion 10 onto the default configuration") {
                 Realm.migration()
-                expect(Realm.Configuration.defaultConfiguration.schemaVersion) == 9
+                expect(Realm.Configuration.defaultConfiguration.schemaVersion) == 10
             }
 
             it("installs a migration block (non-nil)") {

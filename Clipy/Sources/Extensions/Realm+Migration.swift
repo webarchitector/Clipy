@@ -15,11 +15,12 @@ import RealmSwift
 
 extension Realm {
     static func migration() {
-        // Schema 9 introduces parentIdentifier on CPYFolder and CPYSnippet
-        // (preparation for nested snippet folders). Folders default to root
-        // ("" parentIdentifier). Snippets are backfilled to point at the
-        // folder that currently contains them via the legacy `snippets` list.
-        var config = Realm.Configuration(schemaVersion: 9, migrationBlock: { migration, oldSchemaVersion in
+        // Schema 10 drops CPYFolder.snippets (replaced by parentIdentifier on
+        // CPYSnippet, populated in v9). Schema 9 introduced parentIdentifier
+        // on CPYFolder and CPYSnippet for nested snippet folders. Folders
+        // default to root (""). Snippets backfilled to point at the folder
+        // that contained them via the legacy `snippets` list.
+        var config = Realm.Configuration(schemaVersion: 10, migrationBlock: { migration, oldSchemaVersion in
             if oldSchemaVersion <= 2 {
                 // Add identifier in CPYSnippet
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in

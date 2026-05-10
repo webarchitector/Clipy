@@ -397,15 +397,9 @@ extension MenuManager {
         labelItem.isEnabled = false
         folderMenu.addItem(labelItem)
         let settings = currentSettings()
-        var index = settings.isStartFromZero ? 0 : 1
-        folder.snippets
-            .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
-            .filter { $0.enable }
-            .forEach { snippet in
-                let subMenuItem = makeSnippetMenuItem(snippet, listNumber: index, settings: settings)
-                folderMenu.addItem(subMenuItem)
-                index += 1
-            }
+        if let realm = realm {
+            appendSnippetChildren(folderMenu, parentId: folder.identifier, realm: realm, settings: settings)
+        }
         currentPopupMenu = folderMenu
         pendingMenuType = nil
         installEventTap(for: .snippet)

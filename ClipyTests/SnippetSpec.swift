@@ -47,6 +47,14 @@ class SnippetSpec: QuickSpec {
                 expect(realm.objects(CPYSnippet.self).count) == 0
             }
 
+            it("parentIdentifier round-trips through Realm") {
+                let realm = try! Realm()
+                let snippet = CPYSnippet(); snippet.parentIdentifier = "folder-1"
+                try! realm.write { realm.add(snippet) }
+                let fetched = realm.object(ofType: CPYSnippet.self, forPrimaryKey: snippet.identifier)
+                expect(fetched?.parentIdentifier) == "folder-1"
+            }
+
             afterEach {
                 let realm = try! Realm()
                 realm.transaction { realm.deleteAll() }

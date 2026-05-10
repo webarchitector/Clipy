@@ -22,22 +22,11 @@ final class CPYSnippet: Object {
     @objc dynamic var content = ""
     @objc dynamic var identifier = UUID().uuidString
     @objc dynamic var parentIdentifier = ""
-    let folders = LinkingObjects(fromType: CPYFolder.self, property: "snippets")
-
-    var folder: CPYFolder? {
-        return folders.first
-    }
 
     // MARK: Primary Key
     override static func primaryKey() -> String? {
         return "identifier"
     }
-
-    // MARK: - Ignore Properties
-    override static func ignoredProperties() -> [String] {
-        return ["folder"]
-    }
-
 }
 
 // MARK: - Add Snippet
