@@ -41,6 +41,21 @@ final class CPYSnippetsEditorCell: NSTextFieldCell {
         return cell
     }
 
+    override var attributedStringValue: NSAttributedString {
+        get {
+            let base = super.attributedStringValue
+            guard !isItemEnabled, base.length > 0 else { return base }
+            let mutable = NSMutableAttributedString(attributedString: base)
+            mutable.addAttribute(
+                .strikethroughStyle,
+                value: NSUnderlineStyle.single.rawValue,
+                range: NSRange(location: 0, length: mutable.length)
+            )
+            return mutable
+        }
+        set { super.attributedStringValue = newValue }
+    }
+
     // MARK: - Draw
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
         var newFrame: NSRect
@@ -56,7 +71,8 @@ final class CPYSnippetsEditorCell: NSTextFieldCell {
 
             let drawImage = (isHighlighted) ? Asset.snippetsIconFolderWhite.image : Asset.snippetsIconFolderBlue.image
             drawImage.size = NSSize(width: 16, height: 13)
-            drawImage.draw(in: imageFrame, from: NSRect.zero, operation: .sourceOver, fraction: 1.0, respectFlipped: true, hints: nil)
+            let iconAlpha: CGFloat = isItemEnabled ? 1.0 : 0.4
+            drawImage.draw(in: imageFrame, from: NSRect.zero, operation: .sourceOver, fraction: iconAlpha, respectFlipped: true, hints: nil)
 
             newFrame = cellFrame
             newFrame.origin.x += 8
