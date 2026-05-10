@@ -109,13 +109,17 @@ final class ClipboardHistoryCellView: NSTableCellView {
         addSubview(pinView)
         addSubview(timeLabel)
 
+        // Two distinct title-leading constraints: when a thumbnail is shown
+        // we anchor past the thumbnail; when it's hidden we anchor to the
+        // source icon directly so the title gets the freed-up width instead
+        // of leaving a wide blank gap.
         let withImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
-        let withoutImage = titleField.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: 8)
+        let withoutImage = titleField.leadingAnchor.constraint(equalTo: sourceIconView.trailingAnchor, constant: 8)
         titleLeadingWithImage = withImage
         titleLeadingWithoutImage = withoutImage
 
-        let widthC = thumbnailView.widthAnchor.constraint(equalToConstant: 64)
-        let heightC = thumbnailView.heightAnchor.constraint(equalToConstant: 64)
+        let widthC = thumbnailView.widthAnchor.constraint(equalToConstant: 40)
+        let heightC = thumbnailView.heightAnchor.constraint(equalToConstant: 40)
         thumbnailWidthConstraint = widthC
         thumbnailHeightConstraint = heightC
 
@@ -159,13 +163,11 @@ final class ClipboardHistoryCellView: NSTableCellView {
         configureToken &+= 1
         let token = configureToken
 
-        // Drive thumbnail size from Preferences > Menu (Width/Height pixel
-        // fields). Falling back to 64 keeps a sane default if the user has
-        // never set them. File icons keep their fixed 32 size below.
-        let thumbW = max(16, settings.thumbnailWidth)
-        let thumbH = max(16, settings.thumbnailHeight)
-        thumbnailWidthConstraint?.constant = CGFloat(thumbW)
-        thumbnailHeightConstraint?.constant = CGFloat(thumbH)
+        // Inline thumbnail is fixed at 40×40 — `settings.thumbnailWidth/Height`
+        // are PIXEL sizes for menu-popup previews (default 576) and feeding
+        // them as point sizes here squeezes the title to a few characters.
+        thumbnailWidthConstraint?.constant = 40
+        thumbnailHeightConstraint?.constant = 40
 
         titleField.stringValue = entry.displayTitle
         titleField.toolTip = settings.isShowToolTip

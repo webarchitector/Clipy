@@ -172,6 +172,42 @@ final class ClipboardHistoryTableView: NSTableView {
     var quickLookHandler: (() -> Void)?
     var deleteHandler: (() -> Void)?
     var contextMenuProvider: ((Int) -> NSMenu?)?
+    /// Fires for the row under the mouse on every move. `nil` when the cursor
+    /// leaves the table. Used to drive a hover-follow preview pane.
+    var hoverHandler: ((Int?) -> Void)?
+
+    private var hoverTrackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = hoverTrackingArea { removeTrackingArea(existing) }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        hoverTrackingArea = area
+    }
+
+    private func notifyHover(at locationInWindow: NSPoint) {
+        let point = convert(locationInWindow, from: nil)
+        let rowIndex = row(at: point)
+        hoverHandler?(rowIndex >= 0 ? rowIndex : nil)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        notifyHover(at: event.locationInWindow)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        notifyHover(at: event.locationInWindow)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hoverHandler?(nil)
+    }
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -393,6 +429,17 @@ private extension CPYClipboardHistoryWindowController {
         tableView.contextMenuProvider = { [weak self] row in
             self?.makeContextMenu(forRow: row)
         }
+        // Hover-follow preview: while the cursor is over a row, the preview
+        // pane mirrors that row's content; on mouse-out we revert to the
+        // selected entry so a stale hover isn't left lingering.
+        tableView.hoverHandler = { [weak self] row in
+            guard let self = self else { return }
+            if let row = row, row >= 0, row < self.filteredEntries.count {
+                self.historyPreviewView.show(entry: self.filteredEntries[row])
+            } else {
+                self.historyPreviewView.show(entry: self.selectedEntry)
+            }
+        }
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.borderType = .noBorder
@@ -495,13 +542,14 @@ private extension CPYClipboardHistoryWindowController {
         }
     }
 
-    /// Row height grows to fit the thumbnail when any image-style preview is
-    /// enabled (Show Image / Show color preview / Show icon). When all of
-    /// those are off, fall back to a tighter title-only row.
+    /// Compact, fixed row heights. `thumbnailWidth/Height` in settings are
+    /// **pixel** sizes for menu-popup thumbnails (default 576), so feeding
+    /// them straight into pt-based row height blew rows up to ~584pt. Rows
+    /// here are sized for readable single-line titles, with a slightly taller
+    /// row when image-style previews are enabled to host the inline thumb.
     private func computedRowHeight() -> CGFloat {
         let imagey = settings.isShowImage || settings.isShowColorCode || settings.isShowIcon
-        guard imagey else { return 28 }
-        return max(72, CGFloat(settings.thumbnailHeight) + 8)
+        return imagey ? 56 : 32
     }
 
     func observeWorkspace() {
