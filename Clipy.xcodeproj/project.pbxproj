@@ -14,6 +14,8 @@
 		AB05000000000000000B0002 /* NestedDragDropSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000000B0001 /* NestedDragDropSpec.swift */; };
 		AB05000000000000000C0002 /* SnippetXmlRoundTripSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000000C0001 /* SnippetXmlRoundTripSpec.swift */; };
 		AB05000000000000000D0002 /* SnippetXml.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000000D0001 /* SnippetXml.swift */; };
+		AB05000000000000000E0002 /* SnippetSearchFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000000E0001 /* SnippetSearchFilterSpec.swift */; };
+		AB05000000000000000F0002 /* SnippetSearchFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000000F0001 /* SnippetSearchFilter.swift */; };
 		389CB265D2D6FF14FD4F7149 /* MenuManager+MenuBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */; };
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
@@ -186,6 +188,8 @@
 		AB05000000000000000B0001 /* NestedDragDropSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NestedDragDropSpec.swift; sourceTree = "<group>"; };
 		AB05000000000000000C0001 /* SnippetXmlRoundTripSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetXmlRoundTripSpec.swift; sourceTree = "<group>"; };
 		AB05000000000000000D0001 /* SnippetXml.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetXml.swift; sourceTree = "<group>"; };
+		AB05000000000000000E0001 /* SnippetSearchFilterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetSearchFilterSpec.swift; sourceTree = "<group>"; };
+		AB05000000000000000F0001 /* SnippetSearchFilter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetSearchFilter.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
 		31064F137CFB046737D1709D /* Dependencies-Clipy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.debug.xcconfig"; sourceTree = "<group>"; };
 		314B299D1EC49AD5004DD070 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/CPYSnippetsEditorWindowController.xib; sourceTree = "<group>"; };
@@ -620,6 +624,7 @@
 				FA1DB50F1DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.xib */,
 				7FD037ABF98B968BBAF6D9C9 /* CPYSnippetsEditorWindowController+OutlineDataSource.swift */,
 				AB05000000000000000D0001 /* SnippetXml.swift */,
+				AB05000000000000000F0001 /* SnippetSearchFilter.swift */,
 			);
 			path = Snippets;
 			sourceTree = "<group>";
@@ -673,6 +678,7 @@
 				FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */,
 				AB05000000000000000B0001 /* NestedDragDropSpec.swift */,
 				AB05000000000000000C0001 /* SnippetXmlRoundTripSpec.swift */,
+				AB05000000000000000E0001 /* SnippetSearchFilterSpec.swift */,
 				FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */,
 				FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */,
 				AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */,
@@ -1004,6 +1010,7 @@
 				FA1DB4D71DDCB479007F95C8 /* CPYSnippet.swift in Sources */,
 				FA1DB5201DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.swift in Sources */,
 				AB05000000000000000D0002 /* SnippetXml.swift in Sources */,
+				AB05000000000000000F0002 /* SnippetSearchFilter.swift in Sources */,
 				FA10897E20EC22E200A3FEFC /* LocalizedStrings.swift in Sources */,
 				FA1DB4EB1DDCB49C007F95C8 /* CPYPlaceHolderTextView.swift in Sources */,
 				FA1DB4BB1DDCB452007F95C8 /* Realm+Migration.swift in Sources */,
@@ -1037,6 +1044,7 @@
 				AB05000000000000000A0002 /* AppIndexScanRootSpec.swift in Sources */,
 				AB05000000000000000B0002 /* NestedDragDropSpec.swift in Sources */,
 				AB05000000000000000C0002 /* SnippetXmlRoundTripSpec.swift in Sources */,
+				AB05000000000000000E0002 /* SnippetSearchFilterSpec.swift in Sources */,
 				3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */,
 				3FA2F63A208748C582EF3A31 /* AppLauncherServicePersistenceSpec.swift in Sources */,
 				E1826F7CDEF9ED3824C7BBE3 /* CalculatorCurrencySpec.swift in Sources */,
