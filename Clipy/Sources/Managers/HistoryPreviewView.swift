@@ -38,6 +38,11 @@ final class HistoryPreviewView: NSView {
         textView.isRichText = false
         textView.font = NSFont.userFixedPitchFont(ofSize: 12) ?? NSFont.systemFont(ofSize: 12)
         textView.backgroundColor = .controlBackgroundColor
+        // Pin foreground to the dynamic .textColor so plain-text previews
+        // adapt to dark mode (default is dynamic but can be overridden by a
+        // prior RTF render — be explicit).
+        textView.textColor = .textColor
+        textView.insertionPointColor = .textColor
         textView.textContainerInset = NSSize(width: 8, height: 8)
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
@@ -138,6 +143,7 @@ final class HistoryPreviewView: NSView {
     private func showText(_ string: String) {
         textView.isRichText = false
         textView.string = string
+        textView.textColor = .textColor
         textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
         textScrollView.isHidden = false
         imageView.isHidden = true
@@ -146,11 +152,37 @@ final class HistoryPreviewView: NSView {
 
     private func showAttributed(_ string: NSAttributedString) {
         textView.isRichText = true
-        textView.textStorage?.setAttributedString(string)
+        // RTF carries explicit foreground colors (often black from rich
+        // sources). On dark mode that renders unreadable, so swap blackish
+        // / whitish foregrounds for the dynamic .textColor; non-monochrome
+        // accents are preserved to keep visible color formatting.
+        textView.textStorage?.setAttributedString(HistoryPreviewView.adaptForeground(string))
         textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
         textScrollView.isHidden = false
         imageView.isHidden = true
         emptyLabel.isHidden = true
+    }
+
+    static func adaptForeground(_ string: NSAttributedString) -> NSAttributedString {
+        let mutable = NSMutableAttributedString(attributedString: string)
+        let full = NSRange(location: 0, length: mutable.length)
+        mutable.enumerateAttribute(.foregroundColor, in: full, options: []) { value, range, _ in
+            let isMonochrome: Bool
+            if let rgb = (value as? NSColor)?.usingColorSpace(.deviceRGB) {
+                let red = rgb.redComponent
+                let green = rgb.greenComponent
+                let blue = rgb.blueComponent
+                isMonochrome = abs(red - green) < 0.05 && abs(green - blue) < 0.05 && abs(red - blue) < 0.05
+            } else {
+                // Missing foreground or unknown color space — fall through to
+                // the system default so the textView's own .textColor wins.
+                isMonochrome = true
+            }
+            if isMonochrome {
+                mutable.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
+            }
+        }
+        return mutable
     }
 
     private func showImage(_ image: NSImage) {
