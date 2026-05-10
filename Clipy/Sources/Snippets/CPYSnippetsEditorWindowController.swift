@@ -45,10 +45,21 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
             outlineView.registerForDraggedTypes([NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType)])
         }
     }
+    @IBOutlet private weak var searchField: NSSearchField!
 
     /// Cache of `(parentIdentifier → children)` for the outline view's data source
     /// methods. Invalidated by `reloadOutline()` before every reload.
     private var childrenCache: [String: [Object]] = [:]
+
+    /// When non-nil, the outline view is filtered: only IDs in the set are
+    /// rendered, and ancestor folders of matched snippets are auto-expanded.
+    /// nil means no filter (full tree visible).
+    private var visibleIdentifiers: Set<String>?
+
+    /// Folder IDs that were expanded when the user first entered search mode
+    /// (`visibleIdentifiers` transitioned nil → non-nil). Used to restore the
+    /// pre-search expansion state when the query is cleared.
+    private var savedExpandedIDs: Set<String>?
 
     /// Identifier (CPYFolder or CPYSnippet primary key) currently rendered in the
     /// right-hand pane. Source of truth for "what is the user looking at?". Updated
@@ -59,9 +70,24 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
     func children(parentId: String) -> [Object] {
         if let cached = childrenCache[parentId] { return cached }
         guard let realm = Realm.safeInstance() else { return [] }
-        let kids = CPYFolder.children(parentIdentifier: parentId, in: realm)
+        var kids = CPYFolder.children(parentIdentifier: parentId, in: realm)
+        if let visible = visibleIdentifiers {
+            kids = kids.filter { visible.contains(Self.idOf($0)) }
+        }
         childrenCache[parentId] = kids
         return kids
+    }
+
+    static func idOf(_ obj: Object) -> String {
+        if let folder = obj as? CPYFolder { return folder.identifier }
+        if let snippet = obj as? CPYSnippet { return snippet.identifier }
+        return ""
+    }
+
+    /// Returns the controller's current visible-id filter set. Exposed for
+    /// `NestedMoveExecutor` so drag-drop honours hidden siblings (Task 4).
+    func visibleIdentifiersForMove() -> Set<String>? {
+        return visibleIdentifiers
     }
 
     func reloadOutline() {
@@ -104,6 +130,10 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         CPYUtilities.applyAdaptiveAppearance(to: window?.contentView)
         outlineView.target = self
         outlineView.action = #selector(outlineViewClicked(_:))
+        searchField.placeholderString = L10n.searchSnippets
+        searchField.target = self
+        searchField.action = #selector(searchFieldChanged(_:))
+        searchField.delegate = self
         reloadOutline()
         // Select first root folder
         if let realm = Realm.safeInstance(),
@@ -353,6 +383,77 @@ extension CPYSnippetsEditorWindowController {
         // textView fell out of sync with the actual selection.
         changeItemFocus()
     }
+
+    @objc private func searchFieldChanged(_ sender: NSSearchField) {
+        applyFilter(sender.stringValue)
+    }
+
+    @IBAction func findInSnippets(_ sender: Any?) {
+        window?.makeFirstResponder(searchField)
+    }
+
+    private func applyFilter(_ query: String) {
+        guard let realm = Realm.safeInstance() else { return }
+        let new = SnippetSearchFilter.visibleIdentifiers(query: query, in: realm)
+        let wasNil = (visibleIdentifiers == nil)
+        let willBeNil = (new == nil)
+        let previouslySelectedID = selectedItemIdentifier()
+
+        if wasNil && !willBeNil {
+            savedExpandedIDs = collectExpandedFolderIDs()
+        }
+        visibleIdentifiers = new
+        reloadOutline()
+
+        if !willBeNil {
+            expandAllVisibleFolders()
+        } else if let saved = savedExpandedIDs {
+            outlineView.collapseItem(nil, collapseChildren: true)
+            for id in saved {
+                if let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: id) {
+                    outlineView.expandItem(folder)
+                }
+            }
+            savedExpandedIDs = nil
+        }
+
+        restoreSelectionAfterFilter(previouslySelectedID: previouslySelectedID)
+    }
+
+    private func collectExpandedFolderIDs() -> Set<String> {
+        var ids = Set<String>()
+        for row in 0..<outlineView.numberOfRows {
+            guard let folder = outlineView.item(atRow: row) as? CPYFolder else { continue }
+            if outlineView.isItemExpanded(folder) {
+                ids.insert(folder.identifier)
+            }
+        }
+        return ids
+    }
+
+    private func expandAllVisibleFolders() {
+        guard let visible = visibleIdentifiers else { return }
+        guard let realm = Realm.safeInstance() else { return }
+        for id in visible {
+            if let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: id) {
+                outlineView.expandItem(folder)
+            }
+        }
+    }
+
+    private func restoreSelectionAfterFilter(previouslySelectedID: String?) {
+        if let id = previouslySelectedID, selectRow(forItemID: id) {
+            changeItemFocus(forItemID: id)
+            return
+        }
+        if outlineView.numberOfRows > 0 {
+            outlineView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+            changeItemFocus()
+        } else {
+            outlineView.deselectAll(nil)
+            changeItemFocus()
+        }
+    }
 }
 
 // MARK: - SnippetEditorSelectionGuard
@@ -444,6 +545,22 @@ extension CPYSnippetsEditorWindowController: NSTextViewDelegate {
         string.replaceSubrange(range, with: replacementString)
         try? realm.write { snippet.content = string }
         return true
+    }
+}
+
+// MARK: - NSSearchFieldDelegate
+extension CPYSnippetsEditorWindowController: NSSearchFieldDelegate {
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+            if !searchField.stringValue.isEmpty {
+                searchField.stringValue = ""
+                applyFilter("")
+            } else {
+                window?.makeFirstResponder(outlineView)
+            }
+            return true
+        }
+        return false
     }
 }
 

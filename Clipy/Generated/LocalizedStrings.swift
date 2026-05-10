@@ -26,6 +26,8 @@ internal enum L10n {
   internal static let donTLaunch = L10n.tr("Localizable", "Don't Launch")
   /// Edit Snippets...
   internal static let editSnippets = L10n.tr("Localizable", "Edit Snippets")
+  /// Find
+  internal static let find = L10n.tr("Localizable", "Find")
   /// General
   internal static let general = L10n.tr("Localizable", "General")
   /// History
@@ -50,6 +52,8 @@ internal enum L10n {
   internal static let quitClipy = L10n.tr("Localizable", "Quit Clipy")
   /// Search History
   internal static let searchHistory = L10n.tr("Localizable", "Search History")
+  /// Search Snippets
+  internal static let searchSnippets = L10n.tr("Localizable", "Search Snippets")
   /// Shortcuts
   internal static let shortcuts = L10n.tr("Localizable", "Shortcuts")
   /// Snippet

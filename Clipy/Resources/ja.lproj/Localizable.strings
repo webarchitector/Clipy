@@ -61,3 +61,6 @@
 "To do this action please allow Accessibility in Security Privacy preferences located in System Preferences" = "この動作を行うためにはシステム環境設定の\"セキュリティとプライバシー\"環境設定で、Clipyへのアクセシビリティのアクセスを許可してください。";
 
 "Open System Preferences" = "\"システム環境設定\"を開く";
+
+"Search Snippets" = "スニペットを検索";
+"Find" = "検索";

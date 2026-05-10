@@ -11,6 +11,7 @@
                 <outlet property="folderShortcutRecordView" destination="zjO-0c-pwM" id="x7o-Yz-Zpe"/>
                 <outlet property="folderTitleTextField" destination="xGQ-1B-r34" id="mgO-58-c6u"/>
                 <outlet property="outlineView" destination="F5g-cX-Wqm" id="k1K-Pb-XxG"/>
+                <outlet property="searchField" destination="sff-00-0001" id="sff-00-0021"/>
                 <outlet property="splitView" destination="BiM-Ll-CfO" id="UoP-Rf-q9x"/>
                 <outlet property="textView" destination="Sg6-q3-8Kx" id="UKr-6H-tfo"/>
                 <outlet property="window" destination="QvC-M9-y7g" id="euv-Gb-Dbb"/>
@@ -282,6 +283,17 @@
                                 <rect key="frame" x="0.0" y="0.0" width="250" height="544"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <subviews>
+                                    <searchField wantsLayer="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sff-00-0001">
+                                        <rect key="frame" x="8" y="514" width="234" height="22"/>
+                                        <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsWholeSearchString="NO" sendsSearchStringImmediately="YES" maximumRecents="0" placeholderString="Search Snippets" usesSingleLineMode="YES" bezelStyle="round" id="sff-00-0002">
+                                            <font key="font" metaFont="system"/>
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </searchFieldCell>
+                                        <connections>
+                                            <outlet property="delegate" destination="-2" id="sff-00-0003"/>
+                                        </connections>
+                                    </searchField>
                                     <scrollView focusRingType="none" borderType="none" autohidesScrollers="YES" horizontalLineScroll="27" horizontalPageScroll="10" verticalLineScroll="27" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2KR-By-5Os">
                                         <rect key="frame" x="0.0" y="0.0" width="250" height="544"/>
                                         <clipView key="contentView" focusRingType="none" id="vvm-NQ-QmU">
@@ -329,9 +341,12 @@
                                 </subviews>
                                 <constraints>
                                     <constraint firstAttribute="trailing" secondItem="2KR-By-5Os" secondAttribute="trailing" id="CiG-32-yJH"/>
-                                    <constraint firstItem="2KR-By-5Os" firstAttribute="top" secondItem="gSL-Od-RtU" secondAttribute="top" id="UHp-fk-GIA"/>
+                                    <constraint firstItem="2KR-By-5Os" firstAttribute="top" secondItem="sff-00-0001" secondAttribute="bottom" constant="6" id="UHp-fk-GIA"/>
                                     <constraint firstAttribute="bottom" secondItem="2KR-By-5Os" secondAttribute="bottom" id="ZZU-io-Znd"/>
                                     <constraint firstItem="2KR-By-5Os" firstAttribute="leading" secondItem="gSL-Od-RtU" secondAttribute="leading" id="ljh-bu-l2c"/>
+                                    <constraint firstItem="sff-00-0001" firstAttribute="top" secondItem="gSL-Od-RtU" secondAttribute="top" constant="8" id="sff-00-0011"/>
+                                    <constraint firstItem="sff-00-0001" firstAttribute="leading" secondItem="gSL-Od-RtU" secondAttribute="leading" constant="8" id="sff-00-0012"/>
+                                    <constraint firstAttribute="trailing" secondItem="sff-00-0001" secondAttribute="trailing" constant="8" id="sff-00-0013"/>
                                 </constraints>
                             </customView>
                             <customView id="KY3-CN-XVk">
