@@ -50,12 +50,12 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
     func outlineView(_ outlineView: NSOutlineView, pasteboardWriterForItem item: Any) -> NSPasteboardWriting? {
         let pasteboardItem = NSPasteboardItem()
         if let folder = item as? CPYFolder, let index = folders.firstIndex(of: folder) {
-            let draggedData = CPYDraggedData(type: .folder, folderIdentifier: folder.identifier, snippetIdentifier: nil, index: index)
+            let draggedData = CPYDraggedData(type: .folder, identifier: folder.identifier, parentIdentifier: "", index: index)
             guard let data = LegacyKeyedArchive.archivedData(withRootObject: draggedData) else { return nil }
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))
         } else if let snippet = item as? CPYSnippet, let folder = outlineView.parent(forItem: snippet) as? CPYFolder {
             guard let index = folder.snippets.firstIndex(of: snippet) else { return nil }
-            let draggedData = CPYDraggedData(type: .snippet, folderIdentifier: folder.identifier, snippetIdentifier: snippet.identifier, index: Int(index))
+            let draggedData = CPYDraggedData(type: .snippet, identifier: snippet.identifier, parentIdentifier: folder.identifier, index: Int(index))
             guard let data = LegacyKeyedArchive.archivedData(withRootObject: draggedData) else { return nil }
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))
         } else {
@@ -87,7 +87,7 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
         switch draggedData.type {
         case .folder where index != draggedData.index:
             guard index >= 0 else { return false }
-            guard let folder = folders.first(where: { $0.identifier == draggedData.folderIdentifier }) else { return false }
+            guard let folder = folders.first(where: { $0.identifier == draggedData.identifier }) else { return false }
             folders.insert(folder, at: index)
             let removedIndex = (index < draggedData.index) ? draggedData.index + 1 : draggedData.index
             folders.remove(at: removedIndex)
@@ -97,9 +97,9 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
             changeItemFocus()
             return true
         case .snippet:
-            guard let fromFolder = folders.first(where: { $0.identifier == draggedData.folderIdentifier }) else { return false }
+            guard let fromFolder = folders.first(where: { $0.identifier == draggedData.parentIdentifier }) else { return false }
             guard let toFolder = item as? CPYFolder else { return false }
-            guard let snippet = fromFolder.snippets.first(where: { $0.identifier == draggedData.snippetIdentifier }) else { return false }
+            guard let snippet = fromFolder.snippets.first(where: { $0.identifier == draggedData.identifier }) else { return false }
 
             if fromFolder.identifier == toFolder.identifier {
                 guard index >= 0 else { return false }

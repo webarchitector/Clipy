@@ -8,19 +8,29 @@ class DraggedDataSpec: QuickSpec {
 
         describe("NSCoding") {
 
-            it("Archive data") {
-                let draggedData = CPYDraggedData(type: .folder, folderIdentifier: UUID().uuidString, snippetIdentifier: nil, index: 10)
+            it("Archive folder data") {
+                let id = UUID().uuidString
+                let parent = UUID().uuidString
+                let draggedData = CPYDraggedData(type: .folder, identifier: id, parentIdentifier: parent, index: 10)
                 let data = try NSKeyedArchiver.archivedData(withRootObject: draggedData, requiringSecureCoding: true)
 
-                let unarchiveData = try NSKeyedUnarchiver.unarchivedObject(ofClass: CPYDraggedData.self, from: data)
-                expect(unarchiveData).toNot(beNil())
-                expect(unarchiveData?.type) == draggedData.type
-                expect(unarchiveData?.folderIdentifier) == draggedData.folderIdentifier
-                expect(unarchiveData?.snippetIdentifier).to(beNil())
-                expect(unarchiveData?.index) == draggedData.index
+                let unarchived = try NSKeyedUnarchiver.unarchivedObject(ofClass: CPYDraggedData.self, from: data)
+                expect(unarchived).toNot(beNil())
+                expect(unarchived?.type) == draggedData.type
+                expect(unarchived?.identifier) == id
+                expect(unarchived?.parentIdentifier) == parent
+                expect(unarchived?.index) == 10
             }
 
+            it("Archive snippet data with empty parent string is preserved") {
+                // Snippets always have a non-empty parentIdentifier; we still
+                // verify the empty-string round-trip for safety.
+                let draggedData = CPYDraggedData(type: .snippet, identifier: "s", parentIdentifier: "", index: 0)
+                let data = try NSKeyedArchiver.archivedData(withRootObject: draggedData, requiringSecureCoding: true)
+                let unarchived = try NSKeyedUnarchiver.unarchivedObject(ofClass: CPYDraggedData.self, from: data)
+                expect(unarchived?.parentIdentifier) == ""
+                expect(unarchived?.identifier) == "s"
+            }
         }
-
     }
 }
