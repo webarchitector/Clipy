@@ -46,17 +46,37 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         }
     }
 
-    var folders = [CPYFolder]()
+    /// Cache of `(parentIdentifier → children)` for the outline view's data source
+    /// methods. Invalidated by `reloadOutline()` before every reload.
+    private var childrenCache: [String: [Object]] = [:]
+
+    func children(parentId: String) -> [Object] {
+        if let cached = childrenCache[parentId] { return cached }
+        guard let realm = Realm.safeInstance() else { return [] }
+        let kids = CPYFolder.children(parentIdentifier: parentId, in: realm)
+        childrenCache[parentId] = kids
+        return kids
+    }
+
+    func reloadOutline() {
+        childrenCache.removeAll()
+        outlineView.reloadData()
+    }
+
     private var selectedSnippet: CPYSnippet? {
         guard let snippet = outlineView.item(atRow: outlineView.selectedRow) as? CPYSnippet else { return nil }
         return snippet
     }
-    private var selectedFolder: CPYFolder? {
+
+    /// The folder that should host new snippets/subfolders for the current selection.
+    /// If a folder is selected → that folder. If a snippet is selected → its parent
+    /// folder (looked up by `parentIdentifier`). If nothing is selected → nil.
+    private var selectedHostFolder: CPYFolder? {
+        guard let realm = Realm.safeInstance() else { return nil }
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else { return nil }
-        if let folder = outlineView.parent(forItem: item) as? CPYFolder {
-            return folder
-        } else if let folder = item as? CPYFolder {
-            return folder
+        if let folder = item as? CPYFolder { return folder }
+        if let snippet = item as? CPYSnippet, !snippet.parentIdentifier.isEmpty {
+            return realm.object(ofType: CPYFolder.self, forPrimaryKey: snippet.parentIdentifier)
         }
         return nil
     }
@@ -76,16 +96,14 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         folderShortcutRecordView.tintColor = .controlAccentColor
         folderShortcutRecordView.borderColor = .separatorColor
         CPYUtilities.applyAdaptiveAppearance(to: window?.contentView)
-        // HACK: Copy as an object that does not put under Realm management.
-        // https://github.com/realm/realm-cocoa/issues/1734
-        guard let realm = Realm.safeInstance() else { return }
-        folders = realm.objects(CPYFolder.self)
-                    .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
-                    .map { $0.deepCopy() }
-        outlineView.reloadData()
-        // Select first folder
-        if let folder = folders.first {
-            outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: folder)), byExtendingSelection: false)
+        reloadOutline()
+        // Select first root folder
+        if let realm = Realm.safeInstance(),
+           let firstRoot = realm.objects(CPYFolder.self)
+               .filter("parentIdentifier == ''")
+               .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
+               .first {
+            outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: firstRoot)), byExtendingSelection: false)
             changeItemFocus()
         }
     }
@@ -105,32 +123,40 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
 // MARK: - IBActions
 extension CPYSnippetsEditorWindowController {
     @IBAction private func addSnippetButtonTapped(_ sender: AnyObject) {
-        guard let folder = selectedFolder else {
-            NSSound.beep()
-            return
-        }
-        let snippet = folder.createSnippet()
-        folder.snippets.append(snippet)
-        folder.mergeSnippet(snippet)
-        outlineView.reloadData()
-        outlineView.expandItem(folder)
+        guard let realm = Realm.safeInstance() else { NSSound.beep(); return }
+        guard let host = selectedHostFolder else { NSSound.beep(); return }
+        let snippet = CPYSnippet()
+        snippet.title = "untitled snippet"
+        snippet.parentIdentifier = host.identifier
+        snippet.index = children(parentId: host.identifier).count
+        try? realm.write { realm.add(snippet) }
+        reloadOutline()
+        outlineView.expandItem(host)
         outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: snippet)), byExtendingSelection: false)
         changeItemFocus()
     }
 
     @IBAction private func addFolderButtonTapped(_ sender: AnyObject) {
-        let folder = CPYFolder.create()
-        folders.append(folder)
-        folder.merge()
-        outlineView.reloadData()
+        guard let realm = Realm.safeInstance() else { NSSound.beep(); return }
+        let host: CPYFolder? = selectedHostFolder
+        if let host = host, CPYFolder.depth(of: host, in: realm) >= 5 {
+            NSSound.beep(); return
+        }
+        let folder = CPYFolder()
+        folder.title = "untitled folder"
+        folder.parentIdentifier = host?.identifier ?? ""
+        folder.index = children(parentId: folder.parentIdentifier).count
+        try? realm.write { realm.add(folder) }
+        reloadOutline()
+        if let host = host { outlineView.expandItem(host) }
         outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: folder)), byExtendingSelection: false)
         changeItemFocus()
     }
 
     @IBAction private func deleteButtonTapped(_ sender: AnyObject) {
+        guard let realm = Realm.safeInstance() else { NSSound.beep(); return }
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else {
-            NSSound.beep()
-            return
+            NSSound.beep(); return
         }
 
         let alert = NSAlert()
@@ -142,31 +168,61 @@ extension CPYSnippetsEditorWindowController {
         let result = alert.runModal()
         if result != NSApplication.ModalResponse.alertFirstButtonReturn { return }
 
-        if let folder = item as? CPYFolder {
-            folders.removeObject(folder)
-            folder.remove()
-            AppEnvironment.current.hotKeyService.unregisterSnippetHotKey(with: folder.identifier)
-        } else if let snippet = item as? CPYSnippet, let folder = outlineView.parent(forItem: item) as? CPYFolder, let index = folder.snippets.firstIndex(of: snippet) {
-            folder.snippets.remove(at: index)
-            snippet.remove()
+        try? realm.write {
+            if let folder = item as? CPYFolder {
+                deleteFolderRecursively(folder, in: realm)
+            } else if let snippet = item as? CPYSnippet {
+                let parentId = snippet.parentIdentifier
+                realm.delete(snippet)
+                CPYFolder.renumberSiblings(of: parentId, in: realm)
+            }
         }
-        outlineView.reloadData()
+        reloadOutline()
         changeItemFocus()
     }
 
+    private func deleteFolderRecursively(_ folder: CPYFolder, in realm: Realm) {
+        // Collect descendant folder identifiers so we can unregister hotkeys.
+        var idsToUnregister: [String] = [folder.identifier]
+        var stack: [CPYFolder] = [folder]
+        while let current = stack.popLast() {
+            let subs = realm.objects(CPYFolder.self).filter("parentIdentifier == %@", current.identifier)
+            for sub in subs {
+                idsToUnregister.append(sub.identifier)
+                stack.append(sub)
+            }
+        }
+        // Delete descendants bottom-up: snippets, then folders.
+        for fid in idsToUnregister {
+            let snippets = realm.objects(CPYSnippet.self).filter("parentIdentifier == %@", fid)
+            realm.delete(snippets)
+        }
+        let parentId = folder.parentIdentifier
+        for fid in idsToUnregister.reversed() {
+            if let descendant = realm.object(ofType: CPYFolder.self, forPrimaryKey: fid) {
+                realm.delete(descendant)
+            }
+        }
+        // Unregister hotkeys for every removed folder.
+        for fid in idsToUnregister {
+            AppEnvironment.current.hotKeyService.unregisterSnippetHotKey(with: fid)
+        }
+        CPYFolder.renumberSiblings(of: parentId, in: realm)
+    }
+
     @IBAction private func changeStatusButtonTapped(_ sender: AnyObject) {
+        guard let realm = Realm.safeInstance() else { NSSound.beep(); return }
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else {
-            NSSound.beep()
-            return
+            NSSound.beep(); return
         }
-        if let folder = item as? CPYFolder {
-            folder.enable = !folder.enable
-            folder.merge()
-        } else if let snippet = item as? CPYSnippet {
-            snippet.enable = !snippet.enable
-            snippet.merge()
+        try? realm.write {
+            if let folder = item as? CPYFolder {
+                folder.enable.toggle()
+            } else if let snippet = item as? CPYSnippet {
+                snippet.enable.toggle()
+            }
         }
-        outlineView.reloadData()
+        reloadOutline()
         changeItemFocus()
     }
 
@@ -176,55 +232,50 @@ extension CPYSnippetsEditorWindowController {
         panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
         panel.allowedContentTypes = [.xml]
         let returnCode = panel.runModal()
-
         if returnCode != NSApplication.ModalResponse.OK { return }
-
-        let fileURLs = panel.urls
-        guard let url = fileURLs.first else { return }
-        guard let data = try? Data(contentsOf: url) else { return }
+        guard let url = panel.urls.first, let data = try? Data(contentsOf: url) else { return }
 
         do {
             guard let realm = Realm.safeInstance() else { return }
-            let lastFolder = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true).last
-            var folderIndex = (lastFolder?.index ?? -1) + 1
-            // Create Document
+            let lastRoot = realm.objects(CPYFolder.self)
+                .filter("parentIdentifier == ''")
+                .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true).last
+            var rootIndex = (lastRoot?.index ?? -1) + 1
             var options = AEXMLOptions()
             options.parserSettings.shouldTrimWhitespace = false
             let xmlDocument = try AEXMLDocument(xml: data, options: options)
-            realm.transaction {
-                xmlDocument[Constants.Xml.rootElement]
-                    .children
-                    .forEach { folderElement in
-                        let folder = CPYFolder()
-                        // Title
-                        folder.title = folderElement[Constants.Xml.titleElement].value ?? "untitled folder"
-                        // Index
-                        folder.index = folderIndex
-                        // Sync DB
-                        realm.add(folder)
-                        // Snippet
-                        var snippetIndex = 0
-                        folderElement[Constants.Xml.snippetsElement][Constants.Xml.snippetElement]
-                            .all?
-                            .forEach { snippetElement in
-                                let snippet = CPYSnippet()
-                                snippet.title = snippetElement[Constants.Xml.titleElement].value ?? "untitled snippet"
-                                snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
-                                snippet.index = snippetIndex
-                                folder.snippets.append(snippet)
-                                // Increment snippet index
-                                snippetIndex += 1
-                            }
-                        // Increment folder index
-                        folderIndex += 1
-                        // Add folder
-                        let copyFolder = folder.deepCopy()
-                        folders.append(copyFolder)
-                    }
+            try realm.write {
+                xmlDocument[Constants.Xml.rootElement][Constants.Xml.folderElement].all?.forEach { folderElement in
+                    importFolder(folderElement, parentId: "", index: rootIndex, in: realm)
+                    rootIndex += 1
+                }
             }
-            outlineView.reloadData()
+            reloadOutline()
         } catch {
             NSSound.beep()
+        }
+    }
+
+    private func importFolder(_ element: AEXMLElement, parentId: String, index: Int, in realm: Realm) {
+        let folder = CPYFolder()
+        folder.title = element[Constants.Xml.titleElement].value ?? "untitled folder"
+        folder.parentIdentifier = parentId
+        folder.index = index
+        realm.add(folder)
+        var snippetIndex = 0
+        element[Constants.Xml.snippetsElement][Constants.Xml.snippetElement].all?.forEach { sEl in
+            let snippet = CPYSnippet()
+            snippet.title = sEl[Constants.Xml.titleElement].value ?? "untitled snippet"
+            snippet.content = sEl[Constants.Xml.contentElement].value ?? ""
+            snippet.parentIdentifier = folder.identifier
+            snippet.index = snippetIndex
+            realm.add(snippet)
+            snippetIndex += 1
+        }
+        var childIndex = 0
+        element[Constants.Xml.foldersElement][Constants.Xml.folderElement].all?.forEach { childEl in
+            importFolder(childEl, parentId: folder.identifier, index: childIndex, in: realm)
+            childIndex += 1
         }
     }
 
@@ -233,20 +284,11 @@ extension CPYSnippetsEditorWindowController {
         let rootElement = xmlDocument.addChild(name: Constants.Xml.rootElement)
 
         guard let realm = Realm.safeInstance() else { return }
-        let folders = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
-        folders.forEach { folder in
-            let folderElement = rootElement.addChild(name: Constants.Xml.folderElement)
-
-            folderElement.addChild(name: Constants.Xml.titleElement, value: folder.title)
-
-            let snippetsElement = folderElement.addChild(name: Constants.Xml.snippetsElement)
-            folder.snippets
-                .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
-                .forEach { snippet in
-                    let snippetElement = snippetsElement.addChild(name: Constants.Xml.snippetElement)
-                    snippetElement.addChild(name: Constants.Xml.titleElement, value: snippet.title)
-                    snippetElement.addChild(name: Constants.Xml.contentElement, value: snippet.content)
-                }
+        let roots = realm.objects(CPYFolder.self)
+            .filter("parentIdentifier == ''")
+            .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
+        for folder in roots {
+            exportFolder(folder, into: rootElement, realm: realm)
         }
 
         let panel = NSSavePanel()
@@ -257,16 +299,36 @@ extension CPYSnippetsEditorWindowController {
         panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
         panel.nameFieldStringValue = "snippets"
         let returnCode = panel.runModal()
-
         if returnCode != NSApplication.ModalResponse.OK { return }
 
-        guard let data = xmlDocument.xml.data(using: String.Encoding.utf8) else { return }
+        guard let xmlData = xmlDocument.xml.data(using: String.Encoding.utf8) else { return }
         guard let url = panel.url else { return }
 
-        do {
-            try data.write(to: url, options: .atomic)
-        } catch {
-            NSSound.beep()
+        do { try xmlData.write(to: url, options: .atomic) } catch { NSSound.beep() }
+    }
+
+    private func exportFolder(_ folder: CPYFolder, into parent: AEXMLElement, realm: Realm) {
+        let folderElement = parent.addChild(name: Constants.Xml.folderElement)
+        folderElement.addChild(name: Constants.Xml.titleElement, value: folder.title)
+
+        let snippetsElement = folderElement.addChild(name: Constants.Xml.snippetsElement)
+        let snippets = realm.objects(CPYSnippet.self)
+            .filter("parentIdentifier == %@", folder.identifier)
+            .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
+        for snippet in snippets {
+            let sEl = snippetsElement.addChild(name: Constants.Xml.snippetElement)
+            sEl.addChild(name: Constants.Xml.titleElement, value: snippet.title)
+            sEl.addChild(name: Constants.Xml.contentElement, value: snippet.content)
+        }
+
+        let subfolders = realm.objects(CPYFolder.self)
+            .filter("parentIdentifier == %@", folder.identifier)
+            .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
+        if !subfolders.isEmpty {
+            let foldersElement = folderElement.addChild(name: Constants.Xml.foldersElement)
+            for sub in subfolders {
+                exportFolder(sub, into: foldersElement, realm: realm)
+            }
         }
     }
 }
@@ -332,12 +394,10 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDelegate {
         guard !text.isEmpty else { return false }
         guard let outlineView = control as? NSOutlineView else { return false }
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else { return false }
-        if let folder = item as? CPYFolder {
-            folder.title = text
-            folder.merge()
-        } else if let snippet = item as? CPYSnippet {
-            snippet.title = text
-            snippet.merge()
+        guard let realm = Realm.safeInstance() else { return false }
+        try? realm.write {
+            if let folder = item as? CPYFolder { folder.title = text }
+            else if let snippet = item as? CPYSnippet { snippet.title = text }
         }
         changeItemFocus()
         return true
@@ -350,11 +410,11 @@ extension CPYSnippetsEditorWindowController: NSTextViewDelegate {
         guard let replacementString = replacementString else { return false }
         let text = textView.string
         guard let snippet = selectedSnippet else { return false }
+        guard let realm = Realm.safeInstance() else { return false }
         guard let range = Range(affectedCharRange, in: text) else { return false }
         var string = text
         string.replaceSubrange(range, with: replacementString)
-        snippet.content = string
-        snippet.merge()
+        try? realm.write { snippet.content = string }
         return true
     }
 }
@@ -370,22 +430,22 @@ extension CPYSnippetsEditorWindowController: NSWindowDelegate {
 // See CPYShortcutsPreferenceViewController for why @preconcurrency.
 @MainActor extension CPYSnippetsEditorWindowController: @preconcurrency RecordViewDelegate {
     func recordViewShouldBeginRecording(_ recordView: RecordView) -> Bool {
-        guard selectedFolder != nil else { return false }
+        guard selectedHostFolder != nil else { return false }
         return true
     }
 
     func recordView(_ recordView: RecordView, canRecordKeyCombo keyCombo: KeyCombo) -> Bool {
-        guard selectedFolder != nil else { return false }
+        guard selectedHostFolder != nil else { return false }
         return true
     }
 
     func recordView(_ recordView: RecordView, didChangeKeyCombo keyCombo: KeyCombo?) {
-        guard let selectedFolder = selectedFolder else { return }
+        guard let selectedHostFolder = selectedHostFolder else { return }
         guard let keyCombo = keyCombo else {
-            AppEnvironment.current.hotKeyService.unregisterSnippetHotKey(with: selectedFolder.identifier)
+            AppEnvironment.current.hotKeyService.unregisterSnippetHotKey(with: selectedHostFolder.identifier)
             return
         }
-        AppEnvironment.current.hotKeyService.registerSnippetHotKey(with: selectedFolder.identifier, keyCombo: keyCombo)
+        AppEnvironment.current.hotKeyService.registerSnippetHotKey(with: selectedHostFolder.identifier, keyCombo: keyCombo)
     }
 
     func recordViewDidEndRecording(_ recordView: RecordView) {}

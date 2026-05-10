@@ -89,6 +89,7 @@ struct Constants {
         static let titleElement = "title"
         static let snippetsElement = "snippets"
         static let contentElement = "content"
+        static let foldersElement = "folders"
     }
 
     struct HotKey {
