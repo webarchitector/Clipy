@@ -283,12 +283,10 @@
                                 <rect key="frame" x="0.0" y="0.0" width="250" height="544"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <subviews>
-                                    <searchField wantsLayer="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sff-00-0001">
+                                    <searchField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sff-00-0001">
                                         <rect key="frame" x="8" y="514" width="234" height="22"/>
-                                        <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsWholeSearchString="NO" sendsSearchStringImmediately="YES" maximumRecents="0" placeholderString="Search Snippets" usesSingleLineMode="YES" bezelStyle="round" id="sff-00-0002">
+                                        <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsWholeSearchString="NO" sendsSearchStringImmediately="YES" maximumRecents="254" usesSingleLineMode="YES" id="sff-00-0002">
                                             <font key="font" metaFont="system"/>
-                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </searchFieldCell>
                                         <connections>
                                             <outlet property="delegate" destination="-2" id="sff-00-0003"/>
