@@ -175,7 +175,7 @@ enum NestedMoveExecutor {
                                                     atIndex: atIndex)
         } else {
             var working: [Object] = []
-            for kid in allKids where idOf(kid) != itemId { working.append(kid) }
+            for kid in allKids where CPYFolder.nodeID(of: kid) != itemId { working.append(kid) }
             if let target = target {
                 let pos = (atIndex < 0 || atIndex > working.count) ? working.count : atIndex
                 working.insert(target, at: pos)
@@ -206,7 +206,7 @@ enum NestedMoveExecutor {
         var hiddenAtFront: [Object] = []
         var lastVisibleId: String?
         for kid in allKids {
-            let kidId = idOf(kid)
+            let kidId = CPYFolder.nodeID(of: kid)
             if visible.contains(kidId) {
                 lastVisibleId = kidId
             } else {
@@ -218,8 +218,11 @@ enum NestedMoveExecutor {
             }
         }
         var visibleOrdered: [Object] = []
-        for kid in allKids where visible.contains(idOf(kid)) && idOf(kid) != movedId {
-            visibleOrdered.append(kid)
+        for kid in allKids {
+            let kidId = CPYFolder.nodeID(of: kid)
+            if visible.contains(kidId) && kidId != movedId {
+                visibleOrdered.append(kid)
+            }
         }
         if let movedItem = movedItem {
             let pos = (atIndex < 0 || atIndex > visibleOrdered.count) ? visibleOrdered.count : atIndex
@@ -229,16 +232,10 @@ enum NestedMoveExecutor {
         result.append(contentsOf: hiddenAtFront)
         for kid in visibleOrdered {
             result.append(kid)
-            if let trailing = hiddenByAnchor[idOf(kid)] {
+            if let trailing = hiddenByAnchor[CPYFolder.nodeID(of: kid)] {
                 result.append(contentsOf: trailing)
             }
         }
         return result
-    }
-
-    private static func idOf(_ obj: Object) -> String {
-        if let folder = obj as? CPYFolder { return folder.identifier }
-        if let snippet = obj as? CPYSnippet { return snippet.identifier }
-        return ""
     }
 }

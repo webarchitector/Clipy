@@ -91,6 +91,15 @@ extension CPYFolder {
 // MARK: - Tree (parentIdentifier model)
 extension CPYFolder {
 
+    /// Returns the primary-key identifier of a tree node (`CPYFolder` or
+    /// `CPYSnippet`). Empty string for any other type — caller is expected
+    /// to pass children-of-folder objects only.
+    static func nodeID(of obj: Object) -> String {
+        if let folder = obj as? CPYFolder { return folder.identifier }
+        if let snippet = obj as? CPYSnippet { return snippet.identifier }
+        return ""
+    }
+
     /// Returns the merged, index-sorted children (`[CPYFolder | CPYSnippet]`)
     /// of the folder identified by `parentIdentifier`. Pass `""` for roots.
     static func children(parentIdentifier: String, in realm: Realm) -> [Object] {

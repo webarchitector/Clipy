@@ -72,16 +72,10 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         guard let realm = Realm.safeInstance() else { return [] }
         var kids = CPYFolder.children(parentIdentifier: parentId, in: realm)
         if let visible = visibleIdentifiers {
-            kids = kids.filter { visible.contains(Self.idOf($0)) }
+            kids = kids.filter { visible.contains(CPYFolder.nodeID(of: $0)) }
         }
         childrenCache[parentId] = kids
         return kids
-    }
-
-    static func idOf(_ obj: Object) -> String {
-        if let folder = obj as? CPYFolder { return folder.identifier }
-        if let snippet = obj as? CPYSnippet { return snippet.identifier }
-        return ""
     }
 
     /// Returns the controller's current visible-id filter set. Exposed for
