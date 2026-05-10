@@ -325,40 +325,47 @@ extension MenuManager {
 extension MenuManager {
     func addSnippetItems(_ menu: NSMenu, separateMenu: Bool, settings: MenuSettings) {
         guard let realm = realm else { return }
-        let folderResults = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
-        guard !folderResults.isEmpty else { return }
+        let roots = realm.objects(CPYFolder.self)
+            .filter("parentIdentifier == ''")
+            .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
+            .filter { $0.enable }
+        guard !roots.isEmpty else { return }
+
         if separateMenu {
             menu.addItem(NSMenuItem.separator())
         }
 
-        // Snippet title
         let labelItem = NSMenuItem(title: L10n.snippet, action: nil)
         labelItem.isEnabled = false
         menu.addItem(labelItem)
 
-        var subMenuIndex = menu.numberOfItems - 1
-        let firstIndex = settings.isStartFromZero ? 0 : 1
-
-        folderResults
-            .filter { $0.enable }
-            .forEach { folder in
-                let folderTitle = folder.title
-                let subMenuItem = makeSubmenuItem(folderTitle, isShowIcon: settings.isShowIcon)
-                menu.addItem(subMenuItem)
-                subMenuIndex += 1
-
-                var i = firstIndex
-                folder.snippets
-                    .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
-                    .filter { $0.enable }
-                    .forEach { snippet in
-                        let subMenuItem = makeSnippetMenuItem(snippet, listNumber: i, settings: settings)
-                        if let subMenu = menu.item(at: subMenuIndex)?.submenu {
-                            subMenu.addItem(subMenuItem)
-                            i += 1
-                        }
-                    }
+        for root in roots {
+            let subMenuItem = makeSubmenuItem(root.title, isShowIcon: settings.isShowIcon)
+            menu.addItem(subMenuItem)
+            if let submenu = subMenuItem.submenu {
+                appendSnippetChildren(submenu, parentId: root.identifier, realm: realm, settings: settings)
             }
+        }
+    }
+
+    private func appendSnippetChildren(_ menu: NSMenu, parentId: String, realm: Realm, settings: MenuSettings) {
+        let firstIndex = settings.isStartFromZero ? 0 : 1
+        var listNumber = firstIndex
+        let kids = CPYFolder.children(parentIdentifier: parentId, in: realm)
+        for kid in kids {
+            if let folder = kid as? CPYFolder {
+                guard folder.enable else { continue }
+                let subMenuItem = makeSubmenuItem(folder.title, isShowIcon: settings.isShowIcon)
+                menu.addItem(subMenuItem)
+                if let submenu = subMenuItem.submenu {
+                    appendSnippetChildren(submenu, parentId: folder.identifier, realm: realm, settings: settings)
+                }
+            } else if let snippet = kid as? CPYSnippet {
+                guard snippet.enable else { continue }
+                menu.addItem(makeSnippetMenuItem(snippet, listNumber: listNumber, settings: settings))
+                listNumber += 1
+            }
+        }
     }
 
     func makeSnippetMenuItem(_ snippet: CPYSnippet, listNumber: Int, settings: MenuSettings? = nil) -> NSMenuItem {

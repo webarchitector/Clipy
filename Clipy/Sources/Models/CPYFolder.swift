@@ -58,6 +58,7 @@ extension CPYFolder {
         let snippet = CPYSnippet()
         snippet.title = "untitled snippet"
         snippet.index = Int(snippets.count)
+        snippet.parentIdentifier = identifier
         return snippet
     }
 
@@ -65,6 +66,7 @@ extension CPYFolder {
         guard let realm = Realm.safeInstance() else { return }
         guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: identifier) else { return }
         let copySnippet = CPYSnippet(value: snippet)
+        copySnippet.parentIdentifier = folder.identifier
         folder.realm?.transaction { folder.snippets.append(copySnippet) }
     }
 
