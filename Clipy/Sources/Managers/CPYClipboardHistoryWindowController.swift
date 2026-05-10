@@ -210,14 +210,10 @@ final class ClipboardHistoryTableView: NSTableView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
-        let clickedRow = row(at: point)
-
+        // Single click selects only — keep the row selectable so the user
+        // can press Cmd+O / Enter / Space afterwards. Double-click confirms
+        // via the table's built-in `doubleAction` wiring.
         super.mouseDown(with: event)
-
-        guard event.clickCount == 1 else { return }
-        guard clickedRow >= 0, selectedRow == clickedRow else { return }
-        confirmHandler?()
     }
 
     override func keyDown(with event: NSEvent) {
@@ -237,11 +233,12 @@ final class ClipboardHistoryTableView: NSTableView {
         default:
             break
         }
-        // Vim-style j/k navigation when the table has focus. Russian-layout
-        // aliases (о/л) are honored so muscle memory survives a layout
-        // switch — same pattern as the panel's Cmd+O / Cmd+О binding.
-        // Search-field input is unaffected: when the search field is the
-        // first responder, this method never fires.
+        // Bare-key shortcuts when the table itself has focus. Search-field
+        // input is unaffected — when the search field is the first responder
+        // this method never fires, so typing 'o' or 'щ' into search still
+        // searches normally. Russian-PC-layout aliases (о/л for j/k, щ for o)
+        // honor physical-key equivalents so muscle memory survives a layout
+        // switch.
         let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
         if mods.isEmpty, let chars = event.charactersIgnoringModifiers?.lowercased() {
             if chars == "j" || chars == "о" {
@@ -252,11 +249,11 @@ final class ClipboardHistoryTableView: NSTableView {
                 moveSelection(by: -1)
                 return
             }
+            if chars == "o" || chars == "щ" {
+                openInDefaultAppHandler?()
+                return
+            }
         }
-        // Bare 'o' is *not* an Open-in-Default-App shortcut: it'd swallow
-        // type-to-search and bare-letter typing that users expect from a
-        // table view. The only Open-in-Default-App entry point is Cmd+O,
-        // captured at the panel level via performKeyEquivalent.
         super.keyDown(with: event)
     }
 
