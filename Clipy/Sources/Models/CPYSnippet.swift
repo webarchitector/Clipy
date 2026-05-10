@@ -21,6 +21,7 @@ final class CPYSnippet: Object {
     @objc dynamic var title = ""
     @objc dynamic var content = ""
     @objc dynamic var identifier = UUID().uuidString
+    @objc dynamic var parentIdentifier = ""
     let folders = LinkingObjects(fromType: CPYFolder.self, property: "snippets")
 
     var folder: CPYFolder? {

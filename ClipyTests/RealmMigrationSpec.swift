@@ -15,9 +15,9 @@ class RealmMigrationSpec: QuickSpec {
                 Realm.Configuration.defaultConfiguration.inMemoryIdentifier = UUID().uuidString
             }
 
-            it("installs schemaVersion 8 onto the default configuration") {
+            it("installs schemaVersion 9 onto the default configuration") {
                 Realm.migration()
-                expect(Realm.Configuration.defaultConfiguration.schemaVersion) == 8
+                expect(Realm.Configuration.defaultConfiguration.schemaVersion) == 9
             }
 
             it("installs a migration block (non-nil)") {
@@ -55,6 +55,28 @@ class RealmMigrationSpec: QuickSpec {
                 )
                 _ = try? Realm(configuration: probeConfig)
                 expect(migrationFired) == false
+            }
+
+            describe("Snippet parentIdentifier backfill") {
+                it("maps snippets to their containing folder identifier") {
+                    let folderA = "folder-A"
+                    let folderB = "folder-B"
+                    let snippetsByFolder: [String: [String]] = [
+                        folderA: ["s1", "s2"],
+                        folderB: ["s3"]
+                    ]
+                    let map = SnippetParentBackfill.parentMap(folders: snippetsByFolder)
+                    expect(map.count) == 3
+                    expect(map["s1"]) == folderA
+                    expect(map["s2"]) == folderA
+                    expect(map["s3"]) == folderB
+                }
+
+                it("orphan snippets (not in any folder) get an empty parent") {
+                    let map = SnippetParentBackfill.parentMap(folders: ["fA": ["s1"]])
+                    expect(SnippetParentBackfill.parentFor(snippetId: "missing", in: map)) == ""
+                    expect(SnippetParentBackfill.parentFor(snippetId: "s1", in: map)) == "fA"
+                }
             }
 
             it("supports the current schema (CPYClip / CPYFolder / CPYSnippet) on a fresh realm") {

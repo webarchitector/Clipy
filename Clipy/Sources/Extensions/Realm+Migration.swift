@@ -15,10 +15,11 @@ import RealmSwift
 
 extension Realm {
     static func migration() {
-        // Schema 8 added CPYClip.isPinned and CPYClip.sourceBundleID. Both
-        // default to false / "" so no per-object migration is needed; just
-        // a version bump tells Realm the new schema is intentional.
-        var config = Realm.Configuration(schemaVersion: 8, migrationBlock: { migration, oldSchemaVersion in
+        // Schema 9 introduces parentIdentifier on CPYFolder and CPYSnippet
+        // (preparation for nested snippet folders). Folders default to root
+        // ("" parentIdentifier). Snippets are backfilled to point at the
+        // folder that currently contains them via the legacy `snippets` list.
+        var config = Realm.Configuration(schemaVersion: 9, migrationBlock: { migration, oldSchemaVersion in
             if oldSchemaVersion <= 2 {
                 // Add identifier in CPYSnippet
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
@@ -64,6 +65,28 @@ extension Realm {
                     }
                 })
             }
+            if oldSchemaVersion <= 8 {
+                // Pass 1: walk old folders, gather snippetID -> folderID map.
+                var folderMap: [String: [String]] = [:]
+                migration.enumerateObjects(ofType: CPYFolder.className()) { oldObject, newObject in
+                    guard let oldObject = oldObject, let newObject = newObject else { return }
+                    let folderID = (oldObject["identifier"] as? String) ?? ""
+                    newObject["parentIdentifier"] = ""
+                    let oldSnippets = oldObject["snippets"] as? List<DynamicObject>
+                    var snippetIDs: [String] = []
+                    oldSnippets?.forEach { oldSnippet in
+                        if let sid = oldSnippet["identifier"] as? String { snippetIDs.append(sid) }
+                    }
+                    folderMap[folderID] = snippetIDs
+                }
+                let snippetParent = SnippetParentBackfill.parentMap(folders: folderMap)
+                // Pass 2: write parentIdentifier into snippets.
+                migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
+                    guard let newObject = newObject else { return }
+                    let snippetID = (newObject["identifier"] as? String) ?? ""
+                    newObject["parentIdentifier"] = SnippetParentBackfill.parentFor(snippetId: snippetID, in: snippetParent)
+                }
+            }
         })
         // Compact the realm file when at least 100 MB on disk and less than 50% used.
         config.shouldCompactOnLaunch = { totalBytes, usedBytes in
@@ -72,5 +95,26 @@ extension Realm {
         }
         Realm.Configuration.defaultConfiguration = config
         _ = try? Realm()
+    }
+}
+
+// MARK: - SnippetParentBackfill
+
+/// Pure helper exposed for testing the v8 → v9 backfill of CPYSnippet.parentIdentifier.
+enum SnippetParentBackfill {
+    /// Inverts a `[folderID: [snippetID]]` mapping into `[snippetID: folderID]`.
+    static func parentMap(folders: [String: [String]]) -> [String: String] {
+        var out: [String: String] = [:]
+        for (folderID, snippetIDs) in folders {
+            for snippetID in snippetIDs {
+                out[snippetID] = folderID
+            }
+        }
+        return out
+    }
+
+    /// Returns the parent folder ID for a snippet, or `""` if it is not in any folder.
+    static func parentFor(snippetId: String, in map: [String: String]) -> String {
+        return map[snippetId] ?? ""
     }
 }

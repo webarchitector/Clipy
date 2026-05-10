@@ -20,6 +20,7 @@ final class CPYFolder: Object {
     @objc dynamic var enable = true
     @objc dynamic var title = ""
     @objc dynamic var identifier = UUID().uuidString
+    @objc dynamic var parentIdentifier = ""
     let snippets = List<CPYSnippet>()
 
     // MARK: Primary Key
