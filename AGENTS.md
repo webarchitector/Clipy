@@ -45,7 +45,35 @@ For finding classes, methods, call paths, references — query the `codebase-mem
 - `MenuManager` rebuilds menus from Realm notifications with debounce. If clips, snippets, or related preferences change, verify menu refresh behavior still works.
 - Popup-menu key overrides (`j`/`k` → ↓/↑, `O`/`щ` → open clip, right-click → open clip) live in the CGEvent tap (`menuManagerEventTapCallback`), not the `addLocalMonitorForEvents` block. NSMenu's tracker bypasses both the local monitor and `NSApp.postEvent`, so the HID tap is the only layer that can rewrite or suppress events the menu sees. The local monitor is still useful for `cancelTrackingWithoutAnimation()` side effects (menu-type switching, app-launcher hand-off). Adding new popup hotkeys → put them in the tap; adding new "dismiss popup and do X" hand-offs → either path works.
 - Run `./Scripts/check-port-drift.sh` after touching `Clipy/Sources/AppLauncher/` or `Clipy/Sources/InputSource/` to snapshot how far the ports have drifted from `/Users/ank/dev/selector/selector/{ShortcutCellView,InputSourceManager}.swift`. It's a diagnostic, not a CI gate — eyeball the trend and decide whether divergence is intentional. AppLauncher numbers stay high because Selector keeps the launcher as one big file while the port is split into five.
-- Local Release builds are adhoc-signed (`Signature=adhoc`, no Team ID). macOS TCC keys Accessibility approval on the binary's signature, so each rebuild + copy into `/Applications/` produces a "new" app from TCC's POV and silently loses AX trust. Symptom: HID-tap features (popup-menu `j`/`k`/`h`/`l`/`o`, right-click open) stop working while the local-monitor features (menu-type switching, app-launcher hand-off) keep working. Reset and re-grant after each install: `tccutil reset Accessibility com.clipy-app.Clipy`, then approve Clipy in System Settings → Privacy & Security → Accessibility on first feature use.
+- Local Release builds default to `Signature=adhoc` (no Team ID). macOS TCC keys Accessibility / Input-Monitoring approval on the binary's designated requirement, so every adhoc rebuild produces a "new app" from TCC's POV and silently loses AX trust — symptom: HID-tap features (popup-menu `j`/`k`/`h`/`l`/`o`, right-click open) stop working while the local-monitor features (menu-type switching, app-launcher hand-off) keep working. Fix: build with the local self-signed `Clipy Dev` identity so the cert hash (and therefore the DR) stays stable across rebuilds:
+  ```
+  xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
+    CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release \
+    CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build
+  ```
+  Recreate the identity on a new machine:
+  ```
+  TMP=$(mktemp -d) && cat > "$TMP/openssl.cnf" <<'EOF'
+  [req]
+  default_bits = 2048
+  distinguished_name = req_dn
+  req_extensions = v3_req
+  prompt = no
+  [req_dn]
+  CN = Clipy Dev
+  [v3_req]
+  basicConstraints = critical, CA:false
+  keyUsage = critical, digitalSignature
+  extendedKeyUsage = critical, codeSigning
+  EOF
+  openssl req -x509 -newkey rsa:2048 -nodes -keyout "$TMP/key.pem" -out "$TMP/cert.pem" -days 3650 -config "$TMP/openssl.cnf" -extensions v3_req
+  openssl pkcs12 -export -legacy -inkey "$TMP/key.pem" -in "$TMP/cert.pem" -out "$TMP/identity.p12" -password pass:clipydev
+  security import "$TMP/identity.p12" -k ~/Library/Keychains/login.keychain-db -P clipydev -T /usr/bin/codesign
+  security add-trusted-cert -p codeSign "$TMP/cert.pem"
+  rm -rf "$TMP"
+  security find-identity -v -p codesigning   # should list "Clipy Dev"
+  ```
+  Project default `CODE_SIGN_IDENTITY = "-"` is preserved in `pbxproj` for upstream-merge cleanliness — the override lives only on the build command line. Approve once in System Settings → Privacy & Security → Accessibility / Input Monitoring; subsequent rebuilds keep the grant.
 - Prefer adding or updating Quick/Nimble specs for behavior changes. Under Swift 6 Quick's `it` closures are `@Sendable` — **don't capture spec-scoped `var`s** (Realm/UserDefaults/service instances) across `it` closures. Build per-test fixtures with local `func makeRealm() -> Realm`, `func makeIsolatedDefaults()`, etc., and clean up via `defer` inside the `it`. The pattern is established across `DataCleanOverflowSpec`, `PasteServiceCacheSpec`, `UserDefaultsCombineSpec`, etc.
 - For localization work, keep English/base UI in XIBs and update localized `.strings` for other languages. See `.github/CONTRIBUTING.md` for the repository’s localization convention.
 
