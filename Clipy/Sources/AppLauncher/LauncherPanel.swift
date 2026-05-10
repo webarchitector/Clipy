@@ -27,6 +27,21 @@ final class LauncherPanel: NSPanel {
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let mask: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
         let mods = event.modifierFlags.intersection(mask)
+        // Alt+J/K (and Russian-PC-layout о/л on the same physical keys)
+        // mirror ↓/↑ so users can keep their hand on the home row while
+        // navigating the result list.
+        if mods == .option, let chars = event.charactersIgnoringModifiers?.lowercased() {
+            switch chars {
+            case "j", "о":
+                AppLauncher.shared.moveSelection(by: 1)
+                return true
+            case "k", "л":
+                AppLauncher.shared.moveSelection(by: -1)
+                return true
+            default:
+                break
+            }
+        }
         if mods == .command, let chars = event.charactersIgnoringModifiers {
             if chars == "," {
                 AppLauncher.shared.hide()

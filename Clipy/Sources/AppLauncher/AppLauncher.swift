@@ -331,7 +331,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         }
     }
 
-    private func moveSelection(by delta: Int) {
+    func moveSelection(by delta: Int) {
         guard !visibleItems.isEmpty else { return }
         let current = tableView.selectedRow
         var next = current + delta
