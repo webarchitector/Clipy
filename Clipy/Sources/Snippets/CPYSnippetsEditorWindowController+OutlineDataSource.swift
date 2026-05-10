@@ -59,12 +59,130 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
     }
 
     func outlineView(_ outlineView: NSOutlineView, validateDrop info: NSDraggingInfo, proposedItem item: Any?, proposedChildIndex index: Int) -> NSDragOperation {
-        // Stubbed in this commit; Task 6 of nested-snippets plan restores drag/drop with cycle and depth checks.
-        return NSDragOperation()
+        guard let realm = Realm.safeInstance() else { return NSDragOperation() }
+        let pasteboard = info.draggingPasteboard
+        guard let data = pasteboard.data(forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType)) else { return NSDragOperation() }
+        guard let dragged = LegacyKeyedArchive.unarchivedObject(of: CPYDraggedData.self, from: data) else { return NSDragOperation() }
+        let targetParentId = (item as? CPYFolder)?.identifier ?? ""
+
+        switch dragged.type {
+        case .folder:
+            return DropValidator.validateFolderMove(movedId: dragged.identifier, targetParentId: targetParentId, in: realm) ? .move : NSDragOperation()
+        case .snippet:
+            return DropValidator.validateSnippetMove(targetParentId: targetParentId, in: realm) ? .move : NSDragOperation()
+        }
     }
 
     func outlineView(_ outlineView: NSOutlineView, acceptDrop info: NSDraggingInfo, item: Any?, childIndex index: Int) -> Bool {
-        // Stubbed in this commit; Task 6 of nested-snippets plan restores drag/drop with cycle and depth checks.
-        return false
+        guard let realm = Realm.safeInstance() else { return false }
+        let pasteboard = info.draggingPasteboard
+        guard let data = pasteboard.data(forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType)) else { return false }
+        guard let dragged = LegacyKeyedArchive.unarchivedObject(of: CPYDraggedData.self, from: data) else { return false }
+        let targetParentId = (item as? CPYFolder)?.identifier ?? ""
+
+        switch dragged.type {
+        case .folder:
+            guard DropValidator.validateFolderMove(movedId: dragged.identifier, targetParentId: targetParentId, in: realm) else { return false }
+        case .snippet:
+            guard DropValidator.validateSnippetMove(targetParentId: targetParentId, in: realm) else { return false }
+        }
+
+        // No-op if target == source position.
+        if dragged.parentIdentifier == targetParentId && dragged.index == index { return false }
+
+        try? realm.write {
+            NestedMoveExecutor.move(itemId: dragged.identifier,
+                                    isFolder: dragged.type == .folder,
+                                    toParentId: targetParentId,
+                                    atIndex: index,
+                                    in: realm)
+        }
+        reloadOutline()
+        if let parent = item as? CPYFolder { outlineView.expandItem(parent) }
+        let movedItem: Any?
+        if dragged.type == .folder {
+            movedItem = realm.object(ofType: CPYFolder.self, forPrimaryKey: dragged.identifier)
+        } else {
+            movedItem = realm.object(ofType: CPYSnippet.self, forPrimaryKey: dragged.identifier)
+        }
+        if let movedItem = movedItem {
+            outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: movedItem)), byExtendingSelection: false)
+            changeItemFocus()
+        }
+        return true
+    }
+}
+
+// MARK: - Drag & Drop helpers (testable)
+
+enum DropValidator {
+    /// Returns true iff a folder with `movedId` may be reparented under `targetParentId`.
+    /// Rules: no self-drop, no cycle, depth(target) + height(moved) ≤ 5.
+    static func validateFolderMove(movedId: String, targetParentId: String, in realm: Realm) -> Bool {
+        if movedId == targetParentId { return false }
+        guard let moved = realm.object(ofType: CPYFolder.self, forPrimaryKey: movedId) else { return false }
+        let targetDepth: Int
+        if targetParentId.isEmpty {
+            targetDepth = 0
+        } else {
+            guard let target = realm.object(ofType: CPYFolder.self, forPrimaryKey: targetParentId) else { return false }
+            if target.identifier == moved.identifier { return false }
+            if CPYFolder.isDescendant(target, of: moved, in: realm) { return false }
+            targetDepth = CPYFolder.depth(of: target, in: realm)
+        }
+        let height = CPYFolder.maxDescendantDepth(of: moved, in: realm)
+        return (targetDepth + height) <= 5
+    }
+
+    /// Returns true iff a snippet may be placed under `targetParentId`.
+    /// Rules: target must be a folder (non-empty parent id) — no depth limit.
+    static func validateSnippetMove(targetParentId: String, in realm: Realm) -> Bool {
+        if targetParentId.isEmpty { return false }
+        return realm.object(ofType: CPYFolder.self, forPrimaryKey: targetParentId) != nil
+    }
+}
+
+enum NestedMoveExecutor {
+    /// Reparents an item (folder or snippet) under `toParentId` at position `atIndex`
+    /// (a value of -1 means append at end). Renumbers the old and new parents'
+    /// children so siblings stay 0..n-1. Caller must hold an open Realm write
+    /// transaction.
+    static func move(itemId: String, isFolder: Bool, toParentId: String, atIndex: Int, in realm: Realm) {
+        let oldParentId: String
+        if isFolder {
+            guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: itemId) else { return }
+            oldParentId = folder.parentIdentifier
+            folder.parentIdentifier = toParentId
+        } else {
+            guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: itemId) else { return }
+            oldParentId = snippet.parentIdentifier
+            snippet.parentIdentifier = toParentId
+        }
+        let kids = CPYFolder.children(parentIdentifier: toParentId, in: realm)
+        var ordered: [Object] = []
+        for kid in kids where idOf(kid) != itemId { ordered.append(kid) }
+        let target: Object?
+        if isFolder {
+            target = realm.object(ofType: CPYFolder.self, forPrimaryKey: itemId)
+        } else {
+            target = realm.object(ofType: CPYSnippet.self, forPrimaryKey: itemId)
+        }
+        if let target = target {
+            let pos = (atIndex < 0 || atIndex > ordered.count) ? ordered.count : atIndex
+            ordered.insert(target, at: pos)
+        }
+        for (idx, kid) in ordered.enumerated() {
+            if let folder = kid as? CPYFolder { folder.index = idx }
+            else if let snippet = kid as? CPYSnippet { snippet.index = idx }
+        }
+        if oldParentId != toParentId {
+            CPYFolder.renumberSiblings(of: oldParentId, in: realm)
+        }
+    }
+
+    private static func idOf(_ obj: Object) -> String {
+        if let folder = obj as? CPYFolder { return folder.identifier }
+        if let snippet = obj as? CPYSnippet { return snippet.identifier }
+        return ""
     }
 }
