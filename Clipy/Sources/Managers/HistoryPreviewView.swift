@@ -28,20 +28,24 @@ final class HistoryPreviewView: NSView {
         textScrollView.borderType = .noBorder
         textScrollView.drawsBackground = false
 
-        textView.translatesAutoresizingMaskIntoConstraints = false
+        // NSTextView inside an NSScrollView is sized by the scroll view via
+        // the legacy autoresizing-mask path, so leave
+        // translatesAutoresizingMaskIntoConstraints = true (the default).
+        // Mixing it with .width-only autoresizing collapses the textView to
+        // zero size and the preview reads as a blank pane.
         textView.isEditable = false
         textView.isSelectable = true
         textView.isRichText = false
         textView.font = NSFont.userFixedPitchFont(ofSize: 12) ?? NSFont.systemFont(ofSize: 12)
         textView.backgroundColor = .controlBackgroundColor
         textView.textContainerInset = NSSize(width: 8, height: 8)
-        // Auto-resizing inside an NSScrollView's documentView slot.
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
         textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
         textScrollView.documentView = textView
 
         imageView.translatesAutoresizingMaskIntoConstraints = false
