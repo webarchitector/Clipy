@@ -83,8 +83,14 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         panel.setContentSize(NSSize(width: 600, height: targetHeight))
 
         panel.center()
-        panel.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // Non-activating path: don't call NSApp.activate. WindowServer
+        // denies SetFrontProcessWithInfo while another app holds Secure
+        // Event Input (Safari htpasswd sheet, login fields, etc.), and
+        // a denied activate leaves the panel invisible. orderFrontRegardless
+        // + makeKey mirrors how Spotlight/Alfred/Raycast surface a search
+        // field over modal sheets without stealing process focus.
+        panel.orderFrontRegardless()
+        panel.makeKey()
         panel.makeFirstResponder(searchField)
     }
 
@@ -135,12 +141,20 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     private func setupPanel() {
         let p = LauncherPanel(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 760),
-            styleMask: [.titled, .closable, .resizable],
+            // .nonactivatingPanel lets the panel become key without
+            // flipping the process to frontmost — required so the
+            // launcher surfaces over Safari/login sheets that have
+            // engaged Secure Event Input (WindowServer would otherwise
+            // deny SetFrontProcessWithInfo and the panel never appears).
+            styleMask: [.titled, .closable, .resizable, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
         p.title = "Clipy Launcher"
-        p.level = .floating
+        // .statusBar sits above modal sheets and full-screen windows so
+        // the launcher is reachable from any context. .floating wasn't
+        // high enough to overlay a foreground app's modal sheet.
+        p.level = .statusBar
         p.isReleasedWhenClosed = false
         p.isMovableByWindowBackground = true
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
