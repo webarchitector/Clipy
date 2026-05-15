@@ -96,9 +96,16 @@ final class HIDHotKeyTap: @unchecked Sendable {
         let keyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
         let carbonModifiers = HIDHotKeyTap.carbonModifiers(from: event.flags)
 
+        // Match against the keyCode Carbon was actually registered with,
+        // not `keyCombo.currentKeyCode` — the latter goes through Sauce
+        // which recomputes per call against the currently active layout
+        // and can drift after the user switches between layouts (e.g. EN
+        // → RU). When drift hits, the match misses, the tap passes the
+        // event through, and the focused app silently eats it, which
+        // surfaces as "the layout-switch hotkey works every other press".
         let match = HotKeyCenter.shared.registeredHotKeys.first { hotKey in
             !hotKey.keyCombo.doubledModifiers &&
-                hotKey.keyCombo.currentKeyCode == keyCode &&
+                hotKey.registeredKeyCode == keyCode &&
                 hotKey.keyCombo.modifiers == carbonModifiers
         }
 
