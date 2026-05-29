@@ -30,6 +30,10 @@ final class Calculator: @unchecked Sendable {
     // MARK: - Math (pure)
 
     static func evaluateMath(_ expr: String) -> String? {
+        // Detected on the raw input so a whole-number result like `2.5*4`
+        // still renders as "10.0" instead of "10" — the user's decimal
+        // point signals "treat this as a float result".
+        let inputHasDecimal = expr.contains(".")
         var normalized = expr
             .replacingOccurrences(of: "\n", with: "")
             .replacingOccurrences(of: "\t", with: "")
@@ -56,7 +60,7 @@ final class Calculator: @unchecked Sendable {
             let v = value.doubleValue
             if v.isNaN || v.isInfinite { return nil }
             if v.truncatingRemainder(dividingBy: 1) == 0 && abs(v) < 1e15 {
-                return String(format: "%.0f", v)
+                return String(format: inputHasDecimal ? "%.1f" : "%.0f", v)
             }
             return String(format: "%.6g", v)
         }

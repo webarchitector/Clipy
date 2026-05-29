@@ -26,9 +26,19 @@ class CalculatorMathSpec: QuickSpec {
                 expect(Calculator.evaluateMath("1/0")).to(beNil())
             }
 
-            it("formats integral results without a decimal") {
+            it("formats integral results without a decimal when the input is integral") {
                 expect(Calculator.evaluateMath("3")) == "3"
-                expect(Calculator.evaluateMath("3.0")) == "3"
+                expect(Calculator.evaluateMath("1+2")) == "3"
+                expect(Calculator.evaluateMath("(1+2)*3")) == "9"
+                expect(Calculator.evaluateMath("2^10")) == "1024"
+            }
+
+            it("keeps a trailing .0 when the input expression contains a decimal point") {
+                expect(Calculator.evaluateMath("3.0")) == "3.0"
+                expect(Calculator.evaluateMath("2.5*4")) == "10.0"
+                expect(Calculator.evaluateMath("1.5+1.5")) == "3.0"
+                expect(Calculator.evaluateMath("0.5*2")) == "1.0"
+                expect(Calculator.evaluateMath("(1.0+2)*3")) == "9.0"
             }
 
             it("returns nil for partial / malformed input instead of crashing") {
