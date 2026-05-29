@@ -73,15 +73,10 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         lastQuery = ""
         pendingFilterWorkItem?.cancel()
         pendingFilterWorkItem = nil
+        // applyFilter populates visibleItems and (since panel is off-screen)
+        // resizes via setContentSize, so center() lands the already-fitted
+        // panel in the middle of the screen.
         applyFilter("")
-
-        let screen = panel.screen ?? NSScreen.main
-        let visible = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 600, height: 480)
-        let preferredHeight: CGFloat = 760
-        let maxHeight = max(240, visible.height - 80)
-        let targetHeight = min(preferredHeight, maxHeight)
-        panel.setContentSize(NSSize(width: 600, height: targetHeight))
-
         panel.center()
         // Non-activating path: don't call NSApp.activate. WindowServer
         // denies SetFrontProcessWithInfo while another app holds Secure
@@ -233,6 +228,55 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         if !visibleItems.isEmpty {
             tableView?.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
         }
+        resizePanelToFit()
+    }
+
+    /// Shrinks the panel to fit `visibleItems`, anchoring the top edge so the
+    /// window collapses upward as results narrow (Spotlight/Alfred behaviour).
+    /// The first `show()` seeds a preferred height + centers; subsequent
+    /// resizes preserve `frame.maxY`.
+    private func resizePanelToFit() {
+        guard let panel = panel else { return }
+        let rowHeight: CGFloat = 24
+        let rowSpacing: CGFloat = 2
+        let topPad: CGFloat = 8
+        let searchFieldHeight: CGFloat = 28
+        let gapBelowSearch: CGFloat = 6
+        let bottomPad: CGFloat = 8
+
+        let n = visibleItems.count
+        let tableHeight = n > 0
+            ? CGFloat(n) * (rowHeight + rowSpacing) - rowSpacing
+            : 0
+        let gap = n > 0 ? gapBelowSearch : 0
+        let desiredContent = topPad + searchFieldHeight + gap + tableHeight + bottomPad
+
+        let screen = panel.screen ?? NSScreen.main
+        let visible = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 600, height: 480)
+        let oldFrame = panel.frame
+        // Chrome = frame - content; computed from current frame so titled-bar
+        // height stays accurate even if the system changes it under us.
+        let currentContent = panel.contentRect(forFrameRect: oldFrame).size
+        let chromeHeight = oldFrame.height - currentContent.height
+        let maxFrameHeight = max(120, visible.height - 80)
+        let maxContent = maxFrameHeight - chromeHeight
+        let targetContent = max(searchFieldHeight + topPad + bottomPad,
+                                min(desiredContent, maxContent))
+        let targetFrameHeight = targetContent + chromeHeight
+        if abs(oldFrame.height - targetFrameHeight) < 0.5 { return }
+
+        // Off-screen (first show): adjust content; show()'s center() places it.
+        // On-screen: preserve top edge so the panel collapses upward as
+        // results narrow — matches Spotlight / Alfred / Raycast.
+        if !panel.isVisible {
+            panel.setContentSize(NSSize(width: oldFrame.width, height: targetContent))
+            return
+        }
+        let topY = oldFrame.maxY
+        let newOrigin = NSPoint(x: oldFrame.origin.x, y: topY - targetFrameHeight)
+        panel.setFrame(NSRect(origin: newOrigin,
+                              size: NSSize(width: oldFrame.width, height: targetFrameHeight)),
+                       display: true, animate: false)
     }
 
     // MARK: - NSTableView
