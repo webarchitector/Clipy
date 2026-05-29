@@ -245,8 +245,12 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         let bottomPad: CGFloat = 8
 
         let n = visibleItems.count
+        // Include trailing rowSpacing + small cushion so the scroll view's
+        // container is comfortably larger than its document — otherwise the
+        // overlay scroller can flicker in on a row-count boundary (e.g. the
+        // 2-row `3+5=` result).
         let tableHeight = n > 0
-            ? CGFloat(n) * (rowHeight + rowSpacing) - rowSpacing
+            ? CGFloat(n) * (rowHeight + rowSpacing) + 4
             : 0
         let gap = n > 0 ? gapBelowSearch : 0
         let desiredContent = topPad + searchFieldHeight + gap + tableHeight + bottomPad
