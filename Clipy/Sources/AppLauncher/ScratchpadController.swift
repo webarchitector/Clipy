@@ -134,6 +134,11 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         if (listTable?.numberOfRows ?? 0) > 0 {
             listTable?.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
         }
+        // Keep the search field first responder in list mode so ↑/↓ reach
+        // control(_:textView:doCommandBy:) (the field editor delivers them).
+        // Without this, returning from the editor leaves focus on the removed
+        // text view and arrow keys do nothing.
+        if let sf = searchField { sf.window?.makeFirstResponder(sf) }
         emitHeight(rows: notes.count + 1)
     }
 
