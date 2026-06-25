@@ -28,9 +28,11 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
     // List UI
     private var listScroll: NSScrollView?
     private var listTable: NSTableView?
+    private var listBackButton: NSButton?
     // Editor UI
     private var editorScroll: NSScrollView?
     private var editorTextView: ScratchEditorTextView?
+    private var editorBackButton: NSButton?
 
     private static let newRowTitle = "➕ New from clipboard"
 
@@ -87,8 +89,11 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         searchField?.isHidden = false
         reloadNotes(filter: filter)
 
-        guard let contentView = contentView else { return }
+        guard let contentView = contentView, let sf = searchField else { return }
         if listScroll == nil {
+            let backButton = makeBackButton(title: "← Apps", action: #selector(backToApps))
+            contentView.addSubview(backButton)
+
             let table = NSTableView()
             table.dataSource = self
             table.delegate = self
@@ -111,18 +116,20 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
             scroll.autohidesScrollers = true
             scroll.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(scroll)
-            if let sf = searchField {
-                NSLayoutConstraint.activate([
-                    scroll.topAnchor.constraint(equalTo: sf.bottomAnchor, constant: 6),
-                    scroll.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-                    scroll.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-                    scroll.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
-                ])
-            }
+            NSLayoutConstraint.activate([
+                backButton.topAnchor.constraint(equalTo: sf.bottomAnchor, constant: 8),
+                backButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+                scroll.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 6),
+                scroll.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+                scroll.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+                scroll.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
+            ])
             self.listScroll = scroll
             self.listTable = table
+            self.listBackButton = backButton
         }
         listScroll?.isHidden = false
+        listBackButton?.isHidden = false
         listTable?.reloadData()
         if (listTable?.numberOfRows ?? 0) > 0 {
             listTable?.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
@@ -138,8 +145,26 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
 
     private func teardownList() {
         listScroll?.removeFromSuperview()
+        listBackButton?.removeFromSuperview()
         listScroll = nil
         listTable = nil
+        listBackButton = nil
+    }
+
+    private func makeBackButton(title: String, action: Selector) -> NSButton {
+        let button = NSButton(title: title, target: self, action: action)
+        button.bezelStyle = .rounded
+        button.controlSize = .small
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }
+
+    @objc private func backToApps() {
+        exitToRoot()
+    }
+
+    @objc private func backToList() {
+        saveAndShowList()
     }
 
     @objc private func listRowClicked() {
@@ -177,6 +202,9 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         textView.onCommandEnter = { [weak self] in self?.copyCurrentAndHide() }
         textView.onDeleteNote = { [weak self] in self?.deleteCurrentAndShowList() }
 
+        let backButton = makeBackButton(title: "← List", action: #selector(backToList))
+        contentView.addSubview(backButton)
+
         let scroll = NSScrollView()
         scroll.documentView = textView
         scroll.hasVerticalScroller = true
@@ -184,22 +212,26 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         scroll.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(scroll)
         NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            backButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            backButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            scroll.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 6),
             scroll.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             scroll.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
             scroll.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
         self.editorScroll = scroll
         self.editorTextView = textView
+        self.editorBackButton = backButton
         contentView.window?.makeFirstResponder(textView)
-        onHeightChange?(320)
     }
 
     private func teardownEditor() {
         flushEditorSave()
         editorScroll?.removeFromSuperview()
+        editorBackButton?.removeFromSuperview()
         editorScroll = nil
         editorTextView = nil
+        editorBackButton = nil
     }
 
     private func flushEditorSave() {

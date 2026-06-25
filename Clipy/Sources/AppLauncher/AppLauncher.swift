@@ -78,6 +78,10 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         if panel == nil { setupPanel() }
         guard let panel = panel, let searchField = searchField else { return }
 
+        // Always reopen at the app-selection root, even if the panel was closed
+        // while in scratchpad mode.
+        if inScratchpad { exitScratchpad() }
+
         AppIndex.shared.reloadIfNeeded()
         ensureRunningAppsTracking()
         searchField.stringValue = ""
@@ -229,7 +233,10 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     private func enterScratchpad() {
         guard let content = panel?.contentView, let sf = searchField else { return }
         inScratchpad = true
-        scratchpad.onHeightChange = { [weak self] height in self?.setContentHeight(height) }
+        // Scratchpad uses a large fixed window (wide + near-full height), so it
+        // does not collapse to fit content like the app-launcher results do.
+        scratchpad.onHeightChange = nil
+        sizeForScratchpad()
         scratchpad.enter(contentView: content, searchField: sf, launcherScroll: launcherScroll)
     }
 
@@ -239,18 +246,20 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         searchField?.delegate = self
         searchField?.stringValue = ""
         applyFilter("")
+        panel?.center()
     }
 
-    private func setContentHeight(_ contentHeight: CGFloat) {
+    private func sizeForScratchpad() {
         guard let panel = panel else { return }
-        let frame = panel.frame
-        let chrome = frame.height - panel.contentRect(forFrameRect: frame).height
-        let target = contentHeight + chrome
-        let top = frame.maxY
-        panel.setFrame(NSRect(x: frame.origin.x, y: top - target,
-                              width: frame.width, height: target),
+        let visible = (panel.screen ?? NSScreen.main)?.visibleFrame
+            ?? NSRect(x: 0, y: 0, width: 1000, height: 800)
+        let width = min(900, visible.width - 80)
+        let height = visible.height - 80
+        let origin = NSPoint(x: visible.midX - width / 2, y: visible.midY - height / 2)
+        panel.setFrame(NSRect(origin: origin, size: NSSize(width: width, height: height)),
                        display: true, animate: false)
     }
+
 
     // MARK: - Filter
 
