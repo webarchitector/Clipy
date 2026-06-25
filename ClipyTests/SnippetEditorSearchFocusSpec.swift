@@ -1,8 +1,6 @@
-// swiftlint:disable identifier_name
-
+import Cocoa
 import Quick
 import Nimble
-import Cocoa
 @testable import Clipy
 
 // Regression: the snippets editor controller is the delegate of BOTH the outline
@@ -22,11 +20,11 @@ class SnippetEditorSearchFocusSpec: QuickSpec {
 
                 // Empty query — the exact case that fired on the first click.
                 editor.string = ""
-                expect(controller.control(searchField, textShouldEndEditing: editor)).to(beTrue())
+                expect(controller.control(searchField, textShouldEndEditing: editor)) == true
 
                 // Non-empty query.
                 editor.string = "foo"
-                expect(controller.control(searchField, textShouldEndEditing: editor)).to(beTrue())
+                expect(controller.control(searchField, textShouldEndEditing: editor)) == true
             }
 
             // Same class of bug: `control(_:textView:doCommandBy:)` fires for the
@@ -39,7 +37,7 @@ class SnippetEditorSearchFocusSpec: QuickSpec {
                 let handled = controller.control(outlineView,
                                                  textView: editor,
                                                  doCommandBy: #selector(NSResponder.cancelOperation(_:)))
-                expect(handled).to(beFalse())
+                expect(handled) == false
             }
         }
     }

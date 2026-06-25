@@ -260,7 +260,6 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
                        display: true, animate: false)
     }
 
-
     // MARK: - Filter
 
     private func applyFilter(_ rawQuery: String) {

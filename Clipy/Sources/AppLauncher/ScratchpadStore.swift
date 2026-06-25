@@ -22,28 +22,28 @@ final class ScratchpadStore {
         let now = Date()
         note.createdAt = now
         note.updatedAt = now
-        let id = note.identifier
+        let identifier = note.identifier
         realm.transaction { realm.add(note) }
-        return id
+        return identifier
     }
 
-    func update(id: String, content: String) {
+    func update(id noteID: String, content: String) {
         guard let realm = realmProvider(),
-              let note = realm.object(ofType: CPYScratchNote.self, forPrimaryKey: id) else { return }
+              let note = realm.object(ofType: CPYScratchNote.self, forPrimaryKey: noteID) else { return }
         realm.transaction {
             note.content = content
             note.updatedAt = Date()
         }
     }
 
-    func delete(id: String) {
+    func delete(id noteID: String) {
         guard let realm = realmProvider(),
-              let note = realm.object(ofType: CPYScratchNote.self, forPrimaryKey: id) else { return }
+              let note = realm.object(ofType: CPYScratchNote.self, forPrimaryKey: noteID) else { return }
         realm.transaction { realm.delete(note) }
     }
 
-    func note(id: String) -> CPYScratchNote? {
+    func note(id noteID: String) -> CPYScratchNote? {
         guard let realm = realmProvider() else { return nil }
-        return realm.object(ofType: CPYScratchNote.self, forPrimaryKey: id)
+        return realm.object(ofType: CPYScratchNote.self, forPrimaryKey: noteID)
     }
 }

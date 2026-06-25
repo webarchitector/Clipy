@@ -1,4 +1,3 @@
-// swiftlint:disable identifier_name
 import Foundation
 import Quick
 import Nimble
@@ -17,39 +16,39 @@ class ScratchpadStoreSpec: QuickSpec {
             it("creates and lists notes, newest first") {
                 let realm = makeRealm()
                 let store = ScratchpadStore(realmProvider: { realm })
-                let id1 = store.create(content: "first")
-                let id2 = store.create(content: "second")
-                expect(id1).toNot(beNil())
-                expect(id2).toNot(beNil())
+                let first = store.create(content: "first")
+                let second = store.create(content: "second")
+                expect(first) != nil
+                expect(second) != nil
                 let notes = store.allNotes()
-                expect(notes.count).to(equal(2))
-                expect(notes.first?.identifier).to(equal(id2))
+                expect(notes.count) == 2
+                expect(notes.first?.identifier) == second
             }
 
             it("updates content and bumps order to the top") {
                 let realm = makeRealm()
                 let store = ScratchpadStore(realmProvider: { realm })
-                let idA = store.create(content: "A")!
-                let idB = store.create(content: "B")!
-                store.update(id: idA, content: "A edited")
+                let alpha = store.create(content: "A")!
+                let beta = store.create(content: "B")!
+                store.update(id: alpha, content: "A edited")
                 let notes = store.allNotes()
-                expect(notes.first?.identifier).to(equal(idA))
-                expect(store.note(id: idA)?.content).to(equal("A edited"))
-                expect(idB).toNot(beNil())
+                expect(notes.first?.identifier) == alpha
+                expect(store.note(id: alpha)?.content) == "A edited"
+                expect(beta) != nil
             }
 
             it("deletes notes") {
                 let realm = makeRealm()
                 let store = ScratchpadStore(realmProvider: { realm })
-                let id = store.create(content: "x")!
-                store.delete(id: id)
-                expect(store.allNotes().count).to(equal(0))
-                expect(store.note(id: id)).to(beNil())
+                let identifier = store.create(content: "x")!
+                store.delete(id: identifier)
+                expect(store.allNotes().count) == 0
+                expect(store.note(id: identifier)) == nil
             }
 
             it("is a no-op when Realm is unavailable") {
                 let store = ScratchpadStore(realmProvider: { nil })
-                expect(store.create(content: "x")).to(beNil())
+                expect(store.create(content: "x")) == nil
                 expect(store.allNotes()).to(beEmpty())
                 store.update(id: "missing", content: "y")
                 store.delete(id: "missing")

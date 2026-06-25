@@ -89,7 +89,7 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         searchField?.isHidden = false
         reloadNotes(filter: filter)
 
-        guard let contentView = contentView, let sf = searchField else { return }
+        guard let contentView = contentView, let field = searchField else { return }
         if listScroll == nil {
             let backButton = makeBackButton(title: "← Apps", action: #selector(backToApps))
             contentView.addSubview(backButton)
@@ -117,7 +117,7 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
             scroll.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(scroll)
             NSLayoutConstraint.activate([
-                backButton.topAnchor.constraint(equalTo: sf.bottomAnchor, constant: 8),
+                backButton.topAnchor.constraint(equalTo: field.bottomAnchor, constant: 8),
                 backButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
                 scroll.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 6),
                 scroll.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
@@ -138,7 +138,7 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         // control(_:textView:doCommandBy:) (the field editor delivers them).
         // Without this, returning from the editor leaves focus on the removed
         // text view and arrow keys do nothing.
-        if let sf = searchField { sf.window?.makeFirstResponder(sf) }
+        field.window?.makeFirstResponder(field)
         emitHeight(rows: notes.count + 1)
     }
 
@@ -180,7 +180,7 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         guard let row = listTable?.selectedRow, row >= 0 else { return }
         if row == 0 {
             let clip = NSPasteboard.general.string(forType: .string) ?? ""
-            if let id = store.create(content: clip) { openEditor(id: id) }
+            if let newID = store.create(content: clip) { openEditor(id: newID) }
             return
         }
         let noteIndex = row - 1
@@ -188,11 +188,31 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         openEditor(id: notes[noteIndex].identifier)
     }
 
+    func moveListSelection(by delta: Int) {
+        guard let table = listTable else { return }
+        let count = table.numberOfRows
+        guard count > 0 else { return }
+        var next = table.selectedRow + delta
+        next = max(0, min(count - 1, next))
+        table.selectRowIndexes(IndexSet(integer: next), byExtendingSelection: false)
+        table.scrollRowToVisible(next)
+    }
+
+    private func deleteSelectedFromList() {
+        guard let row = listTable?.selectedRow, row > 0 else { return }
+        let index = row - 1
+        guard index < notes.count else { return }
+        store.delete(id: notes[index].identifier)
+        reloadNotes(filter: searchField?.stringValue ?? "")
+        listTable?.reloadData()
+        emitHeight(rows: notes.count + 1)
+    }
+
     // MARK: - Editor
 
-    private func openEditor(id: String) {
+    private func openEditor(id noteID: String) {
         mode = .editor
-        editingId = id
+        editingId = noteID
         teardownList()
         searchField?.isHidden = true
 
@@ -201,7 +221,7 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         textView.font = NSFont.systemFont(ofSize: 14)
         textView.isRichText = false
         textView.isAutomaticQuoteSubstitutionEnabled = false
-        textView.string = store.note(id: id)?.content ?? ""
+        textView.string = store.note(id: noteID)?.content ?? ""
         textView.delegate = self
         textView.onCancel = { [weak self] in self?.saveAndShowList() }
         textView.onCommandEnter = { [weak self] in self?.copyCurrentAndHide() }
@@ -242,8 +262,8 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
     private func flushEditorSave() {
         saveWorkItem?.cancel()
         saveWorkItem = nil
-        guard let id = editingId, let tv = editorTextView else { return }
-        store.update(id: id, content: tv.string)
+        guard let noteID = editingId, let textView = editorTextView else { return }
+        store.update(id: noteID, content: textView.string)
     }
 
     private func saveAndShowList() {
@@ -254,44 +274,51 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
 
     private func copyCurrentAndHide() {
         flushEditorSave()
-        if let tv = editorTextView { copyToPasteboard(tv.string) }
+        if let textView = editorTextView { copyToPasteboard(textView.string) }
         hidePanel()
     }
 
     private func deleteCurrentAndShowList() {
-        if let id = editingId { store.delete(id: id) }
+        if let noteID = editingId { store.delete(id: noteID) }
         editingId = nil
         teardownEditor()
         showList(filter: "")
     }
 
-    private func deleteSelectedFromList() {
-        guard let row = listTable?.selectedRow, row > 0 else { return }
-        let idx = row - 1
-        guard idx < notes.count else { return }
-        store.delete(id: notes[idx].identifier)
-        reloadNotes(filter: searchField?.stringValue ?? "")
-        listTable?.reloadData()
-        emitHeight(rows: notes.count + 1)
-    }
-
     // MARK: - Height
 
-    private func emitHeight(rows: Int) {
-        let rowH: CGFloat = 24 + 2
+    func emitHeight(rows: Int) {
+        let rowHeight: CGFloat = 24 + 2
         let chrome: CGFloat = 8 + 28 + 6 + 8
-        onHeightChange?(chrome + CGFloat(max(1, rows)) * rowH + 4)
+        onHeightChange?(chrome + CGFloat(max(1, rows)) * rowHeight + 4)
     }
 
-    // MARK: - NSTableView (list)
+    // Routed from control(_:textView:doCommandBy:) so the Escape behaviour lives
+    // next to the rest of the list logic.
+    func handleListCancel() {
+        if !(searchField?.stringValue.isEmpty ?? true) {
+            searchField?.stringValue = ""
+            controlTextDidChange(Notification(name: NSControl.textDidChangeNotification))
+        } else {
+            exitToRoot()
+        }
+    }
 
+    func deleteSelectedNoteFromList() {
+        deleteSelectedFromList()
+    }
+}
+
+// MARK: - NSTableView data source / delegate (list)
+
+extension ScratchpadController {
     func numberOfRows(in tableView: NSTableView) -> Int { notes.count + 1 }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let cell = (tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("scratchCell"), owner: self)
                     as? NSTableCellView) ?? NSTableCellView()
         cell.identifier = NSUserInterfaceItemIdentifier("scratchCell")
-        let tf = cell.textField ?? {
+        let label = cell.textField ?? {
             let field = NSTextField(labelWithString: "")
             field.translatesAutoresizingMaskIntoConstraints = false
             cell.addSubview(field)
@@ -303,22 +330,24 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
             ])
             return field
         }()
-        tf.font = NSFont.systemFont(ofSize: 14)
-        tf.lineBreakMode = .byTruncatingTail
+        label.font = NSFont.systemFont(ofSize: 14)
+        label.lineBreakMode = .byTruncatingTail
         if row == 0 {
-            tf.stringValue = Self.newRowTitle
-            tf.textColor = .secondaryLabelColor
+            label.stringValue = Self.newRowTitle
+            label.textColor = .secondaryLabelColor
         } else {
             let note = notes[row - 1]
             let title = ScratchTitle.title(from: note.content)
-            tf.stringValue = title.isEmpty ? "Empty note" : title
-            tf.textColor = .labelColor
+            label.stringValue = title.isEmpty ? "Empty note" : title
+            label.textColor = .labelColor
         }
         return cell
     }
+}
 
-    // MARK: - NSSearchFieldDelegate (list filtering + keys)
+// MARK: - NSSearchFieldDelegate (list filtering + keys)
 
+extension ScratchpadController {
     func controlTextDidChange(_ obj: Notification) {
         guard mode == .list else { return }
         reloadNotes(filter: searchField?.stringValue ?? "")
@@ -336,12 +365,7 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
             activateListSelection()
             return true
         case #selector(NSResponder.cancelOperation(_:)):
-            if !(searchField?.stringValue.isEmpty ?? true) {
-                searchField?.stringValue = ""
-                controlTextDidChange(Notification(name: NSControl.textDidChangeNotification))
-            } else {
-                exitToRoot()
-            }
+            handleListCancel()
             return true
         case #selector(NSResponder.moveDown(_:)):
             moveListSelection(by: 1)
@@ -350,23 +374,15 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
             moveListSelection(by: -1)
             return true
         case #selector(NSResponder.deleteToBeginningOfLine(_:)):
-            deleteSelectedFromList()
+            deleteSelectedNoteFromList()
             return true
         default:
             return false
         }
     }
-
-    private func moveListSelection(by delta: Int) {
-        guard let table = listTable else { return }
-        let count = table.numberOfRows
-        guard count > 0 else { return }
-        var next = table.selectedRow + delta
-        next = max(0, min(count - 1, next))
-        table.selectRowIndexes(IndexSet(integer: next), byExtendingSelection: false)
-        table.scrollRowToVisible(next)
-    }
 }
+
+// MARK: - NSTextViewDelegate (editor autosave)
 
 extension ScratchpadController: NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
