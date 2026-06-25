@@ -13,6 +13,7 @@ enum LauncherItem {
     case calcCopyResult(expression: String, result: String)
     case calcCopyFull(expression: String, result: String)
     case status(String)
+    case scratchpad(noteCount: Int)
 }
 
 // Driven entirely from the main thread (NSPanel UI). @unchecked Sendable
@@ -29,6 +30,8 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     private var panel: NSPanel?
     private var searchField: NSSearchField!
     private var tableView: NSTableView!
+
+    let scratchpadStore = ScratchpadStore()
 
     private var visibleItems: [LauncherItem] = []
     private var runningApps: Set<String> = []
@@ -222,7 +225,11 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         for (name, running) in AppIndex.shared.match(query: q, runningNames: runningApps) {
             items.append(.app(name: name, running: running))
         }
-        visibleItems = items
+        let scratchCount = q.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? scratchpadStore.allNotes().count : 0
+        visibleItems = LauncherItems.withScratchpad(prefixing: items,
+                                                    query: q,
+                                                    noteCount: scratchCount)
 
         tableView?.reloadData()
         if !visibleItems.isEmpty {
@@ -338,6 +345,9 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
             tf.stringValue = msg
             tf.textColor = .secondaryLabelColor
             dotLabel.isHidden = true
+        case let .scratchpad(noteCount):
+            tf.stringValue = "📝 Scratchpad (\(noteCount))"
+            dotLabel.isHidden = true
         }
         return cell
     }
@@ -425,6 +435,8 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
             hide()
         case .status:
             break
+        case .scratchpad:
+            break // wired to enterScratchpad() in a later step
         }
     }
 

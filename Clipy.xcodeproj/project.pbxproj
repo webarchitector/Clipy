@@ -34,6 +34,7 @@
 		AB01000000000000000A0002 /* ClipboardHistoryEntrySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */; };
 		C5A1000000000000000A0002 /* ScratchTitleSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A1000000000000000A0001 /* ScratchTitleSpec.swift */; };
 		C5A2000000000000000A0002 /* ScratchpadStoreSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A2000000000000000A0001 /* ScratchpadStoreSpec.swift */; };
+		C5A3000000000000000A0002 /* LauncherScratchpadItemSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A3000000000000000A0001 /* LauncherScratchpadItemSpec.swift */; };
 		AB01000000000000000B0002 /* SnippetEditorSearchFocusSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000B0001 /* SnippetEditorSearchFocusSpec.swift */; };
 		AB01000000000000000A0004 /* DataCleanOverflowSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */; };
 		AB01000000000000000A0006 /* ClipServicePasswordHeuristicSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */; };
@@ -98,6 +99,7 @@
 		C5C2000000000000000A0002 /* ScratchTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C2000000000000000A0001 /* ScratchTitle.swift */; };
 		C5B1000000000000000A0002 /* CPYScratchNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B1000000000000000A0001 /* CPYScratchNote.swift */; };
 		C5B2000000000000000A0002 /* ScratchpadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B2000000000000000A0001 /* ScratchpadStore.swift */; };
+		C5B3000000000000000A0002 /* LauncherItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B3000000000000000A0001 /* LauncherItems.swift */; };
 		FA1DB4E51DDCB49C007F95C8 /* CPYUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4D91DDCB49C007F95C8 /* CPYUtilities.swift */; };
 		AB03000000000000000A0002 /* MainThreadBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000A0001 /* MainThreadBox.swift */; };
 		FA1DB4E71DDCB49C007F95C8 /* CPYDesignableButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4DD1DDCB49C007F95C8 /* CPYDesignableButton.swift */; };
@@ -182,6 +184,7 @@
 		AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryEntrySpec.swift; sourceTree = "<group>"; };
 		C5A1000000000000000A0001 /* ScratchTitleSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScratchTitleSpec.swift; sourceTree = "<group>"; };
 		C5A2000000000000000A0001 /* ScratchpadStoreSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScratchpadStoreSpec.swift; sourceTree = "<group>"; };
+		C5A3000000000000000A0001 /* LauncherScratchpadItemSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LauncherScratchpadItemSpec.swift; sourceTree = "<group>"; };
 		AB01000000000000000B0001 /* SnippetEditorSearchFocusSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetEditorSearchFocusSpec.swift; sourceTree = "<group>"; };
 		AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataCleanOverflowSpec.swift; sourceTree = "<group>"; };
 		AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipServicePasswordHeuristicSpec.swift; sourceTree = "<group>"; };
@@ -292,6 +295,7 @@
 		C5C2000000000000000A0001 /* ScratchTitle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScratchTitle.swift; sourceTree = "<group>"; };
 		C5B1000000000000000A0001 /* CPYScratchNote.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CPYScratchNote.swift; sourceTree = "<group>"; };
 		C5B2000000000000000A0001 /* ScratchpadStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScratchpadStore.swift; sourceTree = "<group>"; };
+		C5B3000000000000000A0001 /* LauncherItems.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LauncherItems.swift; sourceTree = "<group>"; };
 		FA1DB4D91DDCB49C007F95C8 /* CPYUtilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CPYUtilities.swift; sourceTree = "<group>"; };
 		AB03000000000000000A0001 /* MainThreadBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainThreadBox.swift; sourceTree = "<group>"; };
 		FA1DB4DD1DDCB49C007F95C8 /* CPYDesignableButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CPYDesignableButton.swift; sourceTree = "<group>"; };
@@ -409,6 +413,7 @@
 				66676C6EF16F8F0308CC5A11 /* AppLauncher.swift */,
 				C5C2000000000000000A0001 /* ScratchTitle.swift */,
 				C5B2000000000000000A0001 /* ScratchpadStore.swift */,
+				C5B3000000000000000A0001 /* LauncherItems.swift */,
 				ADF565B73A015CBBA7EB6D01 /* AppLauncherService.swift */,
 			);
 			name = AppLauncher;
@@ -715,6 +720,7 @@
 				AB01000000000000000B0001 /* SnippetEditorSearchFocusSpec.swift */,
 				C5A1000000000000000A0001 /* ScratchTitleSpec.swift */,
 				C5A2000000000000000A0001 /* ScratchpadStoreSpec.swift */,
+				C5A3000000000000000A0001 /* LauncherScratchpadItemSpec.swift */,
 				3A87CC5D99B04C87B7D8CDF0 /* HistoryFilterSpec.swift */,
 				8E2743D1E2214D4A87BF957D /* HistoryControllerHelpersSpec.swift */,
 				AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */,
@@ -1059,6 +1065,7 @@
 				8EE81CDBD64E7A9D8D3361DF /* AppLauncher.swift in Sources */,
 				C5C2000000000000000A0002 /* ScratchTitle.swift in Sources */,
 				C5B2000000000000000A0002 /* ScratchpadStore.swift in Sources */,
+				C5B3000000000000000A0002 /* LauncherItems.swift in Sources */,
 				ADBBDD749273048F0B0456F4 /* AppLauncherService.swift in Sources */,
 				CCD1044872DE40055D2625E5 /* TISInputSource+Additions.swift in Sources */,
 				B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */,
@@ -1098,6 +1105,7 @@
 				AB01000000000000000B0002 /* SnippetEditorSearchFocusSpec.swift in Sources */,
 				C5A1000000000000000A0002 /* ScratchTitleSpec.swift in Sources */,
 				C5A2000000000000000A0002 /* ScratchpadStoreSpec.swift in Sources */,
+				C5A3000000000000000A0002 /* LauncherScratchpadItemSpec.swift in Sources */,
 				2D9986BC68C844CB9C79A521 /* HistoryFilterSpec.swift in Sources */,
 				8F9712206BEB4CFA8FCF2A1F /* HistoryControllerHelpersSpec.swift in Sources */,
 				AB01000000000000000A0004 /* DataCleanOverflowSpec.swift in Sources */,
