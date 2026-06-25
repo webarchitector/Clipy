@@ -46,11 +46,63 @@ struct ClipboardHistoryEntry: Equatable {
         } else {
             rawTitle = clipTitle
         }
-        // Collapse runs of whitespace/newlines into a single space and trim — single pass.
-        displayTitle = ClipboardHistoryEntry.collapseWhitespace(rawTitle, maxScalars: 500)
+        // displayTitle = first non-empty line + "..." if more content follows,
+        // so a multi-line clip is visually distinct from a single-line one.
+        // searchText stays fully flattened so a query like "foo bar" still
+        // matches a clip whose payload is "foo\nbar".
+        displayTitle = ClipboardHistoryEntry.firstLineWithEllipsis(rawTitle, maxScalars: 500)
 
-        searchText = displayTitle
-        toolTip = displayTitle.count <= 2000 ? displayTitle : String(displayTitle.prefix(2000))
+        let flat = ClipboardHistoryEntry.collapseWhitespace(rawTitle, maxScalars: 500)
+        searchText = flat
+        toolTip = flat.count <= 2000 ? flat : String(flat.prefix(2000))
+    }
+
+    private static func firstLineWithEllipsis(_ input: String, maxScalars: Int) -> String {
+        let ellipsis = "..."
+        let whitespace = CharacterSet.whitespaces
+        let newlines = CharacterSet.newlines
+        var output = ""
+        output.reserveCapacity(min(input.utf8.count, maxScalars))
+        var count = 0
+        var lastWasSpace = true
+        var sawNewline = false
+        var hasMoreContent = false
+
+        for scalar in input.unicodeScalars {
+            if !sawNewline {
+                if newlines.contains(scalar) {
+                    sawNewline = true
+                    continue
+                }
+                if whitespace.contains(scalar) {
+                    if !lastWasSpace && count < maxScalars {
+                        output.unicodeScalars.append(" ")
+                        count += 1
+                        lastWasSpace = true
+                    }
+                } else {
+                    if count >= maxScalars { break }
+                    output.unicodeScalars.append(scalar)
+                    count += 1
+                    lastWasSpace = false
+                }
+            } else if !whitespace.contains(scalar) && !newlines.contains(scalar) {
+                hasMoreContent = true
+                break
+            }
+        }
+
+        if output.unicodeScalars.last == " " {
+            output.unicodeScalars.removeLast()
+        }
+
+        if hasMoreContent && !output.hasSuffix(ellipsis) {
+            while output.unicodeScalars.count + ellipsis.unicodeScalars.count > maxScalars {
+                output.unicodeScalars.removeLast()
+            }
+            output += ellipsis
+        }
+        return output
     }
 
     private static func collapseWhitespace(_ input: String, maxScalars: Int) -> String {

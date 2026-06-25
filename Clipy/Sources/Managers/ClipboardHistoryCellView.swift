@@ -188,26 +188,30 @@ final class ClipboardHistoryCellView: NSTableCellView {
             ((!entry.isColorCode && settings.isShowImage) || (entry.isColorCode && settings.isShowColorCode))
 
         if wantsThumbnail {
+            let titleIsPlaceholder = MenuManager.clipTypePlaceholders.contains(entry.displayTitle)
             ThumbnailCache.shared.object(forKeyAsync: entry.thumbnailPath) { [weak self] image in
                 DispatchQueue.main.async {
                     guard let self = self, self.configureToken == token, let image = image else { return }
-                    self.showThumbnail(image)
+                    self.showThumbnail(image, hideTitle: titleIsPlaceholder)
                 }
             }
         } else if settings.isShowIcon, let filePath = ClipboardHistoryCellView.firstFilePath(from: entry) {
             let icon = NSWorkspace.shared.icon(forFile: filePath)
             icon.size = NSSize(width: 32, height: 32)
-            showThumbnail(icon)
+            showThumbnail(icon, hideTitle: false)
         } else {
             hideThumbnail()
         }
     }
 
-    private func showThumbnail(_ image: NSImage) {
+    private func showThumbnail(_ image: NSImage, hideTitle: Bool = false) {
         thumbnailView.image = image
         thumbnailView.isHidden = false
         titleLeadingWithoutImage?.isActive = false
         titleLeadingWithImage?.isActive = true
+        if hideTitle {
+            titleField.stringValue = ""
+        }
     }
 
     private func hideThumbnail() {

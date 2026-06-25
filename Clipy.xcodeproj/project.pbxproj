@@ -32,6 +32,7 @@
 		AB10000000000000000A0002 /* ClipboardHistoryPanelHotkeySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB10000000000000000A0001 /* ClipboardHistoryPanelHotkeySpec.swift */; };
 		FA0157B51E48A0C7000DEDA4 /* RealmMigrationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */; };
 		AB01000000000000000A0002 /* ClipboardHistoryEntrySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */; };
+		AB01000000000000000B0002 /* SnippetEditorSearchFocusSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000B0001 /* SnippetEditorSearchFocusSpec.swift */; };
 		AB01000000000000000A0004 /* DataCleanOverflowSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */; };
 		AB01000000000000000A0006 /* ClipServicePasswordHeuristicSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */; };
 		AB01000000000000000A0008 /* MenuSettingsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000A0007 /* MenuSettingsSpec.swift */; };
@@ -174,6 +175,7 @@
 		AB10000000000000000A0001 /* ClipboardHistoryPanelHotkeySpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryPanelHotkeySpec.swift; sourceTree = "<group>"; };
 		FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RealmMigrationSpec.swift; sourceTree = "<group>"; };
 		AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryEntrySpec.swift; sourceTree = "<group>"; };
+		AB01000000000000000B0001 /* SnippetEditorSearchFocusSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetEditorSearchFocusSpec.swift; sourceTree = "<group>"; };
 		AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataCleanOverflowSpec.swift; sourceTree = "<group>"; };
 		AB01000000000000000A0005 /* ClipServicePasswordHeuristicSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipServicePasswordHeuristicSpec.swift; sourceTree = "<group>"; };
 		AB01000000000000000A0007 /* MenuSettingsSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuSettingsSpec.swift; sourceTree = "<group>"; };
@@ -697,6 +699,7 @@
 				AB10000000000000000A0001 /* ClipboardHistoryPanelHotkeySpec.swift */,
 				FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */,
 				AB01000000000000000A0001 /* ClipboardHistoryEntrySpec.swift */,
+				AB01000000000000000B0001 /* SnippetEditorSearchFocusSpec.swift */,
 				3A87CC5D99B04C87B7D8CDF0 /* HistoryFilterSpec.swift */,
 				8E2743D1E2214D4A87BF957D /* HistoryControllerHelpersSpec.swift */,
 				AB01000000000000000A0003 /* DataCleanOverflowSpec.swift */,
@@ -1074,6 +1077,7 @@
 				AB10000000000000000A0002 /* ClipboardHistoryPanelHotkeySpec.swift in Sources */,
 				FA0157B51E48A0C7000DEDA4 /* RealmMigrationSpec.swift in Sources */,
 				AB01000000000000000A0002 /* ClipboardHistoryEntrySpec.swift in Sources */,
+				AB01000000000000000B0002 /* SnippetEditorSearchFocusSpec.swift in Sources */,
 				2D9986BC68C844CB9C79A521 /* HistoryFilterSpec.swift in Sources */,
 				8F9712206BEB4CFA8FCF2A1F /* HistoryControllerHelpersSpec.swift in Sources */,
 				AB01000000000000000A0004 /* DataCleanOverflowSpec.swift in Sources */,
@@ -1494,7 +1498,7 @@
 			repositoryURL = "https://github.com/realm/realm-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 20.0.4;
+				minimumVersion = 20.0.5;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

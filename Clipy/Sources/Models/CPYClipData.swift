@@ -208,8 +208,21 @@ final class CPYClipData: NSObject {
     }
 
     var colorCodeImage: NSImage? {
+        guard CPYClipData.looksLikeHexColorString(stringValue) else { return nil }
         guard let color = NSColor(clipyHexString: stringValue) else { return nil }
         return NSImage.create(with: color, size: NSSize(width: 20, height: 20))
+    }
+
+    /// Auto-detection guard for the color-code thumbnail: only treat a string
+    /// as a hex color when it carries a leading `#` or at least one hex letter
+    /// (a–f / A–F). This filters out pure-digit strings like "890766" — they
+    /// happen to be valid 6-digit hex but were almost certainly copied as a
+    /// number, not a color.
+    static func looksLikeHexColorString(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        if trimmed.hasPrefix("#") { return true }
+        return trimmed.contains { ("a"..."f").contains($0) || ("A"..."F").contains($0) }
     }
 
     static var availableTypes: [NSPasteboard.PasteboardType] {

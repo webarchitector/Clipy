@@ -221,6 +221,22 @@ extension CPYSnippetsEditorWindowController {
         let result = alert.runModal()
         if result != NSApplication.ModalResponse.alertFirstButtonReturn { return }
 
+        // Tell the outline view to drop its references to the item (and any
+        // expanded descendants) BEFORE we invalidate them in Realm. Otherwise
+        // the next reloadData() calls `_NSOVRecursiveFreeChildrenAndItem` which
+        // hash-probes the cached items via RLMObjectBase.hash → valueForKey:,
+        // and accessing a deleted Realm object there throws RLMException →
+        // EXC_BREAKPOINT.
+        let parentItem = outlineView.parent(forItem: item)
+        let childIndex = outlineView.childIndex(forItem: item)
+        if childIndex >= 0 {
+            outlineView.beginUpdates()
+            outlineView.removeItems(at: IndexSet(integer: childIndex),
+                                    inParent: parentItem,
+                                    withAnimation: [])
+            outlineView.endUpdates()
+        }
+
         try? realm.write {
             if let folder = item as? CPYFolder {
                 deleteFolderRecursively(folder, in: realm)
@@ -500,9 +516,15 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDelegate {
     }
 
     func control(_ control: NSControl, textShouldEndEditing fieldEditor: NSText) -> Bool {
+        // This delegate fires for every NSControl the controller is delegate of.
+        // Only the outline view's inline rename is handled here — any other
+        // control (notably the search field) must be allowed to end editing.
+        // Returning false for the search field traps first responder on it,
+        // which freezes outline clicks and drag-and-drop and makes the field
+        // impossible to unfocus.
+        guard let outlineView = control as? NSOutlineView else { return true }
         let text = fieldEditor.string
         guard !text.isEmpty else { return false }
-        guard let outlineView = control as? NSOutlineView else { return false }
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else { return false }
         guard let realm = Realm.safeInstance() else { return false }
         let itemID: String
@@ -549,6 +571,11 @@ extension CPYSnippetsEditorWindowController: NSTextViewDelegate {
 // MARK: - NSSearchFieldDelegate
 extension CPYSnippetsEditorWindowController: NSSearchFieldDelegate {
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        // Fires for every NSControl the controller delegates, including the
+        // outline view during inline rename. Only the search field's Escape
+        // handling belongs here — otherwise pressing Escape to cancel a rename
+        // would clear the search query / steal focus instead of aborting edit.
+        guard control == searchField else { return false }
         if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
             if !searchField.stringValue.isEmpty {
                 searchField.stringValue = ""

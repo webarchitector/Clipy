@@ -34,9 +34,24 @@ class ClipboardHistoryEntrySpec: QuickSpec {
                     expect(entry.displayTitle) == "hello"
                 }
 
-                it("collapses runs of whitespace into a single space") {
+                it("keeps single-line input intact, collapsing internal whitespace") {
+                    let entry = ClipboardHistoryEntry(clip: makeClip(title: "a   b\t c"))
+                    expect(entry.displayTitle) == "a b c"
+                }
+
+                it("shows only the first line plus ellipsis for multi-line clips") {
                     let entry = ClipboardHistoryEntry(clip: makeClip(title: "a   b\n\n c\t\td"))
-                    expect(entry.displayTitle) == "a b c d"
+                    expect(entry.displayTitle) == "a b..."
+                }
+
+                it("collapses consecutive newlines into a single ellipsis") {
+                    let entry = ClipboardHistoryEntry(clip: makeClip(title: "first\n\n\nsecond"))
+                    expect(entry.displayTitle) == "first..."
+                }
+
+                it("treats trailing whitespace-only lines as single-line") {
+                    let entry = ClipboardHistoryEntry(clip: makeClip(title: "only\n\n   \n"))
+                    expect(entry.displayTitle) == "only"
                 }
 
                 it("caps at ~500 scalars to keep menu rendering cheap") {
@@ -92,14 +107,20 @@ class ClipboardHistoryEntrySpec: QuickSpec {
                     expect(entry.primaryKey) == "abc123"
                 }
 
-                it("searchText mirrors displayTitle so the search field can match it") {
+                it("searchText mirrors displayTitle for single-line clips") {
                     let entry = ClipboardHistoryEntry(clip: makeClip(title: "Hello   world"))
                     expect(entry.searchText) == entry.displayTitle
                 }
 
-                it("toolTip mirrors displayTitle for short titles") {
-                    let entry = ClipboardHistoryEntry(clip: makeClip(title: "tip"))
-                    expect(entry.toolTip) == "tip"
+                it("searchText keeps full flattened content for multi-line clips so cross-line queries match") {
+                    let entry = ClipboardHistoryEntry(clip: makeClip(title: "foo\nbar"))
+                    expect(entry.displayTitle) == "foo..."
+                    expect(entry.searchText) == "foo bar"
+                }
+
+                it("toolTip mirrors flattened content, not the ellipsis-truncated display title") {
+                    let entry = ClipboardHistoryEntry(clip: makeClip(title: "foo\nbar"))
+                    expect(entry.toolTip) == "foo bar"
                 }
             }
 

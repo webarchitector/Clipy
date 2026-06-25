@@ -115,6 +115,11 @@ extension MenuManager {
         return (isMarkWithNumber) ? "\(listNumber). \(title)" : title
     }
 
+    /// Placeholder titles produced by `preferredTitle` when a clip has no
+     /// human-readable text content. Used to detect "(Image)"/"(PDF)" etc.
+     /// in the menu/cell so we can hide them once a real thumbnail loads.
+    static let clipTypePlaceholders: Set<String> = ["(Image)", "(PDF)", "(File)", "(Filenames)", "(URL)"]
+
     static func setInlineImage(_ image: NSImage, on menuItem: NSMenuItem, listNumber: Int, isMarkWithNumber: Bool, imageHeight: CGFloat = 32, maxWidth: CGFloat? = nil) {
         let font = menuItem.menu?.font ?? NSFont.menuFont(ofSize: 0)
         let result = NSMutableAttributedString()
@@ -177,6 +182,12 @@ extension MenuManager {
         guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return "" }
 
         let firstLine = title.prefix(while: { !$0.isNewline })
+        // Anything after the first newline means the clip is multi-line —
+        // mark it with shortenSymbol so the row is visually distinct from a
+        // truly single-line clip. The same symbol doubles as the
+        // length-truncation marker below; we just ensure we don't append it
+        // twice.
+        let hasMoreLines = firstLine.endIndex < title.endIndex
         var titleString = String(firstLine)
 
         var maxLen = maxLength ?? AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxMenuItemTitleLength)
@@ -184,6 +195,13 @@ extension MenuManager {
 
         if titleString.count > maxLen {
             titleString = String(titleString.prefix(maxLen - shortenSymbol.count)) + shortenSymbol
+        } else if hasMoreLines && !titleString.hasSuffix(shortenSymbol) {
+            let room = maxLen - titleString.count
+            if room >= shortenSymbol.count {
+                titleString += shortenSymbol
+            } else {
+                titleString = String(titleString.prefix(maxLen - shortenSymbol.count)) + shortenSymbol
+            }
         }
 
         return titleString
@@ -290,6 +308,16 @@ extension MenuManager {
                     guard let menuItem = menuBox.value else { return }
                     let thumbW = CGFloat(max(16, settings.thumbnailWidth))
                     let thumbH = CGFloat(max(16, settings.thumbnailHeight))
+                    // Drop the "(Image)"/"(PDF)"/"(Filenames)" placeholder text
+                    // once a real thumbnail loaded — the image itself already
+                    // identifies the clip type, the duplicated label is noise.
+                    let prefix = settings.isMarkWithNumber ? "\(listNumber). " : ""
+                    let stripped = menuItem.title.hasPrefix(prefix)
+                        ? String(menuItem.title.dropFirst(prefix.count))
+                        : menuItem.title
+                    if MenuManager.clipTypePlaceholders.contains(stripped) {
+                        menuItem.title = prefix
+                    }
                     MenuManager.setInlineImage(imageBox.value, on: menuItem, listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber, imageHeight: thumbH, maxWidth: thumbW)
                 }
             }
