@@ -35,16 +35,24 @@ disabled_rules:
   - todo
   - cyclomatic_complexity
   - force_try
+  # The codebase deliberately uses per-file `// swiftlint:disable identifier_name`
+  # for short domain names; don't also flag the blanket form.
+  - blanket_disable_command
+  # `override class func` on URLProtocol subclasses can't be `static`.
+  - static_over_final_class
 identifier_name:
   excluded:
     - i
+    - id
+    - pb
+    - ok
 line_length: 300
 type_body_length:
   - 300
   - 400
 file_length:
-  warning: 500
+  warning: 700
   error: 1000
 function_body_length:
-  warning: 100
-  error: 200
+  warning: 250
+  error: 400

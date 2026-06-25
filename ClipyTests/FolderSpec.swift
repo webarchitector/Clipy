@@ -4,7 +4,6 @@ import Foundation
 import RealmSwift
 @testable import Clipy
 
-// swiftlint:disable function_body_length
 class FolderSpec: QuickSpec {
     override class func spec() {
 
