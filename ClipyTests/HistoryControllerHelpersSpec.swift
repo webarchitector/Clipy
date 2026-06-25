@@ -22,7 +22,7 @@ class HistoryControllerHelpersSpec: QuickSpec {
             it("returns nil for an empty list (caller must clear selection)") {
                 let result = CPYClipboardHistoryWindowController
                     .restoreIndex(in: [], primaryKey: "anything")
-                expect(result).to(beNil())
+                expect(result) == nil
             }
 
             it("returns the row of the previously-selected primary key when present") {
@@ -57,9 +57,9 @@ class HistoryControllerHelpersSpec: QuickSpec {
             }
 
             it("returns nil for digits outside 0…9") {
-                expect(CPYClipboardHistoryWindowController.quickPasteIndex(forDigit: -1)).to(beNil())
-                expect(CPYClipboardHistoryWindowController.quickPasteIndex(forDigit: 10)).to(beNil())
-                expect(CPYClipboardHistoryWindowController.quickPasteIndex(forDigit: 99)).to(beNil())
+                expect(CPYClipboardHistoryWindowController.quickPasteIndex(forDigit: -1)) == nil
+                expect(CPYClipboardHistoryWindowController.quickPasteIndex(forDigit: 10)) == nil
+                expect(CPYClipboardHistoryWindowController.quickPasteIndex(forDigit: 99)) == nil
             }
         }
 

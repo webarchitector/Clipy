@@ -15,7 +15,7 @@ class DraggedDataSpec: QuickSpec {
                 let data = try NSKeyedArchiver.archivedData(withRootObject: draggedData, requiringSecureCoding: true)
 
                 let unarchived = try NSKeyedUnarchiver.unarchivedObject(ofClass: CPYDraggedData.self, from: data)
-                expect(unarchived).toNot(beNil())
+                expect(unarchived) != nil
                 expect(unarchived?.type) == draggedData.type
                 expect(unarchived?.identifier) == id
                 expect(unarchived?.parentIdentifier) == parent

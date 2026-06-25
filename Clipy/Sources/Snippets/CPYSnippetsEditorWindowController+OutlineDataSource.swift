@@ -183,8 +183,7 @@ enum NestedMoveExecutor {
             ordered = working
         }
         for (idx, kid) in ordered.enumerated() {
-            if let folder = kid as? CPYFolder { folder.index = idx }
-            else if let snippet = kid as? CPYSnippet { snippet.index = idx }
+            if let folder = kid as? CPYFolder { folder.index = idx } else if let snippet = kid as? CPYSnippet { snippet.index = idx }
         }
         if oldParentId != toParentId {
             CPYFolder.renumberSiblings(of: oldParentId, in: realm)

@@ -22,12 +22,12 @@ class RealmMigrationSpec: QuickSpec {
 
             it("installs a migration block (non-nil)") {
                 Realm.migration()
-                expect(Realm.Configuration.defaultConfiguration.migrationBlock).toNot(beNil())
+                expect(Realm.Configuration.defaultConfiguration.migrationBlock) != nil
             }
 
             it("installs shouldCompactOnLaunch") {
                 Realm.migration()
-                expect(Realm.Configuration.defaultConfiguration.shouldCompactOnLaunch).toNot(beNil())
+                expect(Realm.Configuration.defaultConfiguration.shouldCompactOnLaunch) != nil
             }
 
             it("compaction predicate triggers above 100 MB and below 50% usage") {
@@ -86,7 +86,7 @@ class RealmMigrationSpec: QuickSpec {
                 // default config to disk-backed).
                 Realm.Configuration.defaultConfiguration.inMemoryIdentifier = UUID().uuidString
                 let realm = try? Realm()
-                expect(realm).toNot(beNil())
+                expect(realm) != nil
 
                 guard let realm = realm else { return }
 
@@ -117,8 +117,8 @@ class RealmMigrationSpec: QuickSpec {
                 expect(realm.objects(CPYFolder.self).count) == folderCountBefore + 1
                 expect(realm.objects(CPYSnippet.self).count) == snippetCountBefore + 1
                 expect(realm.objects(CPYClip.self).count) == clipCountBefore + 1
-                expect(realm.objects(CPYFolder.self).last?.identifier).toNot(beNil())
-                expect(realm.objects(CPYSnippet.self).last?.identifier).toNot(beNil())
+                expect(realm.objects(CPYFolder.self).last?.identifier) != nil
+                expect(realm.objects(CPYSnippet.self).last?.identifier) != nil
             }
         }
     }

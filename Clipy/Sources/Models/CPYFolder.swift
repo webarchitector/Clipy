@@ -156,8 +156,7 @@ extension CPYFolder {
         let kids = children(parentIdentifier: parentIdentifier, in: realm)
         let writeBlock = {
             for (idx, kid) in kids.enumerated() {
-                if let folder = kid as? CPYFolder { folder.index = idx }
-                else if let snippet = kid as? CPYSnippet { snippet.index = idx }
+                if let folder = kid as? CPYFolder { folder.index = idx } else if let snippet = kid as? CPYSnippet { snippet.index = idx }
             }
         }
         if realm.isInWriteTransaction {

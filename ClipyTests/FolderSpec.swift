@@ -44,11 +44,11 @@ class FolderSpec: QuickSpec {
                 folder.title = "title"
                 folder.enable = false
                 folder.merge()
-                expect(folder.realm).to(beNil())
+                expect(folder.realm) == nil
                 expect(realm.objects(CPYFolder.self).count) == 1
 
                 let savedFolder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folder.identifier)
-                expect(savedFolder).toNot(beNil())
+                expect(savedFolder) != nil
                 expect(savedFolder?.index) == folder.index
                 expect(savedFolder?.title) == folder.title
                 expect(savedFolder?.enable) == folder.enable

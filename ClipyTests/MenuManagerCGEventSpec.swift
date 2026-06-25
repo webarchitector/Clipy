@@ -115,12 +115,12 @@ class MenuManagerCGEventSpec: QuickSpec {
 
             it("returns nil for keycodes outside the vim nav set") {
                 let manager = MenuManager()
-                expect(manager.arrowKeyCodeForVimKey(31)).to(beNil())   // 'O' / 'щ'
-                expect(manager.arrowKeyCodeForVimKey(123)).to(beNil())  // already ←
-                expect(manager.arrowKeyCodeForVimKey(124)).to(beNil())  // already →
-                expect(manager.arrowKeyCodeForVimKey(125)).to(beNil())  // already ↓
-                expect(manager.arrowKeyCodeForVimKey(126)).to(beNil())  // already ↑
-                expect(manager.arrowKeyCodeForVimKey(0)).to(beNil())
+                expect(manager.arrowKeyCodeForVimKey(31)) == nil   // 'O' / 'щ'
+                expect(manager.arrowKeyCodeForVimKey(123)) == nil  // already ←
+                expect(manager.arrowKeyCodeForVimKey(124)) == nil  // already →
+                expect(manager.arrowKeyCodeForVimKey(125)) == nil  // already ↓
+                expect(manager.arrowKeyCodeForVimKey(126)) == nil  // already ↑
+                expect(manager.arrowKeyCodeForVimKey(0)) == nil
             }
         }
     }

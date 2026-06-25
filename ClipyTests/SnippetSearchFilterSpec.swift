@@ -20,12 +20,12 @@ class SnippetSearchFilterSpec: QuickSpec {
 
             it("returns nil for an empty query") {
                 let realm = try! Realm()
-                expect(SnippetSearchFilter.visibleIdentifiers(query: "", in: realm)).to(beNil())
+                expect(SnippetSearchFilter.visibleIdentifiers(query: "", in: realm)) == nil
             }
 
             it("returns nil for a whitespace-only query") {
                 let realm = try! Realm()
-                expect(SnippetSearchFilter.visibleIdentifiers(query: "   \t\n", in: realm)).to(beNil())
+                expect(SnippetSearchFilter.visibleIdentifiers(query: "   \t\n", in: realm)) == nil
             }
 
             it("returns an empty set when there are no matches") {
@@ -36,7 +36,7 @@ class SnippetSearchFilterSpec: QuickSpec {
                 snippet.parentIdentifier = folder.identifier; snippet.index = 0
                 try! realm.write { realm.add(snippet) }
                 let result = SnippetSearchFilter.visibleIdentifiers(query: "zzz", in: realm)
-                expect(result).toNot(beNil())
+                expect(result) != nil
                 expect(result?.isEmpty) == true
             }
 

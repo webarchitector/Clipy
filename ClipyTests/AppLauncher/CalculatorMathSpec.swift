@@ -23,7 +23,7 @@ class CalculatorMathSpec: QuickSpec {
             }
 
             it("returns nil for divide-by-zero") {
-                expect(Calculator.evaluateMath("1/0")).to(beNil())
+                expect(Calculator.evaluateMath("1/0")) == nil
             }
 
             it("formats integral results without a decimal when the input is integral") {
@@ -43,27 +43,27 @@ class CalculatorMathSpec: QuickSpec {
 
             it("returns nil for partial / malformed input instead of crashing") {
                 // Trailing binary operator
-                expect(Calculator.evaluateMath("1+")).to(beNil())
-                expect(Calculator.evaluateMath("5*")).to(beNil())
-                expect(Calculator.evaluateMath("2.+")).to(beNil())
-                expect(Calculator.evaluateMath("4-")).to(beNil())
+                expect(Calculator.evaluateMath("1+")) == nil
+                expect(Calculator.evaluateMath("5*")) == nil
+                expect(Calculator.evaluateMath("2.+")) == nil
+                expect(Calculator.evaluateMath("4-")) == nil
                 // Leading non-unary operator
-                expect(Calculator.evaluateMath("*5")).to(beNil())
-                expect(Calculator.evaluateMath("/3")).to(beNil())
+                expect(Calculator.evaluateMath("*5")) == nil
+                expect(Calculator.evaluateMath("/3")) == nil
                 // Unbalanced parens
-                expect(Calculator.evaluateMath("(5+1")).to(beNil())
-                expect(Calculator.evaluateMath("5+1)")).to(beNil())
-                expect(Calculator.evaluateMath("()")).to(beNil())
+                expect(Calculator.evaluateMath("(5+1")) == nil
+                expect(Calculator.evaluateMath("5+1)")) == nil
+                expect(Calculator.evaluateMath("()")) == nil
                 // Doubled binary ops (excluding "** = ^")
-                expect(Calculator.evaluateMath("1+*2")).to(beNil())
-                expect(Calculator.evaluateMath("1//2")).to(beNil())
+                expect(Calculator.evaluateMath("1+*2")) == nil
+                expect(Calculator.evaluateMath("1//2")) == nil
                 // Operator next to closing paren
-                expect(Calculator.evaluateMath("(1+)")).to(beNil())
+                expect(Calculator.evaluateMath("(1+)")) == nil
                 // Empty / whitespace
-                expect(Calculator.evaluateMath("")).to(beNil())
-                expect(Calculator.evaluateMath("   ")).to(beNil())
+                expect(Calculator.evaluateMath("")) == nil
+                expect(Calculator.evaluateMath("   ")) == nil
                 // Implicit multiplication not allowed
-                expect(Calculator.evaluateMath("(2)(3)")).to(beNil())
+                expect(Calculator.evaluateMath("(2)(3)")) == nil
             }
 
             it("accepts unary minus / plus after a binary op") {

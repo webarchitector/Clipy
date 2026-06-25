@@ -45,7 +45,7 @@ struct Constants {
         static let inputPasteCommand = "kCPYPrefInputPasteCommandKey"
         static let showIconInTheMenu = "kCPYPrefShowIconInTheMenuKey"
         static let numberOfItemsPlaceInline = "kCPYPrefNumberOfItemsPlaceInlineKey"
-        static let numberOfItemsPlaceInsideFolder  = "kCPYPrefNumberOfItemsPlaceInsideFolderKey"
+        static let numberOfItemsPlaceInsideFolder = "kCPYPrefNumberOfItemsPlaceInsideFolderKey"
         static let maxMenuItemTitleLength = "kCPYPrefMaxMenuItemTitleLengthKey"
         static let menuItemsTitleStartWithZero = "kCPYPrefMenuItemsTitleStartWithZeroKey"
         static let reorderClipsAfterPasting = "kCPYPrefReorderClipsAfterPasting"

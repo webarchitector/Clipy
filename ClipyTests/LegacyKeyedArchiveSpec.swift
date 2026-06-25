@@ -35,12 +35,12 @@ class LegacyKeyedArchiveSpec: QuickSpec {
                 it("returns nil when decoding into the wrong type") {
                     let original: NSString = "hello"
                     let data = LegacyKeyedArchive.archivedData(withRootObject: original)!
-                    expect(LegacyKeyedArchive.unarchivedObject(of: NSDate.self, from: data)).to(beNil())
+                    expect(LegacyKeyedArchive.unarchivedObject(of: NSDate.self, from: data)) == nil
                 }
 
                 it("returns nil for garbage data instead of throwing") {
                     let garbage = Data(repeating: 0xFF, count: 32)
-                    expect(LegacyKeyedArchive.unarchivedObject(of: NSString.self, from: garbage)).to(beNil())
+                    expect(LegacyKeyedArchive.unarchivedObject(of: NSString.self, from: garbage)) == nil
                 }
             }
 
@@ -70,7 +70,7 @@ class LegacyKeyedArchiveSpec: QuickSpec {
 
                 it("returns nil when the file is missing") {
                     let missing = "/tmp/definitely-not-here-\(UUID().uuidString)"
-                    expect(LegacyKeyedArchive.unarchivedObject(of: NSString.self, fromFile: missing)).to(beNil())
+                    expect(LegacyKeyedArchive.unarchivedObject(of: NSString.self, fromFile: missing)) == nil
                 }
 
                 it("returns false when the destination directory doesn't exist") {
@@ -84,7 +84,7 @@ class LegacyKeyedArchiveSpec: QuickSpec {
                     let value: NSString = "hello"
                     let viaConvenience = value.archive()
                     let viaDirect = LegacyKeyedArchive.archivedData(withRootObject: value)
-                    expect(viaConvenience).toNot(beNil())
+                    expect(viaConvenience) != nil
                     expect(viaConvenience) == viaDirect
                 }
             }
@@ -102,7 +102,7 @@ class LegacyKeyedArchiveSpec: QuickSpec {
                         ])!
                     ]
                     let data = infos.archive()
-                    expect(data).toNot(beNil())
+                    expect(data) != nil
                     let decoded = LegacyKeyedArchive.unarchivedObject(of: NSArray.self, from: data!)
                     expect(decoded?.count) == 2
                 }

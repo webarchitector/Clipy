@@ -52,8 +52,8 @@ class AppLauncherServicePersistenceSpec: QuickSpec {
                 defer { service.change(keyCombo: nil) }  // unregister hotkey
 
                 let stored = defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)
-                expect(stored).toNot(beNil())
-                expect(service.currentKeyCombo).toNot(beNil())
+                expect(stored) != nil
+                expect(service.currentKeyCombo) != nil
                 expect(service.currentKeyCombo?.currentKeyCode) == combo.currentKeyCode
             }
 
@@ -64,12 +64,12 @@ class AppLauncherServicePersistenceSpec: QuickSpec {
 
                 let service = AppLauncherService()
                 service.change(keyCombo: makeCombo())
-                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)).toNot(beNil())
+                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)) != nil
 
                 service.change(keyCombo: nil)
 
-                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)).to(beNil())
-                expect(service.currentKeyCombo).to(beNil())
+                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)) == nil
+                expect(service.currentKeyCombo) == nil
             }
         }
 
@@ -85,7 +85,7 @@ class AppLauncherServicePersistenceSpec: QuickSpec {
                 defer { service.change(keyCombo: nil) }
 
                 expect(defaults.bool(forKey: Constants.HotKey.appLauncherDidPreSeed)) == true
-                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)).toNot(beNil())
+                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)) != nil
                 // The seeded combo is ⌘Space (kVK_Space = 49).
                 expect(service.currentKeyCombo?.currentKeyCode) == 49
             }
@@ -97,15 +97,15 @@ class AppLauncherServicePersistenceSpec: QuickSpec {
 
                 // Prior session: pre-seeded then user cleared it.
                 defaults.set(true, forKey: Constants.HotKey.appLauncherDidPreSeed)
-                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)).to(beNil())
+                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)) == nil
 
                 let service = AppLauncherService()
                 service.setupHotKey()
                 defer { service.change(keyCombo: nil) }
 
                 // Cleared state must survive; we shouldn't re-seed.
-                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)).to(beNil())
-                expect(service.currentKeyCombo).to(beNil())
+                expect(defaults.data(forKey: Constants.HotKey.appLauncherKeyCombo)) == nil
+                expect(service.currentKeyCombo) == nil
             }
 
             it("preserves an already-archived combo across launches without overwriting") {

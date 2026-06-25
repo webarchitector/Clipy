@@ -46,14 +46,14 @@ class CPYClipDataSpec: QuickSpec {
         describe("cappedForStorage") {
 
             it("returns nil when the input is nil") {
-                expect(CPYClipData.cappedForStorage(nil)).to(beNil())
+                expect(CPYClipData.cappedForStorage(nil)) == nil
             }
 
             it("leaves an image at the cap untouched") {
                 let cap = CPYClipData.maxStoredImageDimension
                 let image = Self.makeImage(width: cap, height: cap, red: 10, green: 10, blue: 10)
                 let result = CPYClipData.cappedForStorage(image)
-                expect(result).toNot(beNil())
+                expect(result) != nil
                 expect(result?.size.width) == CGFloat(cap)
                 expect(result?.size.height) == CGFloat(cap)
             }

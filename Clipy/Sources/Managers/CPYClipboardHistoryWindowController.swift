@@ -269,13 +269,6 @@ final class ClipboardHistoryTableView: NSTableView {
         hoverHandler?(nil)
     }
 
-    override func mouseDown(with event: NSEvent) {
-        // Single click selects only — keep the row selectable so the user
-        // can press Cmd+O / Enter / Space afterwards. Double-click confirms
-        // via the table's built-in `doubleAction` wiring.
-        super.mouseDown(with: event)
-    }
-
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 36, 76:

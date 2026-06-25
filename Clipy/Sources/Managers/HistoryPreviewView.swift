@@ -111,7 +111,7 @@ final class HistoryPreviewView: NSView {
             return
         }
 
-        if (type == .deprecatedTIFF || type == .tiff || type == .png), let image = clipData.image {
+        if type == .deprecatedTIFF || type == .tiff || type == .png, let image = clipData.image {
             showImage(image)
             return
         }

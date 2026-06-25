@@ -32,25 +32,25 @@ class CalculatorCurrencySpec: QuickSpec {
             }
 
             it("rejects nonsense") {
-                expect(Calculator.parseCurrency("nonsense")).to(beNil())
-                expect(Calculator.parseCurrency("15 thb")).to(beNil())
-                expect(Calculator.parseCurrency("usd thb")).to(beNil())
+                expect(Calculator.parseCurrency("nonsense")) == nil
+                expect(Calculator.parseCurrency("15 thb")) == nil
+                expect(Calculator.parseCurrency("usd thb")) == nil
             }
 
             it("rejects malformed input that should never reach the API") {
-                expect(Calculator.parseCurrency("")).to(beNil())
-                expect(Calculator.parseCurrency("   ")).to(beNil())
-                expect(Calculator.parseCurrency("15")).to(beNil())                  // amount only
-                expect(Calculator.parseCurrency("usd")).to(beNil())                 // currency only
-                expect(Calculator.parseCurrency("15 usd")).to(beNil())              // missing target
-                expect(Calculator.parseCurrency("15.5.5 usd thb")).to(beNil())      // double-dot amount
-                expect(Calculator.parseCurrency("-15 usd thb")).to(beNil())         // negative amounts not in regex
-                expect(Calculator.parseCurrency("15 us thb")).to(beNil())           // 2-letter codes rejected (need 3-4)
-                expect(Calculator.parseCurrency("15 usddd thb")).to(beNil())        // 5-letter code rejected
-                expect(Calculator.parseCurrency("15 usd1 thb")).to(beNil())         // digit in code
-                expect(Calculator.parseCurrency("15 руб usd")).to(beNil())          // cyrillic in code
-                expect(Calculator.parseCurrency("15 usd 🇺🇸")).to(beNil())          // emoji
-                expect(Calculator.parseCurrency("usd 15 thb")).to(beNil())          // wrong order
+                expect(Calculator.parseCurrency("")) == nil
+                expect(Calculator.parseCurrency("   ")) == nil
+                expect(Calculator.parseCurrency("15")) == nil                  // amount only
+                expect(Calculator.parseCurrency("usd")) == nil                 // currency only
+                expect(Calculator.parseCurrency("15 usd")) == nil              // missing target
+                expect(Calculator.parseCurrency("15.5.5 usd thb")) == nil      // double-dot amount
+                expect(Calculator.parseCurrency("-15 usd thb")) == nil         // negative amounts not in regex
+                expect(Calculator.parseCurrency("15 us thb")) == nil           // 2-letter codes rejected (need 3-4)
+                expect(Calculator.parseCurrency("15 usddd thb")) == nil        // 5-letter code rejected
+                expect(Calculator.parseCurrency("15 usd1 thb")) == nil         // digit in code
+                expect(Calculator.parseCurrency("15 руб usd")) == nil          // cyrillic in code
+                expect(Calculator.parseCurrency("15 usd 🇺🇸")) == nil          // emoji
+                expect(Calculator.parseCurrency("usd 15 thb")) == nil          // wrong order
             }
 
             it("trims surrounding whitespace") {

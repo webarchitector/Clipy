@@ -52,14 +52,14 @@ class MenuSettingsSpec: QuickSpec {
                 let saved = snapshot(touchedKeys)
                 defer { restore(saved) }
                 let defaults = AppEnvironment.current.defaults
-                defaults.set(true,  forKey: Constants.UserDefaults.menuItemsAreMarkedWithNumbers)
+                defaults.set(true, forKey: Constants.UserDefaults.menuItemsAreMarkedWithNumbers)
                 defaults.set(false, forKey: Constants.UserDefaults.showToolTipOnMenuItem)
-                defaults.set(true,  forKey: Constants.UserDefaults.showImageInTheMenu)
+                defaults.set(true, forKey: Constants.UserDefaults.showImageInTheMenu)
                 defaults.set(false, forKey: Constants.UserDefaults.showColorPreviewInTheMenu)
-                defaults.set(true,  forKey: Constants.UserDefaults.addNumericKeyEquivalents)
-                defaults.set(true,  forKey: Constants.UserDefaults.menuItemsTitleStartWithZero)
+                defaults.set(true, forKey: Constants.UserDefaults.addNumericKeyEquivalents)
+                defaults.set(true, forKey: Constants.UserDefaults.menuItemsTitleStartWithZero)
                 defaults.set(false, forKey: Constants.UserDefaults.showIconInTheMenu)
-                defaults.set(true,  forKey: Constants.UserDefaults.reorderClipsAfterPasting)
+                defaults.set(true, forKey: Constants.UserDefaults.reorderClipsAfterPasting)
                 defaults.set(false, forKey: Constants.UserDefaults.addClearHistoryMenuItem)
 
                 let settings = MenuSettings()
@@ -78,11 +78,11 @@ class MenuSettingsSpec: QuickSpec {
                 let saved = snapshot(touchedKeys)
                 defer { restore(saved) }
                 let defaults = AppEnvironment.current.defaults
-                defaults.set(42,  forKey: Constants.UserDefaults.maxLengthOfToolTip)
-                defaults.set(60,  forKey: Constants.UserDefaults.maxMenuItemTitleLength)
-                defaults.set(15,  forKey: Constants.UserDefaults.numberOfItemsPlaceInline)
-                defaults.set(8,   forKey: Constants.UserDefaults.numberOfItemsPlaceInsideFolder)
-                defaults.set(99,  forKey: Constants.UserDefaults.maxHistorySize)
+                defaults.set(42, forKey: Constants.UserDefaults.maxLengthOfToolTip)
+                defaults.set(60, forKey: Constants.UserDefaults.maxMenuItemTitleLength)
+                defaults.set(15, forKey: Constants.UserDefaults.numberOfItemsPlaceInline)
+                defaults.set(8, forKey: Constants.UserDefaults.numberOfItemsPlaceInsideFolder)
+                defaults.set(99, forKey: Constants.UserDefaults.maxHistorySize)
                 defaults.set(300, forKey: Constants.UserDefaults.thumbnailWidth)
                 defaults.set(200, forKey: Constants.UserDefaults.thumbnailHeight)
 

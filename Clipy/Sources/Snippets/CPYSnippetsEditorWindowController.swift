@@ -486,7 +486,6 @@ extension CPYSnippetsEditorWindowController {
     }
 }
 
-
 // MARK: - NSSplitView Delegate
 extension CPYSnippetsEditorWindowController: NSSplitViewDelegate {
     func splitView(_ splitView: NSSplitView, constrainMinCoordinate proposedMinimumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
@@ -528,9 +527,7 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDelegate {
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else { return false }
         guard let realm = Realm.safeInstance() else { return false }
         let itemID: String
-        if let folder = item as? CPYFolder { itemID = folder.identifier }
-        else if let snippet = item as? CPYSnippet { itemID = snippet.identifier }
-        else { return false }
+        if let folder = item as? CPYFolder { itemID = folder.identifier } else if let snippet = item as? CPYSnippet { itemID = snippet.identifier } else { return false }
         try? realm.write {
             if let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: itemID) {
                 folder.title = text

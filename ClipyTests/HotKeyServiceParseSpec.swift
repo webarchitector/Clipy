@@ -26,36 +26,36 @@ class HotKeyServiceParseSpec: QuickSpec {
             it("returns nil when the menu key is absent") {
                 let service = HotKeyService()
                 let combos: [String: Any] = ["foo": ["keyCode": 9, "modifiers": 768]]
-                expect(service.parse(with: combos, forKey: "missing")).to(beNil())
+                expect(service.parse(with: combos, forKey: "missing")) == nil
             }
 
             it("returns nil when the inner value isn't a dict") {
                 let service = HotKeyService()
                 let combos: [String: Any] = ["foo": "garbage"]
-                expect(service.parse(with: combos, forKey: "foo")).to(beNil())
+                expect(service.parse(with: combos, forKey: "foo")) == nil
             }
 
             it("returns nil when keyCode is missing") {
                 let service = HotKeyService()
                 let combos: [String: Any] = ["foo": ["modifiers": 768]]
-                expect(service.parse(with: combos, forKey: "foo")).to(beNil())
+                expect(service.parse(with: combos, forKey: "foo")) == nil
             }
 
             it("returns nil when modifiers is missing") {
                 let service = HotKeyService()
                 let combos: [String: Any] = ["foo": ["keyCode": 9]]
-                expect(service.parse(with: combos, forKey: "foo")).to(beNil())
+                expect(service.parse(with: combos, forKey: "foo")) == nil
             }
 
             it("returns nil when keyCode is the wrong type (e.g. NSNumber via NSDictionary edge cases)") {
                 let service = HotKeyService()
                 let combos: [String: Any] = ["foo": ["keyCode": "9", "modifiers": 768]]
-                expect(service.parse(with: combos, forKey: "foo")).to(beNil())
+                expect(service.parse(with: combos, forKey: "foo")) == nil
             }
 
             it("returns nil for an empty input dictionary") {
                 let service = HotKeyService()
-                expect(service.parse(with: [:], forKey: "foo")).to(beNil())
+                expect(service.parse(with: [:], forKey: "foo")) == nil
             }
         }
     }

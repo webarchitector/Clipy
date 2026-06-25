@@ -30,7 +30,7 @@ class InputSourceServiceDedupSpec: QuickSpec {
                 ])
                 expect(result[0].combo) == 10
                 expect(result[0].droppedAsDuplicate) == false
-                expect(result[1].combo).to(beNil())
+                expect(result[1].combo) == nil
                 expect(result[1].droppedAsDuplicate) == true
             }
 

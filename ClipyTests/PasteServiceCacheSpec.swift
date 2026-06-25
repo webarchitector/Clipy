@@ -57,7 +57,7 @@ class PasteServiceCacheSpec: QuickSpec {
                 clip.dataHash = "missing"
                 clip.dataPath = "/tmp/definitely-not-here-\(UUID().uuidString).data"
                 try! realm.write { realm.add(clip) }
-                expect(service.cachedClipData(for: clip)).to(beNil())
+                expect(service.cachedClipData(for: clip)) == nil
             }
 
             it("decodes the archive on first lookup") {
@@ -65,7 +65,7 @@ class PasteServiceCacheSpec: QuickSpec {
                 defer { try? FileManager.default.removeItem(at: tmpDir) }
                 let clip = makeClipOnDisk(stringValue: "hello", in: tmpDir)
                 let result = service.cachedClipData(for: clip)
-                expect(result).toNot(beNil())
+                expect(result) != nil
                 expect(result?.stringValue) == "hello"
             }
 
@@ -74,13 +74,13 @@ class PasteServiceCacheSpec: QuickSpec {
                 defer { try? FileManager.default.removeItem(at: tmpDir) }
                 let clip = makeClipOnDisk(stringValue: "cacheable", in: tmpDir)
                 let first = service.cachedClipData(for: clip)
-                expect(first).toNot(beNil())
+                expect(first) != nil
 
                 // Delete the underlying file. If the cache works, the second
                 // lookup still returns the same data.
                 try? FileManager.default.removeItem(atPath: clip.dataPath)
                 let second = service.cachedClipData(for: clip)
-                expect(second).toNot(beNil())
+                expect(second) != nil
                 expect(second?.stringValue) == "cacheable"
             }
 

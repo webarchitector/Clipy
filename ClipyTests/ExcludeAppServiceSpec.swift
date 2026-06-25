@@ -27,9 +27,9 @@ class ExcludeAppServiceSpec: QuickSpec {
 
             it("returns nil for out-of-range indexes instead of crashing") {
                 let service = ExcludeAppService(applications: [])
-                expect(service.application(at: 0)).to(beNil())
-                expect(service.application(at: -1)).to(beNil())
-                expect(service.application(at: 999)).to(beNil())
+                expect(service.application(at: 0)) == nil
+                expect(service.application(at: -1)) == nil
+                expect(service.application(at: 999)) == nil
             }
         }
 
