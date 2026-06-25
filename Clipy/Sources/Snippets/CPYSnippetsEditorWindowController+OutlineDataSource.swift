@@ -168,11 +168,12 @@ enum NestedMoveExecutor {
         }
         let ordered: [Object]
         if let visible = visibleIDs {
-            ordered = reorderRespectingHiddenAnchors(allKids: allKids,
-                                                    visible: visible,
-                                                    movedId: itemId,
-                                                    movedItem: target,
-                                                    atIndex: atIndex)
+            ordered = reorderRespectingHiddenAnchors(
+                allKids: allKids,
+                visible: visible,
+                movedId: itemId,
+                movedItem: target,
+                atIndex: atIndex)
         } else {
             var working: [Object] = []
             for kid in allKids where CPYFolder.nodeID(of: kid) != itemId { working.append(kid) }

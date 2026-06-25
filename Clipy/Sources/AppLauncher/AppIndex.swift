@@ -18,8 +18,8 @@ struct AppEntry {
     let lat: String
 }
 
-/// Source of all installed-app names. Maintains a cached `apps.txt` index
-/// shared with the bash CLI `a` (path under `~/.local/share/app-launcher/var/`).
+// Source of all installed-app names. Maintains a cached `apps.txt` index
+// shared with the bash CLI `a` (path under `~/.local/share/app-launcher/var/`).
 // All public reads/writes happen on the main thread (Preferences UI +
 // AppLauncher panel). Internal background scans funnel results back to
 // main before mutating shared state. @unchecked Sendable matches what

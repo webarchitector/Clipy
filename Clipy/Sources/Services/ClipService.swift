@@ -171,8 +171,6 @@ final class ClipService {
 
 // MARK: - Create Clip
 extension ClipService {
-    // SwiftLint misidentifies a plain guard in this method as empty enum arguments.
-    // swiftlint:disable empty_enum_arguments
     fileprivate func create() {
         lock.lock(); defer { lock.unlock() }
 
@@ -205,7 +203,6 @@ extension ClipService {
         let data = CPYClipData(pasteboard: pasteboard, types: types)
         save(with: data, sourceBundleID: sourceBundleID)
     }
-    // swiftlint:enable empty_enum_arguments
 
     // Visible to tests via `@testable import Clipy` — boundary is the
      // ClipService module, not consumers of the public Clipy API.

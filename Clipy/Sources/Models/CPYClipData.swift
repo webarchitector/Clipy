@@ -16,7 +16,6 @@ import CryptoKit
 private extension NSColor {
     /// Inline replacement for SwiftHEXColors' `init(hexString:)`. Accepts
     /// "#RGB", "#RGBA", "#RRGGBB", "#RRGGBBAA" with or without the leading "#".
-    // swiftlint:disable operator_usage_whitespace
     convenience init?(clipyHexString: String) {
         var hex = clipyHexString
         if hex.hasPrefix("#") { hex.removeFirst() }
@@ -48,7 +47,6 @@ private extension NSColor {
         }
         self.init(red: red, green: green, blue: blue, alpha: alpha)
     }
-    // swiftlint:enable operator_usage_whitespace
 }
 
 final class CPYClipData: NSObject {

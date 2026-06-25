@@ -418,7 +418,7 @@ extension CPYSnippetsEditorWindowController {
         applyFilter(sender.stringValue)
     }
 
-    @IBAction func findInSnippets(_ sender: Any?) {
+    @IBAction private func findInSnippets(_ sender: Any?) {
         window?.makeFirstResponder(searchField)
     }
 
