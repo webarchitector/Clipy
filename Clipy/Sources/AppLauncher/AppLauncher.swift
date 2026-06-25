@@ -41,13 +41,13 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         exitToRoot: { [weak self] in self?.exitScratchpad() }
     )
 
-    private var visibleItems: [LauncherItem] = []
+    var visibleItems: [LauncherItem] = []
     private var runningApps: Set<String> = []
     private var lastQuery: String = ""
     private var pendingFilterWorkItem: DispatchWorkItem?
     private var runningAppsObservers: [NSObjectProtocol] = []
 
-    private static let dotTag = 1001
+    static let dotTag = 1001
 
     // MARK: - Hotkey entry points
 
@@ -336,74 +336,11 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
                        display: true, animate: false)
     }
 
-    // MARK: - NSTableView
+}
 
-    func numberOfRows(in tableView: NSTableView) -> Int { visibleItems.count }
+// MARK: - NSSearchFieldDelegate
 
-    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let cell = (tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("cell"), owner: self)
-                    as? NSTableCellView) ?? NSTableCellView()
-        cell.identifier = NSUserInterfaceItemIdentifier("cell")
-
-        let dotLabel: NSTextField = (cell.viewWithTag(Self.dotTag) as? NSTextField) ?? {
-            let d = NSTextField(labelWithString: "●")
-            d.tag = Self.dotTag
-            d.font = NSFont.systemFont(ofSize: 14)
-            d.textColor = NSColor.systemGreen
-            d.alignment = .right
-            d.translatesAutoresizingMaskIntoConstraints = false
-            cell.addSubview(d)
-            NSLayoutConstraint.activate([
-                d.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -6),
-                d.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
-                d.widthAnchor.constraint(equalToConstant: 16)
-            ])
-            return d
-        }()
-
-        let tf = cell.textField ?? {
-            let f = NSTextField(labelWithString: "")
-            f.translatesAutoresizingMaskIntoConstraints = false
-            cell.addSubview(f)
-            cell.textField = f
-            NSLayoutConstraint.activate([
-                f.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 6),
-                f.trailingAnchor.constraint(equalTo: dotLabel.leadingAnchor, constant: -6),
-                f.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
-            ])
-            return f
-        }()
-        tf.font = NSFont.systemFont(ofSize: 14)
-        tf.lineBreakMode = .byTruncatingTail
-        tf.textColor = NSColor.labelColor
-
-        switch visibleItems[row] {
-        case let .app(name, running):
-            tf.stringValue = name
-            dotLabel.isHidden = !running
-        case let .calcCopyResult(expr, result):
-            tf.stringValue = "🧮 \(expr) = \(result)   (Enter to copy result)"
-            dotLabel.isHidden = true
-        case let .calcCopyFull(expr, result):
-            tf.stringValue = "📋 \(expr) = \(result)   (Enter to copy expression = result)"
-            dotLabel.isHidden = true
-        case let .status(msg):
-            tf.stringValue = msg
-            tf.textColor = .secondaryLabelColor
-            dotLabel.isHidden = true
-        case let .scratchpad(noteCount):
-            tf.stringValue = "📝 Scratchpad (\(noteCount))"
-            dotLabel.isHidden = true
-        }
-        return cell
-    }
-
-    @objc private func rowClicked() {
-        activateSelection()
-    }
-
-    // MARK: - NSSearchFieldDelegate
-
+extension AppLauncher {
     func controlTextDidChange(_ obj: Notification) {
         // Coalesce keystrokes: O(n) match across ~500 apps + table reload + potential
         // currency fetch shouldn't run on every character. Flushed eagerly on Enter /
@@ -458,10 +395,12 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         tableView.selectRowIndexes(IndexSet(integer: next), byExtendingSelection: false)
         tableView.scrollRowToVisible(next)
     }
+}
 
-    // MARK: - Activation
+// MARK: - Activation
 
-    private func activateSelection() {
+extension AppLauncher {
+    func activateSelection() {
         let row = tableView.selectedRow >= 0 ? tableView.selectedRow : 0
         guard row < visibleItems.count else { hide(); return }
         let item = visibleItems[row]
@@ -491,9 +430,11 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         pb.clearContents()
         pb.setString(s, forType: .string)
     }
+}
 
-    // MARK: - NSWindowDelegate
+// MARK: - NSWindowDelegate
 
+extension AppLauncher {
     func windowWillClose(_ notification: Notification) {
         Calculator.shared.cancelPendingFetch()
     }
