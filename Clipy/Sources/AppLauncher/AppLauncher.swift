@@ -32,6 +32,14 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     private var tableView: NSTableView!
 
     let scratchpadStore = ScratchpadStore()
+    private var launcherScroll: NSScrollView!
+    private var inScratchpad = false
+    private lazy var scratchpad = ScratchpadController(
+        store: scratchpadStore,
+        copyToPasteboard: { [weak self] s in self?.copyToPasteboard(s) },
+        hidePanel: { [weak self] in self?.hide() },
+        exitToRoot: { [weak self] in self?.exitScratchpad() }
+    )
 
     private var visibleItems: [LauncherItem] = []
     private var runningApps: Set<String> = []
@@ -93,6 +101,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
     }
 
     func hide() {
+        if inScratchpad { exitScratchpad() }
         panel?.orderOut(nil)
         pendingFilterWorkItem?.cancel()
         pendingFilterWorkItem = nil
@@ -212,6 +221,35 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         self.panel = p
         self.searchField = sf
         self.tableView = tv
+        self.launcherScroll = scroll
+    }
+
+    // MARK: - Scratchpad mode
+
+    private func enterScratchpad() {
+        guard let content = panel?.contentView, let sf = searchField else { return }
+        inScratchpad = true
+        scratchpad.onHeightChange = { [weak self] height in self?.setContentHeight(height) }
+        scratchpad.enter(contentView: content, searchField: sf, launcherScroll: launcherScroll)
+    }
+
+    private func exitScratchpad() {
+        inScratchpad = false
+        scratchpad.leave()
+        searchField?.delegate = self
+        searchField?.stringValue = ""
+        applyFilter("")
+    }
+
+    private func setContentHeight(_ contentHeight: CGFloat) {
+        guard let panel = panel else { return }
+        let frame = panel.frame
+        let chrome = frame.height - panel.contentRect(forFrameRect: frame).height
+        let target = contentHeight + chrome
+        let top = frame.maxY
+        panel.setFrame(NSRect(x: frame.origin.x, y: top - target,
+                              width: frame.width, height: target),
+                       display: true, animate: false)
     }
 
     // MARK: - Filter
@@ -436,7 +474,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
         case .status:
             break
         case .scratchpad:
-            break // wired to enterScratchpad() in a later step
+            enterScratchpad()
         }
     }
 

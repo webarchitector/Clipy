@@ -1,8 +1,10 @@
 import Cocoa
 
-@MainActor
+// Driven entirely from the main thread (NSPanel UI), mirroring AppLauncher's
+// concurrency model. @unchecked Sendable avoids an actor-isolation cascade
+// through the AppKit delegate conformances we already serialize on main.
 final class ScratchpadController: NSObject, NSSearchFieldDelegate,
-                                  NSTableViewDataSource, NSTableViewDelegate {
+                                  NSTableViewDataSource, NSTableViewDelegate, @unchecked Sendable {
 
     private enum Mode { case list, editor }
 
