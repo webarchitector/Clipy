@@ -100,6 +100,7 @@
 		C5B1000000000000000A0002 /* CPYScratchNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B1000000000000000A0001 /* CPYScratchNote.swift */; };
 		C5B2000000000000000A0002 /* ScratchpadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B2000000000000000A0001 /* ScratchpadStore.swift */; };
 		C5B3000000000000000A0002 /* LauncherItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B3000000000000000A0001 /* LauncherItems.swift */; };
+		C5C1000000000000000A0002 /* ScratchEditorTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C1000000000000000A0001 /* ScratchEditorTextView.swift */; };
 		FA1DB4E51DDCB49C007F95C8 /* CPYUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4D91DDCB49C007F95C8 /* CPYUtilities.swift */; };
 		AB03000000000000000A0002 /* MainThreadBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000A0001 /* MainThreadBox.swift */; };
 		FA1DB4E71DDCB49C007F95C8 /* CPYDesignableButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1DB4DD1DDCB49C007F95C8 /* CPYDesignableButton.swift */; };
@@ -296,6 +297,7 @@
 		C5B1000000000000000A0001 /* CPYScratchNote.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CPYScratchNote.swift; sourceTree = "<group>"; };
 		C5B2000000000000000A0001 /* ScratchpadStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScratchpadStore.swift; sourceTree = "<group>"; };
 		C5B3000000000000000A0001 /* LauncherItems.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LauncherItems.swift; sourceTree = "<group>"; };
+		C5C1000000000000000A0001 /* ScratchEditorTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScratchEditorTextView.swift; sourceTree = "<group>"; };
 		FA1DB4D91DDCB49C007F95C8 /* CPYUtilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CPYUtilities.swift; sourceTree = "<group>"; };
 		AB03000000000000000A0001 /* MainThreadBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainThreadBox.swift; sourceTree = "<group>"; };
 		FA1DB4DD1DDCB49C007F95C8 /* CPYDesignableButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CPYDesignableButton.swift; sourceTree = "<group>"; };
@@ -414,6 +416,7 @@
 				C5C2000000000000000A0001 /* ScratchTitle.swift */,
 				C5B2000000000000000A0001 /* ScratchpadStore.swift */,
 				C5B3000000000000000A0001 /* LauncherItems.swift */,
+				C5C1000000000000000A0001 /* ScratchEditorTextView.swift */,
 				ADF565B73A015CBBA7EB6D01 /* AppLauncherService.swift */,
 			);
 			name = AppLauncher;
@@ -1066,6 +1069,7 @@
 				C5C2000000000000000A0002 /* ScratchTitle.swift in Sources */,
 				C5B2000000000000000A0002 /* ScratchpadStore.swift in Sources */,
 				C5B3000000000000000A0002 /* LauncherItems.swift in Sources */,
+				C5C1000000000000000A0002 /* ScratchEditorTextView.swift in Sources */,
 				ADBBDD749273048F0B0456F4 /* AppLauncherService.swift in Sources */,
 				CCD1044872DE40055D2625E5 /* TISInputSource+Additions.swift in Sources */,
 				B2080A6F4F0D45F815C77812 /* InputSource.swift in Sources */,
