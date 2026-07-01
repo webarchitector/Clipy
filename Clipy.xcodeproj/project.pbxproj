@@ -23,6 +23,7 @@
 		AB050000000000000014002 /* SnippetSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000014001 /* SnippetSource.swift */; };
 		AB050000000000000015002 /* SnippetSourceStoreSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000015001 /* SnippetSourceStoreSpec.swift */; };
 		AB050000000000000016002 /* AppleNotesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000016001 /* AppleNotesModel.swift */; };
+		AB050000000000000017002 /* AppleNotesSnippetCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000017001 /* AppleNotesSnippetCache.swift */; };
 		389CB265D2D6FF14FD4F7149 /* MenuManager+MenuBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */; };
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
@@ -221,6 +222,7 @@
 		AB050000000000000014001 /* SnippetSource.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetSource.swift; sourceTree = "<group>"; };
 		AB050000000000000015001 /* SnippetSourceStoreSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetSourceStoreSpec.swift; sourceTree = "<group>"; };
 		AB050000000000000016001 /* AppleNotesModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesModel.swift; sourceTree = "<group>"; };
+		AB050000000000000017001 /* AppleNotesSnippetCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesSnippetCache.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
 		31064F137CFB046737D1709D /* Dependencies-Clipy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.debug.xcconfig"; sourceTree = "<group>"; };
 		314B299D1EC49AD5004DD070 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/CPYSnippetsEditorWindowController.xib; sourceTree = "<group>"; };
@@ -674,6 +676,7 @@
 				AB050000000000000012001 /* CPYSnippetsEditorWindow.swift */,
 				AB050000000000000014001 /* SnippetSource.swift */,
 				AB050000000000000016001 /* AppleNotesModel.swift */,
+				AB050000000000000017001 /* AppleNotesSnippetCache.swift */,
 			);
 			path = Snippets;
 			sourceTree = "<group>";
@@ -1073,6 +1076,7 @@
 				AB050000000000000012002 /* CPYSnippetsEditorWindow.swift in Sources */,
 				AB050000000000000014002 /* SnippetSource.swift in Sources */,
 				AB050000000000000016002 /* AppleNotesModel.swift in Sources */,
+				AB050000000000000017002 /* AppleNotesSnippetCache.swift in Sources */,
 				FA10897E20EC22E200A3FEFC /* LocalizedStrings.swift in Sources */,
 				FA1DB4EB1DDCB49C007F95C8 /* CPYPlaceHolderTextView.swift in Sources */,
 				FA1DB4BB1DDCB452007F95C8 /* Realm+Migration.swift in Sources */,
