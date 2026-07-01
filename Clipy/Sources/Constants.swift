@@ -65,6 +65,8 @@ struct Constants {
         static let copySameHistory = "kCPYPrefCopySameHistroy"
         static let excludeApplications = "kCPYExcludeApplications"
         static let showColorPreviewInTheMenu = "kCPYPrefShowColorPreviewInTheMenu"
+        static let snippetSource = "kCPYSnippetSource"
+        static let appleNotesFolder = "kCPYAppleNotesFolder"
     }
 
     struct Beta {
