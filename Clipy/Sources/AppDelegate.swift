@@ -290,6 +290,14 @@ class AppDelegate: NSObject, NSMenuItemValidation {
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
+
+    private func refreshAppleNotesSnippetsIfNeeded() {
+        guard SnippetSourceStore.current == .appleNotes else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            _ = AppEnvironment.current.appleNotesService.refresh()
+            AppEnvironment.current.menuManager.rebuildSnippetSource()
+        }
+    }
 }
 
 // MARK: - NSApplication Delegate
@@ -330,6 +338,7 @@ extension AppDelegate: NSApplicationDelegate {
 
         // Managers
         AppEnvironment.current.menuManager.setup()
+        refreshAppleNotesSnippetsIfNeeded()
     }
 }
 
