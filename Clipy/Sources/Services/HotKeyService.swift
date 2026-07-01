@@ -229,6 +229,7 @@ extension HotKeyService {
     }
 
     @objc func popupSnippetFolder(_ object: AnyObject) {
+        guard SnippetSourceStore.current == .native else { return }
         guard let hotKey = object as? HotKey else { return }
         guard let realm = Realm.safeInstance() else { return }
         guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: hotKey.identifier) else {

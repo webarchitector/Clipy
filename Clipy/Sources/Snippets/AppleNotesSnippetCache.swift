@@ -24,7 +24,6 @@ enum AppleNotesSnippetCache {
             return try Realm(configuration: configuration())
         } catch {
             cacheLog.error("Apple Notes cache Realm init failed: \(error.localizedDescription, privacy: .public)")
-            assertionFailure("Apple Notes cache Realm init failed: \(error)")
             return nil
         }
     }

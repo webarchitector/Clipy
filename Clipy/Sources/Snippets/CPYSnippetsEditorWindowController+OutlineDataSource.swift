@@ -39,6 +39,7 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
 
     // MARK: - Drag and Drop
     func outlineView(_ outlineView: NSOutlineView, pasteboardWriterForItem item: Any) -> NSPasteboardWriting? {
+        guard SnippetSourceStore.current != .appleNotes else { return nil }
         let pasteboardItem = NSPasteboardItem()
         if let folder = item as? CPYFolder {
             let parentId = folder.parentIdentifier
