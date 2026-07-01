@@ -28,6 +28,8 @@
 		AB050000000000000019002 /* AppleNotesImporterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000019001 /* AppleNotesImporterSpec.swift */; };
 		AB05000000000000001A002 /* AppleNotesScripting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001A001 /* AppleNotesScripting.swift */; };
 		AB05000000000000001B002 /* NotesOutputParserSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001B001 /* NotesOutputParserSpec.swift */; };
+		AB05000000000000001C002 /* AppleNotesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001C001 /* AppleNotesService.swift */; };
+		AB05000000000000001D002 /* AppleNotesServiceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001D001 /* AppleNotesServiceSpec.swift */; };
 		389CB265D2D6FF14FD4F7149 /* MenuManager+MenuBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */; };
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
@@ -231,6 +233,8 @@
 		AB050000000000000019001 /* AppleNotesImporterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesImporterSpec.swift; sourceTree = "<group>"; };
 		AB05000000000000001A001 /* AppleNotesScripting.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesScripting.swift; sourceTree = "<group>"; };
 		AB05000000000000001B001 /* NotesOutputParserSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotesOutputParserSpec.swift; sourceTree = "<group>"; };
+		AB05000000000000001C001 /* AppleNotesService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesService.swift; sourceTree = "<group>"; };
+		AB05000000000000001D001 /* AppleNotesServiceSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesServiceSpec.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
 		31064F137CFB046737D1709D /* Dependencies-Clipy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.debug.xcconfig"; sourceTree = "<group>"; };
 		314B299D1EC49AD5004DD070 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/CPYSnippetsEditorWindowController.xib; sourceTree = "<group>"; };
@@ -487,6 +491,7 @@
 				FAA4BCCB2163DC9100FF5D18 /* AccessibilityService.swift */,
 				FB2345678901BCDEF2345678 /* ThumbnailCache.swift */,
 				FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */,
+				AB05000000000000001C001 /* AppleNotesService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -746,6 +751,7 @@
 				AB050000000000000015001 /* SnippetSourceStoreSpec.swift */,
 				AB050000000000000019001 /* AppleNotesImporterSpec.swift */,
 				AB05000000000000001B001 /* NotesOutputParserSpec.swift */,
+				AB05000000000000001D001 /* AppleNotesServiceSpec.swift */,
 				FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */,
 				AB10000000000000000A0001 /* ClipboardHistoryPanelHotkeySpec.swift */,
 				FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */,
@@ -1091,6 +1097,7 @@
 				AB050000000000000017002 /* AppleNotesSnippetCache.swift in Sources */,
 				AB050000000000000018002 /* AppleNotesImporter.swift in Sources */,
 				AB05000000000000001A002 /* AppleNotesScripting.swift in Sources */,
+				AB05000000000000001C002 /* AppleNotesService.swift in Sources */,
 				FA10897E20EC22E200A3FEFC /* LocalizedStrings.swift in Sources */,
 				FA1DB4EB1DDCB49C007F95C8 /* CPYPlaceHolderTextView.swift in Sources */,
 				FA1DB4BB1DDCB452007F95C8 /* Realm+Migration.swift in Sources */,
@@ -1136,6 +1143,7 @@
 				AB050000000000000015002 /* SnippetSourceStoreSpec.swift in Sources */,
 				AB050000000000000019002 /* AppleNotesImporterSpec.swift in Sources */,
 				AB05000000000000001B002 /* NotesOutputParserSpec.swift in Sources */,
+				AB05000000000000001D002 /* AppleNotesServiceSpec.swift in Sources */,
 				3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */,
 				3FA2F63A208748C582EF3A31 /* AppLauncherServicePersistenceSpec.swift in Sources */,
 				E1826F7CDEF9ED3824C7BBE3 /* CalculatorCurrencySpec.swift in Sources */,

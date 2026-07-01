@@ -24,6 +24,7 @@ struct Environment {
     let menuManager: MenuManager
     let appLauncherService: AppLauncherService
     let inputSourceService: InputSourceService
+    let appleNotesService: AppleNotesService
 
     let defaults: UserDefaults
 
@@ -37,6 +38,7 @@ struct Environment {
          menuManager: MenuManager = MenuManager(),
          appLauncherService: AppLauncherService = AppLauncherService(),
          inputSourceService: InputSourceService = InputSourceService(),
+         appleNotesService: AppleNotesService = AppleNotesService(),
          defaults: UserDefaults = .standard) {
 
         self.clipService = clipService
@@ -48,6 +50,7 @@ struct Environment {
         self.menuManager = menuManager
         self.appLauncherService = appLauncherService
         self.inputSourceService = inputSourceService
+        self.appleNotesService = appleNotesService
         self.defaults = defaults
     }
 
