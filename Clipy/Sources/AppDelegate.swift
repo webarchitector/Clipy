@@ -162,7 +162,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             NSSound.beep()
             return
         }
-        guard let realm = Realm.safeInstance() else { return }
+        guard let realm = AppEnvironment.current.menuManager.activeSnippetRealm() else { return }
         guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey) else {
             NSSound.beep()
             return

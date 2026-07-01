@@ -352,7 +352,7 @@ extension MenuManager {
 // MARK: - Snippets
 extension MenuManager {
     func addSnippetItems(_ menu: NSMenu, separateMenu: Bool, settings: MenuSettings) {
-        guard let realm = realm else { return }
+        guard let realm = activeSnippetRealm() else { return }
         let roots = realm.objects(CPYFolder.self)
             .filter("parentIdentifier == ''")
             .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
