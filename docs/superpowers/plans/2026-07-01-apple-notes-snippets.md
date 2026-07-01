@@ -1075,44 +1075,32 @@ git commit -m "refresh apple notes snippets on launch"
 
 ---
 
-### Task 10: Snippets preferences pane
+### Task 10: Snippets preferences pane (programmatic UI, no XIB)
 
 **Files:**
 - Create: `Clipy/Sources/Preferences/Panels/CPYSnippetPreferenceViewController.swift`
-- Create: `Clipy/Sources/Preferences/Panels/Base.lproj/CPYSnippetPreferenceViewController.xib`
-- Modify: `Clipy/Sources/Preferences/CPYPreferencesWindowController.swift` (add to `viewController` array + a toolbar tab)
-- Modify: `Clipy/Sources/Preferences/Base.lproj/CPYPreferencesWindowController.xib` (new toolbar button/image/label at tag 7)
+- Modify: `Clipy/Sources/Preferences/CPYPreferencesWindowController.swift`
+
+**Approach:** No XIB. The pane view controller builds its view in `loadView()` with an `NSStackView`. It is registered as an 8th tab that the window controller creates **programmatically** in `windowDidLoad()` (a button + image + label appended to the existing `toolBar` view), so the preferences XIB is not edited. UI strings are plain Swift literals (no SwiftGen/L10n dependency).
 
 **Interfaces:**
-- Consumes: `SnippetSource`, `SnippetSourceStore`, `AppEnvironment.current.appleNotesService`, `MenuManager.rebuildSnippetSource()`.
-- Produces: `final class CPYSnippetPreferenceViewController: NSViewController` with actions `sourceChanged(_:)`, `folderSelected(_:)`, `refreshTapped(_:)`, `editInNotesTapped(_:)`, `reloadFoldersTapped(_:)`.
+- Consumes: `SnippetSource`, `SnippetSourceStore`, `AppEnvironment.current.appleNotesService`, `AppEnvironment.current.menuManager.rebuildSnippetSource()`.
+- Produces: `final class CPYSnippetPreferenceViewController: NSViewController` whose view is 480 wide (match the other panes' content width) and self-sizing in height. Actions are plain `@objc` methods wired via `target/action` in code (not `@IBAction`).
 
-**Note:** This task is UI/XIB work; the logic below is real code, the XIB steps are Interface Builder instructions verified by build + manual run.
+- [ ] **Step 1: Write the view controller (programmatic view)**
 
-- [ ] **Step 1: Write the view controller**
+Create `Clipy/Sources/Preferences/Panels/CPYSnippetPreferenceViewController.swift`. Build the view in `loadView()` using an `NSStackView` (vertical, gravity-based) containing:
+- a labeled `NSPopUpButton` "Snippet source" with items "Native" (tag 0) and "Apple Notes" (tag 1), target/action → `sourceChanged(_:)`;
+- a labeled `NSPopUpButton` for folders → `folderSelected(_:)`;
+- a horizontal row of `NSButton`s: "Reload folders" → `reloadFoldersTapped(_:)`, "Edit in Apple Notes" → `editInNotesTapped(_:)`, "Refresh snippets" → `refreshTapped(_:)`;
+- a multiline wrapping `NSTextField` (label, `isEditable = false`, `isBezeled = false`, `drawsBackground = false`) as the status line.
 
-Create `Clipy/Sources/Preferences/Panels/CPYSnippetPreferenceViewController.swift`:
+Set `view.frame = NSRect(x: 0, y: 0, width: 480, height: 210)` (the window controller resizes to this frame; keep height reasonable). Keep references to the controls as private `let`/`var` stored properties (they are created in code, not outlets).
+
+The behavior logic is identical to the original plan — reproduce these methods verbatim, with the controls referenced as your stored properties instead of outlets:
 
 ```swift
-import Cocoa
-
-final class CPYSnippetPreferenceViewController: NSViewController {
-
-    @IBOutlet private weak var sourceMatrix: NSPopUpButton!        // items: Native (tag 0), Apple Notes (tag 1)
-    @IBOutlet private weak var folderPopUp: NSPopUpButton!
-    @IBOutlet private weak var reloadFoldersButton: NSButton!
-    @IBOutlet private weak var editInNotesButton: NSButton!
-    @IBOutlet private weak var refreshButton: NSButton!
-    @IBOutlet private weak var statusLabel: NSTextField!
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        sourceMatrix.selectItem(withTag: SnippetSourceStore.current.rawValue)
-        reloadFolders()
-        updateEnabledState()
-    }
-
-    @IBAction private func sourceChanged(_ sender: NSPopUpButton) {
+    @objc private func sourceChanged(_ sender: NSPopUpButton) {
         let source = SnippetSource(rawValue: sender.selectedTag()) ?? .native
         SnippetSourceStore.current = source
         updateEnabledState()
@@ -1120,23 +1108,23 @@ final class CPYSnippetPreferenceViewController: NSViewController {
         AppEnvironment.current.menuManager.rebuildSnippetSource()
     }
 
-    @IBAction private func folderSelected(_ sender: NSPopUpButton) {
+    @objc private func folderSelected(_ sender: NSPopUpButton) {
         SnippetSourceStore.appleNotesFolder = sender.titleOfSelectedItem
         refreshTapped(refreshButton)
     }
 
-    @IBAction private func reloadFoldersTapped(_ sender: NSButton) {
+    @objc private func reloadFoldersTapped(_ sender: NSButton) {
         reloadFolders()
     }
 
-    @IBAction private func editInNotesTapped(_ sender: NSButton) {
+    @objc private func editInNotesTapped(_ sender: NSButton) {
         DispatchQueue.global(qos: .userInitiated).async {
             AppEnvironment.current.appleNotesService.revealSelectedFolder()
         }
     }
 
-    @IBAction private func refreshTapped(_ sender: NSButton) {
-        statusLabel.stringValue = L10n.refreshing
+    @objc private func refreshTapped(_ sender: NSButton) {
+        statusLabel.stringValue = "Refreshing…"
         DispatchQueue.global(qos: .userInitiated).async {
             let result = AppEnvironment.current.appleNotesService.refresh()
             DispatchQueue.main.async {
@@ -1154,8 +1142,7 @@ final class CPYSnippetPreferenceViewController: NSViewController {
                 case .success(let folders):
                     self.folderPopUp.removeAllItems()
                     self.folderPopUp.addItems(withTitles: folders)
-                    if let selected = SnippetSourceStore.appleNotesFolder,
-                       folders.contains(selected) {
+                    if let selected = SnippetSourceStore.appleNotesFolder, folders.contains(selected) {
                         self.folderPopUp.selectItem(withTitle: selected)
                     } else {
                         SnippetSourceStore.appleNotesFolder = self.folderPopUp.titleOfSelectedItem
@@ -1179,11 +1166,11 @@ final class CPYSnippetPreferenceViewController: NSViewController {
     private func describe(_ error: AppleNotesError) -> String {
         switch error {
         case .notAuthorized:
-            return L10n.appleNotesNotAuthorized
+            return "Not authorized. Grant Clipy access to Notes in System Settings → Privacy → Automation."
         case .notesUnavailable:
-            return L10n.appleNotesUnavailable
+            return "Apple Notes is unavailable."
         case .folderNotFound:
-            return L10n.appleNotesFolderNotFound
+            return "Selected Notes folder not found."
         case .scriptFailed(let message):
             return message
         }
@@ -1191,51 +1178,30 @@ final class CPYSnippetPreferenceViewController: NSViewController {
 
     private func updateEnabledState() {
         let isNotes = SnippetSourceStore.current == .appleNotes
-        [folderPopUp, reloadFoldersButton, editInNotesButton, refreshButton].forEach { $0?.isEnabled = isNotes }
+        [folderPopUp, reloadFoldersButton, editInNotesButton, refreshButton].forEach { $0.isEnabled = isNotes }
     }
-}
 ```
 
-- [ ] **Step 2: Add the L10n strings**
+In `viewDidLoad()` call: `sourceMatrix.selectItem(withTag: SnippetSourceStore.current.rawValue)`, then `reloadFolders()`, then `updateEnabledState()`.
 
-The `L10n` enum is SwiftGen-generated from `Localizable.strings`. Add these keys to `Clipy/Sources/Resources/*/Localizable.strings` (mirror the existing snippet keys, e.g. `editSnippets`) so SwiftGen regenerates `L10n.refreshing`, `L10n.appleNotesNotAuthorized`, `L10n.appleNotesUnavailable`, `L10n.appleNotesFolderNotFound`:
+Swift 6 note: all the `DispatchQueue.*.async` closures above capture `self` (an `NSViewController`, main-actor-ish but non-Sendable). If the compiler rejects `self` capture across the background queue, capture only the specific values needed and hop back to main for UI — but the pattern here dispatches static/singleton calls on the background queue and touches `self`'s UI only inside the nested `DispatchQueue.main.async`, which is the safe shape. Adjust minimally if the compiler complains, preserving behavior.
 
-```
-"refreshing" = "Refreshing…";
-"appleNotesNotAuthorized" = "Not authorized. Grant Clipy access to Notes in System Settings → Privacy → Automation.";
-"appleNotesUnavailable" = "Apple Notes is unavailable.";
-"appleNotesFolderNotFound" = "Selected Notes folder not found.";
-```
+- [ ] **Step 2: Register the pane + create the toolbar tab programmatically**
 
-If SwiftGen is not run automatically by the build, replace the `L10n.*` references in Step 1 with the literal English strings above.
+In `CPYPreferencesWindowController.swift`:
+- Append to the `viewController` array: `CPYSnippetPreferenceViewController()` (index 7). (It builds its own view; no nib name needed.)
+- Add three private stored properties for the new tab's chrome, created in code: `snippetButton: NSButton`, `snippetImageView: NSImageView`, `snippetTextField: NSTextField` (optional or lazily built).
+- In `windowDidLoad()`, after the existing tab setup, call a new `installSnippetTab()` that: creates the button/image/label, positions them inside `toolBar` to the right of the existing Beta tab (mirror the geometry/spacing of an existing tab — read the frames of the existing toolbar buttons at runtime to compute the next x-offset), sets `snippetButton.tag = 7`, `target = self`, `action = #selector(toolBarItemTapped(_:))`, `snippetButton.sendAction(on: .leftMouseDown)`, and labels it "Snippets".
+- Extend `resetImages()` and `selectedTab(_:)` to handle the snippet tab (guard the programmatic views for nil): in `resetImages()` set `snippetTextField.textColor = .secondaryLabelColor` and a neutral image; add `case 7:` in `selectedTab(_:)` that highlights `snippetTextField` with `.controlAccentColor`. Reuse an existing pref icon asset (e.g. `Asset.prefMenu` / `Asset.prefMenuOn`) since no dedicated Snippets icon exists.
 
-- [ ] **Step 3: Build the XIB**
+If precise toolbar geometry proves fragile, an acceptable fallback is to widen the window's toolbar area and lay the new button out with the same width/spacing as the existing buttons; the goal is a clickable 8th tab that switches to the Snippets pane via the existing `switchView(_:)`.
 
-Create `CPYSnippetPreferenceViewController.xib` (in `Panels/Base.lproj/`) with File's Owner = `CPYSnippetPreferenceViewController`, matching the content-view size of the other panels. Add and connect:
-- an `NSPopUpButton` "Snippet source" with two items: "Native" (tag 0), "Apple Notes" (tag 1) → `sourceMatrix`, action `sourceChanged:`
-- an `NSPopUpButton` for folders → `folderPopUp`, action `folderSelected:`
-- a "Reload" `NSButton` → `reloadFoldersButton`, action `reloadFoldersTapped:`
-- an "Edit in Apple Notes" `NSButton` → `editInNotesButton`, action `editInNotesTapped:`
-- a "Refresh snippets" `NSButton` → `refreshButton`, action `refreshTapped:`
-- a multiline `NSTextField` (label) → `statusLabel`
-
-- [ ] **Step 4: Register the pane in the window controller**
-
-In `Clipy/Sources/Preferences/CPYPreferencesWindowController.swift`, append to the `viewController` array (after the Beta entry, line 51):
-
-```swift
-                                  CPYBetaPreferenceViewController(nibName: "CPYBetaPreferenceViewController", bundle: nil),
-                                  CPYSnippetPreferenceViewController(nibName: "CPYSnippetPreferenceViewController", bundle: nil)]
-```
-
-Add matching outlets (`snippetImageView`, `snippetTextField`, `snippetButton`), extend `resetImages()` / `selectedTab(_:)` with a `case 7`, and register the button in `windowDidLoad()` (`snippetButton.sendAction(on: .leftMouseDown)`). In the preferences XIB, add the toolbar button/image/label with tag 7 wired to `toolBarItemTapped:` and connect the new outlets. (Reuse an existing pref icon asset, e.g. `Asset.prefMenu`, if a dedicated one is unavailable.)
-
-- [ ] **Step 5: Build**
+- [ ] **Step 3: Build**
 
 Run: `xcodebuild -workspace Clipy.xcworkspace -scheme Clipy build`
 Expected: BUILD SUCCEEDED.
 
-- [ ] **Step 6: Manual verification**
+- [ ] **Step 4: Manual verification (user-run)**
 
 Build Release and run:
 ```
@@ -1244,66 +1210,86 @@ xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
   CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build
 pkill -x Clipy; open /Users/ank/dev/clipy/build/Release/Clipy.app
 ```
-Open Preferences → Snippets. Confirm: switching to Apple Notes enables the folder dropdown, the dropdown lists your Notes folders (grant Automation permission when macOS prompts), selecting a folder + Refresh shows a count, and the snippet menu now shows notes from that folder. "Edit in Apple Notes" opens Notes on the folder.
+Open Preferences → the new **Snippets** tab. Switching to Apple Notes enables the folder dropdown, which lists Notes folders (grant Automation permission when prompted). Selecting a folder + Refresh shows a count, and the snippet menu shows those notes. "Edit in Apple Notes" opens Notes on the folder.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add Clipy/Sources/Preferences ClipyTests Clipy.xcodeproj/project.pbxproj Clipy/Sources/Resources
+git add Clipy/Sources/Preferences Clipy.xcodeproj/project.pbxproj
 git commit -m "add snippets preferences pane for apple notes source"
 ```
 
 ---
 
-### Task 11: Read-only editor in Apple Notes mode
+### Task 11: Read-only editor in Apple Notes mode (programmatic banner, no XIB)
 
 **Files:**
 - Modify: `Clipy/Sources/Snippets/CPYSnippetsEditorWindowController.swift`
 
+**Approach:** No XIB. In Apple Notes mode, point the editor's outline at the active snippet realm, disable the existing mutation controls (they are already IBOutlets on the controller), and add a banner **programmatically** as a subview of the window's content view.
+
 **Interfaces:**
-- Consumes: `SnippetSourceStore`, `AppEnvironment.current.appleNotesService`, `AppleNotesSnippetCache`.
-- Produces: a private `applyAppleNotesReadOnlyModeIfNeeded()` helper invoked on window load.
+- Consumes: `SnippetSourceStore`, `AppEnvironment.current.appleNotesService`, `AppEnvironment.current.menuManager.activeSnippetRealm()`.
+- Produces: a private `applyAppleNotesReadOnlyModeIfNeeded()` invoked at the end of `windowDidLoad()`.
 
 - [ ] **Step 1: Point the editor's outline at the active source**
 
-In `CPYSnippetsEditorWindowController`, wherever the outline reads snippets from `Realm.safeInstance()` for display, use `AppEnvironment.current.menuManager.activeSnippetRealm()` instead so the editor shows the Notes cache in Apple Notes mode. (Editing paths stay on the native realm but are disabled below.)
+Find where this controller reads snippets for display (its outline data source uses a Realm — currently `Realm.safeInstance()` or a stored `realm`). Change the DISPLAY read path to `AppEnvironment.current.menuManager.activeSnippetRealm()` so the editor shows the Notes cache in Apple Notes mode. Report the exact property/method you changed. (Do not alter the native editing/mutation code paths — they are disabled below.)
 
-- [ ] **Step 2: Add the read-only guard**
+- [ ] **Step 2: Add the read-only guard + programmatic banner**
 
-Add:
+Read the controller to find the real outlet names for the add/delete/import/change-status buttons and the content text view. Then add:
 
 ```swift
     private func applyAppleNotesReadOnlyModeIfNeeded() {
         guard SnippetSourceStore.current == .appleNotes else { return }
-        // Disable all mutation controls (add/delete/import/toggle) and the
-        // content text view; show the managed banner with an "Edit in Apple
-        // Notes" button that calls AppEnvironment.current.appleNotesService
-        // .revealSelectedFolder() on a background queue.
-        addSnippetButton.isEnabled = false
-        addFolderButton.isEnabled = false
-        deleteButton.isEnabled = false
-        changeStatusButton.isEnabled = false
-        importSnippetButton?.isEnabled = false
-        contentTextView.isEditable = false
-        managedByNotesBanner.isHidden = false
+
+        // Disable every mutation control (use the real outlet names in this controller).
+        // e.g. addSnippetButton, addFolderButton, deleteButton, changeStatusButton,
+        //      importSnippetButton, and the content NSTextView's isEditable.
+        // ... set each .isEnabled = false / textView.isEditable = false ...
+
+        installManagedByNotesBanner()
+    }
+
+    private func installManagedByNotesBanner() {
+        guard let contentView = window?.contentView else { return }
+        let banner = NSTextField(labelWithString: "Managed by Apple Notes — edit in Apple Notes")
+        let button = NSButton(title: "Edit in Apple Notes", target: self, action: #selector(editInAppleNotesTapped))
+        banner.translatesAutoresizingMaskIntoConstraints = false
+        button.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(banner)
+        contentView.addSubview(button)
+        NSLayoutConstraint.activate([
+            banner.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            banner.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
+            button.centerYAnchor.constraint(equalTo: banner.centerYAnchor),
+            button.leadingAnchor.constraint(equalTo: banner.trailingAnchor, constant: 12)
+        ])
+    }
+
+    @objc private func editInAppleNotesTapped() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            AppEnvironment.current.appleNotesService.revealSelectedFolder()
+        }
     }
 ```
 
-Match the actual outlet names in this controller; add a `managedByNotesBanner` view + "Edit in Apple Notes" button to the editor XIB (hidden by default). Call `applyAppleNotesReadOnlyModeIfNeeded()` at the end of `windowDidLoad()`.
+Call `applyAppleNotesReadOnlyModeIfNeeded()` at the end of `windowDidLoad()`. Adjust the banner placement constants if it overlaps existing content — the goal is a visible, non-overlapping banner with a working button.
 
 - [ ] **Step 3: Build**
 
 Run: `xcodebuild -workspace Clipy.xcworkspace -scheme Clipy build`
 Expected: BUILD SUCCEEDED.
 
-- [ ] **Step 4: Manual verification**
+- [ ] **Step 4: Manual verification (user-run)**
 
-With source = Apple Notes, open "Edit Snippets": the tree shows the Notes cache, all add/delete/edit controls are disabled, and the banner + "Edit in Apple Notes" button are visible. Switch back to Native: full editing returns with all original snippets intact.
+With source = Apple Notes, open "Edit Snippets": the tree shows the Notes cache, add/delete/edit controls are disabled, and the banner + "Edit in Apple Notes" button are visible. Switch back to Native: full editing returns with all original snippets intact.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Clipy/Sources/Snippets/CPYSnippetsEditorWindowController.swift Clipy.xcodeproj/project.pbxproj
+git add Clipy/Sources/Snippets/CPYSnippetsEditorWindowController.swift
 git commit -m "make snippet editor read-only in apple notes mode"
 ```
 
