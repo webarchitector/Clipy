@@ -164,11 +164,12 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
             selectRow(forItemID: firstRoot.identifier)
             changeItemFocus(forItemID: firstRoot.identifier)
         }
-        applyAppleNotesReadOnlyModeIfNeeded()
+        applyAppleNotesReadOnlyMode()
     }
 
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
+        applyAppleNotesReadOnlyMode()
         window?.backgroundColor = .windowBackgroundColor
         // Weak outlets can be nil on re-open if AppKit tore the view hierarchy down between showings.
         splitView?.separatorColor = .separatorColor
@@ -606,46 +607,84 @@ extension CPYSnippetsEditorWindowController: NSWindowDelegate {
 // MARK: - Apple Notes Read-Only Mode
 extension CPYSnippetsEditorWindowController {
 
-    private func applyAppleNotesReadOnlyModeIfNeeded() {
-        guard SnippetSourceStore.current == .appleNotes else { return }
+    /// Identifier applied to the banner container view so it can be found on
+    /// subsequent calls without maintaining a stored property.
+    private static let notesBannerID = NSUserInterfaceItemIdentifier("clipy.notesBannerContainer")
 
-        // Disable all toolbar buttons. The toolbar buttons have no IBOutlet
-        // connections, so we walk the view hierarchy: the toolbar is the
-        // contentView subview that is not the split view.
+    /// Applies or removes the Apple Notes read-only state. Bidirectional and
+    /// idempotent: safe to call from both `windowDidLoad()` and `showWindow(_:)`.
+    /// In native mode all mutation controls are re-enabled and the banner is
+    /// hidden; in Apple Notes mode all mutation controls are disabled and the
+    /// info banner is shown.
+    private func applyAppleNotesReadOnlyMode() {
+        let isNotes = SnippetSourceStore.current == .appleNotes
+
+        // Toolbar buttons have no IBOutlet connections. Walk the non-splitView
+        // contentView children (the toolbar container lives there).
         if let contentView = window?.contentView {
             for subview in contentView.subviews where subview !== splitView {
-                disableAllButtons(in: subview)
+                setAllButtons(in: subview, enabled: !isNotes)
             }
         }
 
-        // Disable inline text editing.
-        textView.isEditable = false
+        // Controls inside splitView not reached by the toolbar walk above.
+        // folderShortcutRecordView is a mutation entry point (hotkey recorder).
+        // folderTitleTextField editing must be blocked to prevent accidental
+        // writes via its control(_:textShouldEndEditing:) path.
+        folderShortcutRecordView?.isEnabled = !isNotes
+        folderTitleTextField?.isEditable = !isNotes
 
-        installManagedByNotesBanner()
+        // Snippet content editing.
+        textView?.isEditable = !isNotes
+
+        installOrToggleNotesBanner(visible: isNotes)
     }
 
-    private func disableAllButtons(in view: NSView) {
+    private func setAllButtons(in view: NSView, enabled: Bool) {
         if let button = view as? NSButton {
-            button.isEnabled = false
+            button.isEnabled = enabled
         }
         for subview in view.subviews {
-            disableAllButtons(in: subview)
+            setAllButtons(in: subview, enabled: enabled)
         }
     }
 
-    private func installManagedByNotesBanner() {
+    /// Installs the "Managed by Apple Notes" banner the first time `visible`
+    /// is true. On subsequent calls it only toggles the existing container's
+    /// `isHidden` flag, preventing duplicate subviews from accumulating across
+    /// repeated `showWindow` calls.
+    private func installOrToggleNotesBanner(visible: Bool) {
         guard let contentView = window?.contentView else { return }
+
+        if let existing = contentView.subviews.first(where: { $0.identifier == Self.notesBannerID }) {
+            existing.isHidden = !visible
+            return
+        }
+        guard visible else { return }
+
+        let container = NSView()
+        container.identifier = Self.notesBannerID
+        container.translatesAutoresizingMaskIntoConstraints = false
+
         let banner = NSTextField(labelWithString: "Managed by Apple Notes — edit in Apple Notes")
-        let button = NSButton(title: "Edit in Apple Notes", target: self, action: #selector(editInAppleNotesTapped))
         banner.translatesAutoresizingMaskIntoConstraints = false
-        button.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(banner)
-        contentView.addSubview(button)
+
+        let editButton = NSButton(title: "Edit in Apple Notes", target: self, action: #selector(editInAppleNotesTapped))
+        editButton.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(banner)
+        container.addSubview(editButton)
+        contentView.addSubview(container)
+
         NSLayoutConstraint.activate([
-            banner.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            banner.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
-            button.centerYAnchor.constraint(equalTo: banner.centerYAnchor),
-            button.leadingAnchor.constraint(equalTo: banner.trailingAnchor, constant: 12)
+            container.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            container.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
+            banner.topAnchor.constraint(equalTo: container.topAnchor),
+            banner.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            banner.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            editButton.centerYAnchor.constraint(equalTo: banner.centerYAnchor),
+            editButton.leadingAnchor.constraint(equalTo: banner.trailingAnchor, constant: 12),
+            editButton.trailingAnchor.constraint(equalTo: container.trailingAnchor)
         ])
     }
 
