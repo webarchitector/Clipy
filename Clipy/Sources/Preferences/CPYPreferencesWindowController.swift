@@ -42,13 +42,20 @@ final class CPYPreferencesWindowController: NSWindowController {
     @IBOutlet private weak var updatesButton: NSButton!
     @IBOutlet private weak var betaButton: NSButton!
     // ViewController
-    private let viewController = [NSViewController(nibName: "CPYGeneralPreferenceViewController", bundle: nil),
-                                  NSViewController(nibName: "CPYMenuPreferenceViewController", bundle: nil),
-                                  CPYTypePreferenceViewController(nibName: "CPYTypePreferenceViewController", bundle: nil),
-                                  CPYExcludeAppPreferenceViewController(nibName: "CPYExcludeAppPreferenceViewController", bundle: nil),
-                                  CPYShortcutsPreferenceViewController(nibName: "CPYShortcutsPreferenceViewController", bundle: nil),
-                                  CPYUpdatesPreferenceViewController(nibName: "CPYUpdatesPreferenceViewController", bundle: nil),
-                                  CPYBetaPreferenceViewController(nibName: "CPYBetaPreferenceViewController", bundle: nil)]
+    private let viewController: [NSViewController] = [
+        NSViewController(nibName: "CPYGeneralPreferenceViewController", bundle: nil),
+        NSViewController(nibName: "CPYMenuPreferenceViewController", bundle: nil),
+        CPYTypePreferenceViewController(nibName: "CPYTypePreferenceViewController", bundle: nil),
+        CPYExcludeAppPreferenceViewController(nibName: "CPYExcludeAppPreferenceViewController", bundle: nil),
+        CPYShortcutsPreferenceViewController(nibName: "CPYShortcutsPreferenceViewController", bundle: nil),
+        CPYUpdatesPreferenceViewController(nibName: "CPYUpdatesPreferenceViewController", bundle: nil),
+        CPYBetaPreferenceViewController(nibName: "CPYBetaPreferenceViewController", bundle: nil),
+        CPYSnippetPreferenceViewController()
+    ]
+    // Programmatic Snippets tab chrome (tag 7)
+    private var snippetButton = NSButton()
+    private var snippetImageView = NSImageView()
+    private var snippetTextField = NSTextField()
 
     // MARK: - Window Life Cycle
     override func windowDidLoad() {
@@ -65,6 +72,7 @@ final class CPYPreferencesWindowController: NSWindowController {
         shortcutsButton.sendAction(on: .leftMouseDown)
         updatesButton.sendAction(on: .leftMouseDown)
         betaButton.sendAction(on: .leftMouseDown)
+        installSnippetTab()
     }
 
     override func showWindow(_ sender: Any?) {
@@ -97,6 +105,48 @@ extension CPYPreferencesWindowController: NSWindowDelegate {
 
 // MARK: - Layout
 private extension CPYPreferencesWindowController {
+    func installSnippetTab() {
+        // Force layout so betaButton's container frame is valid
+        toolBar.layoutSubtreeIfNeeded()
+
+        // Derive position and size from the Beta tab's container view
+        guard let betaContainer = betaButton.superview else { return }
+        let tabWidth  = betaContainer.frame.width
+        let tabHeight = betaContainer.frame.height
+        let nextX     = betaContainer.frame.maxX
+
+        let tabContainer = NSView(frame: NSRect(x: nextX, y: 0, width: tabWidth, height: tabHeight))
+
+        // Image (mirrors XIB: x=7, y=24, w=36, h=24 in a 56-tall container)
+        snippetImageView = NSImageView(frame: NSRect(x: 7, y: 24, width: 36, height: 24))
+        snippetImageView.image = Asset.prefMenu.image
+        snippetImageView.imageScaling = .scaleProportionallyDown
+        tabContainer.addSubview(snippetImageView)
+
+        // Label
+        snippetTextField = NSTextField(frame: NSRect(x: 1, y: 8, width: tabWidth - 2, height: 12))
+        snippetTextField.stringValue = "Snippets"
+        snippetTextField.alignment = .center
+        snippetTextField.isBezeled = false
+        snippetTextField.isEditable = false
+        snippetTextField.drawsBackground = false
+        snippetTextField.font = NSFont.systemFont(ofSize: 9)
+        snippetTextField.textColor = .secondaryLabelColor
+        tabContainer.addSubview(snippetTextField)
+
+        // Transparent click-through button (mirrors XIB bezelStyle / transparent)
+        snippetButton = NSButton(frame: NSRect(x: 0, y: 0, width: tabWidth, height: tabHeight))
+        snippetButton.tag = 7
+        snippetButton.target = self
+        snippetButton.action = #selector(toolBarItemTapped(_:))
+        snippetButton.sendAction(on: .leftMouseDown)
+        snippetButton.bezelStyle = .shadowlessSquare
+        (snippetButton.cell as? NSButtonCell)?.isTransparent = true
+        tabContainer.addSubview(snippetButton)
+
+        toolBar.addSubview(tabContainer)
+    }
+
     func resetImages() {
         generalImageView.image = Asset.prefGeneral.image
         menuImageView.image = Asset.prefMenu.image
@@ -113,6 +163,8 @@ private extension CPYPreferencesWindowController {
         shortcutsTextField.textColor = .secondaryLabelColor
         updatesTextField.textColor = .secondaryLabelColor
         betaTextField.textColor = .secondaryLabelColor
+        snippetTextField.textColor = .secondaryLabelColor
+        snippetImageView.image = Asset.prefMenu.image
     }
 
     func selectedTab(_ index: Int) {
@@ -140,6 +192,9 @@ private extension CPYPreferencesWindowController {
         case 6:
             betaImageView.image = Asset.prefBetaOn.image
             betaTextField.textColor = .controlAccentColor
+        case 7:
+            snippetImageView.image = Asset.prefMenuOn.image
+            snippetTextField.textColor = .controlAccentColor
         default: break
         }
     }

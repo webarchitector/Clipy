@@ -67,9 +67,18 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
     /// edits that would land on a different snippet than the one the user sees.
     private var displayedItemID: String?
 
+    /// Returns the Realm to use for display reads (outline tree, right-hand pane,
+    /// search filter). In Apple Notes mode this is the Notes cache realm; in native
+    /// mode it is the standard Realm.safeInstance() result.  Mutation write paths
+    /// deliberately remain pinned to Realm.safeInstance() so that disabled buttons
+    /// can never accidentally modify the cache.
+    private func displayRealm() -> Realm? {
+        return AppEnvironment.current.menuManager.activeSnippetRealm()
+    }
+
     func children(parentId: String) -> [Object] {
         if let cached = childrenCache[parentId] { return cached }
-        guard let realm = Realm.safeInstance() else { return [] }
+        guard let realm = displayRealm() else { return [] }
         var kids = CPYFolder.children(parentIdentifier: parentId, in: realm)
         if let visible = visibleIdentifiers {
             kids = kids.filter { visible.contains(CPYFolder.nodeID(of: $0)) }
@@ -89,7 +98,7 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         // When a filter is active, refresh the visible-id set against the
         // current Realm state. Without this, deletes leave stale IDs in the
         // set and moves can drop visible items from the rendered tree.
-        if visibleIdentifiers != nil, let realm = Realm.safeInstance() {
+        if visibleIdentifiers != nil, let realm = displayRealm() {
             visibleIdentifiers = SnippetSearchFilter.visibleIdentifiers(query: searchField.stringValue, in: realm)
         }
         outlineView.reloadData()
@@ -147,7 +156,7 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         searchField.delegate = self
         reloadOutline()
         // Select first root folder
-        if let realm = Realm.safeInstance(),
+        if let realm = displayRealm(),
            let firstRoot = realm.objects(CPYFolder.self)
                .filter("parentIdentifier == ''")
                .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
@@ -155,10 +164,12 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
             selectRow(forItemID: firstRoot.identifier)
             changeItemFocus(forItemID: firstRoot.identifier)
         }
+        applyAppleNotesReadOnlyMode()
     }
 
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
+        applyAppleNotesReadOnlyMode()
         window?.backgroundColor = .windowBackgroundColor
         // Weak outlets can be nil on re-open if AppKit tore the view hierarchy down between showings.
         splitView?.separatorColor = .separatorColor
@@ -350,7 +361,7 @@ extension CPYSnippetsEditorWindowController {
     func changeItemFocus(forItemID: String? = nil) {
         textView.undoManager?.removeAllActions()
         let id = forItemID ?? selectedItemIdentifier()
-        guard let id = id, let realm = Realm.safeInstance() else {
+        guard let id = id, let realm = displayRealm() else {
             renderEmptyFocus()
             return
         }
@@ -396,7 +407,7 @@ extension CPYSnippetsEditorWindowController {
     /// rendered correctly via `changeItemFocus(forItemID:)` in the caller.
     @discardableResult
     func selectRow(forItemID id: String) -> Bool {
-        guard let realm = Realm.safeInstance() else { return false }
+        guard let realm = displayRealm() else { return false }
         let item: Any? = realm.object(ofType: CPYFolder.self, forPrimaryKey: id) as Any?
             ?? realm.object(ofType: CPYSnippet.self, forPrimaryKey: id) as Any?
         guard let item = item else { return false }
@@ -423,7 +434,7 @@ extension CPYSnippetsEditorWindowController {
     }
 
     private func applyFilter(_ query: String) {
-        guard let realm = Realm.safeInstance() else { return }
+        guard let realm = displayRealm() else { return }
         let new = SnippetSearchFilter.visibleIdentifiers(query: query, in: realm)
         let wasNil = (visibleIdentifiers == nil)
         let willBeNil = (new == nil)
@@ -463,7 +474,7 @@ extension CPYSnippetsEditorWindowController {
 
     private func expandAllVisibleFolders() {
         guard let visible = visibleIdentifiers else { return }
-        guard let realm = Realm.safeInstance() else { return }
+        guard let realm = displayRealm() else { return }
         for id in visible {
             if let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: id) {
                 outlineView.expandItem(folder)
@@ -590,6 +601,97 @@ extension CPYSnippetsEditorWindowController: NSSearchFieldDelegate {
 extension CPYSnippetsEditorWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         CPYUtilities.closeSnippetsWindow()
+    }
+}
+
+// MARK: - Apple Notes Read-Only Mode
+extension CPYSnippetsEditorWindowController {
+
+    /// Identifier applied to the banner container view so it can be found on
+    /// subsequent calls without maintaining a stored property.
+    private static let notesBannerID = NSUserInterfaceItemIdentifier("clipy.notesBannerContainer")
+
+    /// Applies or removes the Apple Notes read-only state. Bidirectional and
+    /// idempotent: safe to call from both `windowDidLoad()` and `showWindow(_:)`.
+    /// In native mode all mutation controls are re-enabled and the banner is
+    /// hidden; in Apple Notes mode all mutation controls are disabled and the
+    /// info banner is shown.
+    private func applyAppleNotesReadOnlyMode() {
+        let isNotes = SnippetSourceStore.current == .appleNotes
+
+        // Toolbar buttons have no IBOutlet connections. Walk the non-splitView
+        // contentView children (the toolbar container lives there).
+        if let contentView = window?.contentView {
+            for subview in contentView.subviews where subview !== splitView {
+                setAllButtons(in: subview, enabled: !isNotes)
+            }
+        }
+
+        // Controls inside splitView not reached by the toolbar walk above.
+        // folderShortcutRecordView is a mutation entry point (hotkey recorder).
+        // folderTitleTextField editing must be blocked to prevent accidental
+        // writes via its control(_:textShouldEndEditing:) path.
+        folderShortcutRecordView?.isEnabled = !isNotes
+        folderTitleTextField?.isEditable = !isNotes
+
+        // Snippet content editing.
+        textView?.isEditable = !isNotes
+
+        installOrToggleNotesBanner(visible: isNotes)
+    }
+
+    private func setAllButtons(in view: NSView, enabled: Bool) {
+        if let button = view as? NSButton {
+            button.isEnabled = enabled
+        }
+        for subview in view.subviews {
+            setAllButtons(in: subview, enabled: enabled)
+        }
+    }
+
+    /// Installs the "Managed by Apple Notes" banner the first time `visible`
+    /// is true. On subsequent calls it only toggles the existing container's
+    /// `isHidden` flag, preventing duplicate subviews from accumulating across
+    /// repeated `showWindow` calls.
+    private func installOrToggleNotesBanner(visible: Bool) {
+        guard let contentView = window?.contentView else { return }
+
+        if let existing = contentView.subviews.first(where: { $0.identifier == Self.notesBannerID }) {
+            existing.isHidden = !visible
+            return
+        }
+        guard visible else { return }
+
+        let container = NSView()
+        container.identifier = Self.notesBannerID
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let banner = NSTextField(labelWithString: "Managed by Apple Notes — edit in Apple Notes")
+        banner.translatesAutoresizingMaskIntoConstraints = false
+
+        let editButton = NSButton(title: "Edit in Apple Notes", target: self, action: #selector(editInAppleNotesTapped))
+        editButton.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(banner)
+        container.addSubview(editButton)
+        contentView.addSubview(container)
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            container.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
+            banner.topAnchor.constraint(equalTo: container.topAnchor),
+            banner.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            banner.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            editButton.centerYAnchor.constraint(equalTo: banner.centerYAnchor),
+            editButton.leadingAnchor.constraint(equalTo: banner.trailingAnchor, constant: 12),
+            editButton.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+        ])
+    }
+
+    @objc private func editInAppleNotesTapped() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            AppEnvironment.current.appleNotesService.revealSelectedFolder()
+        }
     }
 }
 

@@ -71,6 +71,17 @@ final class MenuManager: NSObject {
         bind()
     }
 
+    func activeSnippetRealm() -> Realm? {
+        if SnippetSourceStore.current == .appleNotes {
+            return AppleNotesSnippetCache.realm()
+        }
+        return realm
+    }
+
+    func rebuildSnippetSource() {
+        menuRebuildSubject.send(())
+    }
+
 }
 
 // MARK: - Event Tap Callback
@@ -397,7 +408,7 @@ extension MenuManager {
         labelItem.isEnabled = false
         folderMenu.addItem(labelItem)
         let settings = currentSettings()
-        if let realm = realm {
+        if let realm = activeSnippetRealm() {
             appendSnippetChildren(folderMenu, parentId: folder.identifier, realm: realm, settings: settings)
         }
         currentPopupMenu = folderMenu

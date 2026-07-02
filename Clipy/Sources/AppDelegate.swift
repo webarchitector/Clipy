@@ -162,7 +162,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             NSSound.beep()
             return
         }
-        guard let realm = Realm.safeInstance() else { return }
+        guard let realm = AppEnvironment.current.menuManager.activeSnippetRealm() else { return }
         guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey) else {
             NSSound.beep()
             return
@@ -290,6 +290,14 @@ class AppDelegate: NSObject, NSMenuItemValidation {
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
+
+    private func refreshAppleNotesSnippetsIfNeeded() {
+        guard SnippetSourceStore.current == .appleNotes else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            _ = AppEnvironment.current.appleNotesService.refresh()
+            AppEnvironment.current.menuManager.rebuildSnippetSource()
+        }
+    }
 }
 
 // MARK: - NSApplication Delegate
@@ -330,6 +338,7 @@ extension AppDelegate: NSApplicationDelegate {
 
         // Managers
         AppEnvironment.current.menuManager.setup()
+        refreshAppleNotesSnippetsIfNeeded()
     }
 }
 

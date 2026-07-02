@@ -36,6 +36,7 @@ struct AppEnvironment {
                                menuManager: MenuManager = current.menuManager,
                                appLauncherService: AppLauncherService = current.appLauncherService,
                                inputSourceService: InputSourceService = current.inputSourceService,
+                               appleNotesService: AppleNotesService = current.appleNotesService,
                                defaults: UserDefaults = current.defaults) {
         replaceCurrent(environment: Environment(clipService: clipService,
                                                 hotKeyService: hotKeyService,
@@ -46,6 +47,7 @@ struct AppEnvironment {
                                                 menuManager: menuManager,
                                                 appLauncherService: appLauncherService,
                                                 inputSourceService: inputSourceService,
+                                                appleNotesService: appleNotesService,
                                                 defaults: defaults))
     }
 
@@ -65,6 +67,7 @@ struct AppEnvironment {
                            menuManager: current.menuManager,
                            appLauncherService: current.appLauncherService,
                            inputSourceService: current.inputSourceService,
+                           appleNotesService: current.appleNotesService,
                            defaults: current.defaults)
     }
 

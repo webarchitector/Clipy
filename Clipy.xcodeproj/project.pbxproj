@@ -20,6 +20,18 @@
 		AB050000000000000011002 /* SnippetEditorSelectionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000011001 /* SnippetEditorSelectionGuard.swift */; };
 		AB050000000000000012002 /* CPYSnippetsEditorWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000012001 /* CPYSnippetsEditorWindow.swift */; };
 		AB050000000000000013002 /* SnippetsEditorWindowHotkeySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000013001 /* SnippetsEditorWindowHotkeySpec.swift */; };
+		AB050000000000000014002 /* SnippetSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000014001 /* SnippetSource.swift */; };
+		AB050000000000000015002 /* SnippetSourceStoreSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000015001 /* SnippetSourceStoreSpec.swift */; };
+		AB050000000000000016002 /* AppleNotesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000016001 /* AppleNotesModel.swift */; };
+		AB050000000000000017002 /* AppleNotesSnippetCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000017001 /* AppleNotesSnippetCache.swift */; };
+		AB050000000000000018002 /* AppleNotesImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000018001 /* AppleNotesImporter.swift */; };
+		AB050000000000000019002 /* AppleNotesImporterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB050000000000000019001 /* AppleNotesImporterSpec.swift */; };
+		AB05000000000000001A002 /* AppleNotesScripting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001A001 /* AppleNotesScripting.swift */; };
+		AB05000000000000001B002 /* NotesOutputParserSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001B001 /* NotesOutputParserSpec.swift */; };
+		AB05000000000000001C002 /* AppleNotesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001C001 /* AppleNotesService.swift */; };
+		AB05000000000000001D002 /* AppleNotesServiceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001D001 /* AppleNotesServiceSpec.swift */; };
+		AB05000000000000001E002 /* SnippetMenuRoutingSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001E001 /* SnippetMenuRoutingSpec.swift */; };
+		AB05000000000000001F002 /* CPYSnippetPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB05000000000000001F001 /* CPYSnippetPreferenceViewController.swift */; };
 		389CB265D2D6FF14FD4F7149 /* MenuManager+MenuBuilders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8F84C5F218542B42CA9B84 /* MenuManager+MenuBuilders.swift */; };
 		3B64317133905C8E698A79DD /* Calculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26F9CCB28F9D8EA85374D8BB /* Calculator.swift */; };
 		3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B83E5E82365E646D25A3 /* CalculatorMathSpec.swift */; };
@@ -215,6 +227,18 @@
 		AB050000000000000011001 /* SnippetEditorSelectionGuard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetEditorSelectionGuard.swift; sourceTree = "<group>"; };
 		AB050000000000000012001 /* CPYSnippetsEditorWindow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYSnippetsEditorWindow.swift; sourceTree = "<group>"; };
 		AB050000000000000013001 /* SnippetsEditorWindowHotkeySpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetsEditorWindowHotkeySpec.swift; sourceTree = "<group>"; };
+		AB050000000000000014001 /* SnippetSource.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetSource.swift; sourceTree = "<group>"; };
+		AB050000000000000015001 /* SnippetSourceStoreSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetSourceStoreSpec.swift; sourceTree = "<group>"; };
+		AB050000000000000016001 /* AppleNotesModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesModel.swift; sourceTree = "<group>"; };
+		AB050000000000000017001 /* AppleNotesSnippetCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesSnippetCache.swift; sourceTree = "<group>"; };
+		AB050000000000000018001 /* AppleNotesImporter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesImporter.swift; sourceTree = "<group>"; };
+		AB050000000000000019001 /* AppleNotesImporterSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesImporterSpec.swift; sourceTree = "<group>"; };
+		AB05000000000000001A001 /* AppleNotesScripting.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesScripting.swift; sourceTree = "<group>"; };
+		AB05000000000000001B001 /* NotesOutputParserSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotesOutputParserSpec.swift; sourceTree = "<group>"; };
+		AB05000000000000001C001 /* AppleNotesService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesService.swift; sourceTree = "<group>"; };
+		AB05000000000000001D001 /* AppleNotesServiceSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleNotesServiceSpec.swift; sourceTree = "<group>"; };
+		AB05000000000000001E001 /* SnippetMenuRoutingSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnippetMenuRoutingSpec.swift; sourceTree = "<group>"; };
+		AB05000000000000001F001 /* CPYSnippetPreferenceViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CPYSnippetPreferenceViewController.swift; sourceTree = "<group>"; };
 		26F9CCB28F9D8EA85374D8BB /* Calculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Calculator.swift; sourceTree = "<group>"; };
 		31064F137CFB046737D1709D /* Dependencies-Clipy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Dependencies-Clipy.debug.xcconfig"; path = "Vendor/Dependencies/Target Support Files/Pods-Clipy/Pods-Clipy.debug.xcconfig"; sourceTree = "<group>"; };
 		314B299D1EC49AD5004DD070 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/CPYSnippetsEditorWindowController.xib; sourceTree = "<group>"; };
@@ -471,6 +495,7 @@
 				FAA4BCCB2163DC9100FF5D18 /* AccessibilityService.swift */,
 				FB2345678901BCDEF2345678 /* ThumbnailCache.swift */,
 				FB3456789012CDEF34567890 /* HIDHotKeyTap.swift */,
+				AB05000000000000001C001 /* AppleNotesService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -643,6 +668,7 @@
 				FA1DB4F21DDCB4C0007F95C8 /* CPYBetaPreferenceViewController.swift */,
 				FA1DB4F31DDCB4C0007F95C8 /* CPYExcludeAppPreferenceViewController.swift */,
 				FA1DB4F41DDCB4C0007F95C8 /* CPYShortcutsPreferenceViewController.swift */,
+				AB05000000000000001F001 /* CPYSnippetPreferenceViewController.swift */,
 				FA1DB4F51DDCB4C0007F95C8 /* CPYTypePreferenceViewController.swift */,
 				FA1DB4F61DDCB4C0007F95C8 /* CPYUpdatesPreferenceViewController.swift */,
 				FA1DB4F71DDCB4C0007F95C8 /* CPYBetaPreferenceViewController.xib */,
@@ -666,6 +692,11 @@
 				AB05000000000000000F0001 /* SnippetSearchFilter.swift */,
 				AB050000000000000011001 /* SnippetEditorSelectionGuard.swift */,
 				AB050000000000000012001 /* CPYSnippetsEditorWindow.swift */,
+				AB050000000000000014001 /* SnippetSource.swift */,
+				AB050000000000000016001 /* AppleNotesModel.swift */,
+				AB050000000000000017001 /* AppleNotesSnippetCache.swift */,
+				AB050000000000000018001 /* AppleNotesImporter.swift */,
+				AB05000000000000001A001 /* AppleNotesScripting.swift */,
 			);
 			path = Snippets;
 			sourceTree = "<group>";
@@ -722,6 +753,11 @@
 				AB05000000000000000E0001 /* SnippetSearchFilterSpec.swift */,
 				AB050000000000000010001 /* SnippetEditorSelectionGuardSpec.swift */,
 				AB050000000000000013001 /* SnippetsEditorWindowHotkeySpec.swift */,
+				AB050000000000000015001 /* SnippetSourceStoreSpec.swift */,
+				AB050000000000000019001 /* AppleNotesImporterSpec.swift */,
+				AB05000000000000001B001 /* NotesOutputParserSpec.swift */,
+				AB05000000000000001D001 /* AppleNotesServiceSpec.swift */,
+				AB05000000000000001E001 /* SnippetMenuRoutingSpec.swift */,
 				FA0157B21E48A0C7000DEDA3 /* HistoryOpenInDefaultAppSpec.swift */,
 				AB10000000000000000A0001 /* ClipboardHistoryPanelHotkeySpec.swift */,
 				FA0157B41E48A0C7000DEDA4 /* RealmMigrationSpec.swift */,
@@ -1062,10 +1098,17 @@
 				AB05000000000000000F0002 /* SnippetSearchFilter.swift in Sources */,
 				AB050000000000000011002 /* SnippetEditorSelectionGuard.swift in Sources */,
 				AB050000000000000012002 /* CPYSnippetsEditorWindow.swift in Sources */,
+				AB050000000000000014002 /* SnippetSource.swift in Sources */,
+				AB050000000000000016002 /* AppleNotesModel.swift in Sources */,
+				AB050000000000000017002 /* AppleNotesSnippetCache.swift in Sources */,
+				AB050000000000000018002 /* AppleNotesImporter.swift in Sources */,
+				AB05000000000000001A002 /* AppleNotesScripting.swift in Sources */,
+				AB05000000000000001C002 /* AppleNotesService.swift in Sources */,
 				FA10897E20EC22E200A3FEFC /* LocalizedStrings.swift in Sources */,
 				FA1DB4EB1DDCB49C007F95C8 /* CPYPlaceHolderTextView.swift in Sources */,
 				FA1DB4BB1DDCB452007F95C8 /* Realm+Migration.swift in Sources */,
 				FA1DB5121DDCB4C0007F95C8 /* CPYPreferencesWindowController.swift in Sources */,
+				AB05000000000000001F002 /* CPYSnippetPreferenceViewController.swift in Sources */,
 				FAE911BB1DE054F1008A4BEC /* NSCoding+Archive.swift in Sources */,
 				FA3778951F3B6920003B5BAB /* Environment.swift in Sources */,
 				74421B9C63AAB6648DF10A7E /* AppIndex.swift in Sources */,
@@ -1104,6 +1147,11 @@
 				AB05000000000000000E0002 /* SnippetSearchFilterSpec.swift in Sources */,
 				AB050000000000000010002 /* SnippetEditorSelectionGuardSpec.swift in Sources */,
 				AB050000000000000013002 /* SnippetsEditorWindowHotkeySpec.swift in Sources */,
+				AB050000000000000015002 /* SnippetSourceStoreSpec.swift in Sources */,
+				AB050000000000000019002 /* AppleNotesImporterSpec.swift in Sources */,
+				AB05000000000000001B002 /* NotesOutputParserSpec.swift in Sources */,
+				AB05000000000000001D002 /* AppleNotesServiceSpec.swift in Sources */,
+				AB05000000000000001E002 /* SnippetMenuRoutingSpec.swift in Sources */,
 				3DBFCA9CCB8F98C7B2AB2A5B /* CalculatorMathSpec.swift in Sources */,
 				3FA2F63A208748C582EF3A31 /* AppLauncherServicePersistenceSpec.swift in Sources */,
 				E1826F7CDEF9ED3824C7BBE3 /* CalculatorCurrencySpec.swift in Sources */,
