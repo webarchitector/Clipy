@@ -46,6 +46,9 @@ identifier_name:
     - id
     - pb
     - ok
+    - rs
+    - fs
+    - ps
 line_length: 300
 type_body_length:
   - 300
