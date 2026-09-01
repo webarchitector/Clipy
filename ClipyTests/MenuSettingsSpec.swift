@@ -98,7 +98,7 @@ class MenuSettingsSpec: QuickSpec {
 
             // No "unset → 0/false" coverage: the host registers defaults via
             // CPYUtilities.registerUserDefaultKeys, so removeObject falls back
-            // to a registered value (e.g. thumbnailWidth=576, isShowImage=true)
+            // to a registered value (e.g. thumbnailWidth=192, isShowImage=true)
             // rather than zero. That registration is what we want in the app
             // anyway; testing it here would just couple to those constants.
         }

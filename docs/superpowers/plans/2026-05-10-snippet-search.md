@@ -540,10 +540,10 @@ Build Release per `CLAUDE.md`:
 
 ```bash
 xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
-  CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release build
+  CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release build
 ```
 
-Quit running Clipy, then `open /Users/ank/dev/clipy/build/Release/Clipy.app`. Open the snippets editor (menubar → "Edit Snippets…"). Verify:
+Quit running Clipy, then `open /Volumes/dev/code-dev/clipy/build/Release/Clipy.app`. Open the snippets editor (menubar → "Edit Snippets…"). Verify:
 
 - Search field is visible above the outline view in the left pane.
 - Typing a fragment of a snippet title or content filters the tree in real time; ancestors are auto-expanded.
@@ -887,9 +887,9 @@ Expected: all tests pass.
 Per `CLAUDE.md`:
 ```bash
 xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
-  CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release build
+  CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release build
 ```
-Quit running Clipy and `open /Users/ank/dev/clipy/build/Release/Clipy.app`. Walk through the smoke checklist:
+Quit running Clipy and `open /Volumes/dev/code-dev/clipy/build/Release/Clipy.app`. Walk through the smoke checklist:
 
 1. Open snippets editor, search field visible above outline view.
 2. Type fragment of snippet title — tree filters in real time, ancestors auto-expanded.

@@ -3,13 +3,27 @@
 set -euo pipefail
 
 app_bundle_path="${1:?expected app bundle path}"
+checked_count=0
+stripped_count=0
 
-find "$app_bundle_path" -type f -print0 | while IFS= read -r -d '' candidate; do
-    file_output="$(file "$candidate" 2>/dev/null || true)"
+# Avoid `find | file` here. That combination completes normally in Terminal
+# but can stall when this script runs as an Xcode build phase. Clipy embeds
+# binaries only in Contents/MacOS and top-level frameworks, so direct zsh
+# globs cover every Mach-O without walking resources or signing metadata.
+candidates=(
+    "$app_bundle_path"/Contents/MacOS/*(N)
+    "$app_bundle_path"/Contents/Frameworks/*.framework/Versions/A/*(N)
+)
 
-    if [[ "$file_output" != *"Mach-O universal binary"* ]] ||
-       [[ "$file_output" != *"arm64"* ]] ||
-       ([[ "$file_output" != *"x86_64"* ]] && [[ "$file_output" != *"i386"* ]]); then
+echo "Checking ${#candidates[@]} executable candidates for non-arm64 slices..."
+
+for candidate in "${candidates[@]}"; do
+    [[ -f "$candidate" && -x "$candidate" ]] || continue
+    ((checked_count += 1))
+    architectures="$(lipo -archs "$candidate" 2>/dev/null || true)"
+
+    if [[ "$architectures" != *"arm64"* ]] ||
+       ([[ "$architectures" != *"x86_64"* ]] && [[ "$architectures" != *"i386"* ]]); then
         continue
     fi
 
@@ -19,7 +33,11 @@ find "$app_bundle_path" -type f -print0 | while IFS= read -r -d '' candidate; do
     if lipo -thin arm64 "$candidate" -output "$tmp_path" 2>/dev/null; then
         chmod "$original_mode" "$tmp_path" 2>/dev/null || true
         mv "$tmp_path" "$candidate"
+        ((stripped_count += 1))
+        echo "Stripped non-arm64 slices: ${candidate#$app_bundle_path/}"
     else
         rm -f "$tmp_path"
     fi
 done
+
+echo "ARM64 slice check complete (${checked_count} executables checked, ${stripped_count} stripped)."

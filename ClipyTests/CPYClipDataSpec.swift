@@ -82,6 +82,18 @@ class CPYClipDataSpec: QuickSpec {
                 expect(Int(result?.size.height ?? 0)) == cap
             }
         }
+
+        describe("color-code previews") {
+
+            it("keeps digit and hexadecimal strings as text") {
+                for value in ["890766", "#ff00aa", "A1B2C3"] {
+                    let data = CPYClipData(image: NSImage())
+                    data.types = [.string]
+                    data.stringValue = value
+                    expect(data.colorCodeImage).to(beNil())
+                }
+            }
+        }
     }
 
     /// Builds a deterministic solid-colour NSImage from raw RGBA bytes.

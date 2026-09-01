@@ -12,14 +12,14 @@
 
 - `SWIFT_VERSION` is 6.0, strict concurrency ON. New shared mutable state must be main-actor or otherwise `Sendable`-safe. Do not capture spec-scoped `var`s across Quick `it` closures — build per-test fixtures.
 - Build (Release, stable signing — keeps TCC grants):
-  `xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build`
+  `xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build`
   Incremental `build` only — never `clean build`.
 - Run one spec: `xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -only-testing:ClipyTests/<SpecName> test`
 - The build currently depends on uncommitted toolchain fixes already present in the working tree (vendor deployment target 12.0, realm-swift 20.0.5, swiftlint 0.64.1). Do not revert them.
 - New source files must be added to BOTH the file system AND `Clipy.xcodeproj/project.pbxproj` (no synchronized folders). For each new file mirror an existing peer's four entries — `PBXBuildFile`, `PBXFileReference`, group child, and the target's Sources build-phase entry — using a fresh unique 24-hex id. App-target files mirror `CPYSnippet.swift`; test files mirror `ClipboardHistoryEntrySpec.swift`.
 - Commit messages: English, short imperative, NO prefixes (`feat:`/`fix:`), NO `Co-Authored-By` / AI attribution.
 - Install to test in the real app (optional, after a task that changes UI):
-  `pkill -x Clipy; rm -rf /Applications/Clipy.app && cp -R /Users/ank/dev/clipy/build/Release/Clipy.app /Applications/Clipy.app && open /Applications/Clipy.app`
+  `pkill -x Clipy; rm -rf /Applications/Clipy.app && cp -R /Volumes/dev/code-dev/clipy/build/Release/Clipy.app /Applications/Clipy.app && open /Applications/Clipy.app`
 
 ## File Structure
 
@@ -423,7 +423,7 @@ Expected: PASS (2 examples).
 - [ ] **Step 5: Build and commit**
 
 ```bash
-xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build
+xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build
 git add Clipy/Sources/AppLauncher/AppLauncher.swift Clipy/Sources/AppLauncher/LauncherItems.swift ClipyTests/LauncherScratchpadItemSpec.swift Clipy.xcodeproj/project.pbxproj
 git commit -m "show scratchpad entry atop launcher results when query empty"
 ```

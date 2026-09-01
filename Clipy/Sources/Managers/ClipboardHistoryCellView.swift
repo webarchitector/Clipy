@@ -164,7 +164,7 @@ final class ClipboardHistoryCellView: NSTableCellView {
         let token = configureToken
 
         // Inline thumbnail is fixed at 40×40 — `settings.thumbnailWidth/Height`
-        // are PIXEL sizes for menu-popup previews (default 576) and feeding
+        // are PIXEL sizes for menu-popup previews (default 192) and feeding
         // them as point sizes here squeezes the title to a few characters.
         thumbnailWidthConstraint?.constant = 40
         thumbnailHeightConstraint?.constant = 40
@@ -184,8 +184,8 @@ final class ClipboardHistoryCellView: NSTableCellView {
 
         pinView.isHidden = !entry.isPinned
 
-        let wantsThumbnail = !entry.thumbnailPath.isEmpty &&
-            ((!entry.isColorCode && settings.isShowImage) || (entry.isColorCode && settings.isShowColorCode))
+        // Also suppress color thumbnails stored by older app versions.
+        let wantsThumbnail = !entry.isColorCode && !entry.thumbnailPath.isEmpty && settings.isShowImage
 
         if wantsThumbnail {
             let titleIsPlaceholder = MenuManager.clipTypePlaceholders.contains(entry.displayTitle)

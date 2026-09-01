@@ -1206,9 +1206,9 @@ Expected: BUILD SUCCEEDED.
 Build Release and run:
 ```
 xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
-  CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release \
+  CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release \
   CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build
-pkill -x Clipy; open /Users/ank/dev/clipy/build/Release/Clipy.app
+pkill -x Clipy; open /Volumes/dev/code-dev/clipy/build/Release/Clipy.app
 ```
 Open Preferences → the new **Snippets** tab. Switching to Apple Notes enables the folder dropdown, which lists Notes folders (grant Automation permission when prompted). Selecting a folder + Refresh shows a count, and the snippet menu shows those notes. "Edit in Apple Notes" opens Notes on the folder.
 

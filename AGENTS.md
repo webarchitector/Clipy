@@ -4,7 +4,7 @@ Read this file before changing code in this repository. Use it together with `RE
 
 ## Code navigation
 
-For finding classes, methods, call paths, references — query the `codebase-memory-mcp` graph (project key `Users-ank-dev-clipy`). The graph is authoritative and does not drift. `docs/INDEX.md` carries only the non-code knowledge the graph cannot infer (bootstrap order, external contracts, why-decisions, XIB invariants). If the graph is missing/stale, run `codebase-memory-mcp cli index_repository '{"repo_path": "/Users/ank/dev/clipy"}'`.
+For finding classes, methods, call paths, references — query the `codebase-memory-mcp` graph (project key `Volumes-dev-code-dev-clipy`). The graph is authoritative and does not drift. `docs/INDEX.md` carries only the non-code knowledge the graph cannot infer (bootstrap order, external contracts, why-decisions, XIB invariants). If the graph is missing/stale, run `codebase-memory-mcp cli index_repository '{"repo_path": "/Volumes/dev/code-dev/clipy"}'`.
 
 ## Project Snapshot
 
@@ -48,10 +48,11 @@ For finding classes, methods, call paths, references — query the `codebase-mem
 - Local Release builds default to `Signature=adhoc` (no Team ID). macOS TCC keys Accessibility / Input-Monitoring approval on the binary's designated requirement, so every adhoc rebuild produces a "new app" from TCC's POV and silently loses AX trust — symptom: HID-tap features (popup-menu `j`/`k`/`h`/`l`/`o`, right-click open) stop working while the local-monitor features (menu-type switching, app-launcher hand-off) keep working. Fix: build with the local self-signed `Clipy Dev` identity so the cert hash (and therefore the DR) stays stable across rebuilds:
   ```
   xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
-    CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release \
+    CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release \
     CODE_SIGN_IDENTITY="Clipy Dev" CODE_SIGN_STYLE=Manual build
   ```
-  Recreate the identity on a new machine:
+  Recreate the identity on a new machine with `./Scripts/create-clipy-dev-certificate.sh`.
+  The equivalent manual procedure is:
   ```
   TMP=$(mktemp -d) && cat > "$TMP/openssl.cnf" <<'EOF'
   [req]
@@ -91,6 +92,7 @@ For finding classes, methods, call paths, references — query the `codebase-mem
 ## Build And Test
 
 - Main workspace scheme: `Clipy`
+- Convenience build script: `./Scripts/build-clipy.sh signed` or `./Scripts/build-clipy.sh unsigned`.
 - When the request is "build a fresh `.app`", start with a workspace `Release` build, not with `Clipy.xcodeproj` and not with a test run.
 - Preferred artifact path after a successful build: `build/DerivedData/Build/Products/Release/Clipy.app`
 - Use `CODE_SIGNING_ALLOWED=NO` for local agent builds unless the user explicitly asks for a signed app.
@@ -105,10 +107,10 @@ xcodebuild -list -workspace Clipy.xcworkspace
 
 ```sh
 xcodebuild \
-  -workspace /Users/ank/dev/clipy/Clipy.xcworkspace \
+  -workspace /Volumes/dev/code-dev/clipy/Clipy.xcworkspace \
   -scheme Clipy \
   -configuration Release \
-  -derivedDataPath /Users/ank/dev/clipy/build/DerivedData \
+  -derivedDataPath /Volumes/dev/code-dev/clipy/build/DerivedData \
   CODE_SIGNING_ALLOWED=NO \
   build
 ```
@@ -128,7 +130,7 @@ xcodebuild \
 - Verify the resulting app bundle here after build:
 
 ```sh
-ls -la /Users/ank/dev/clipy/build/DerivedData/Build/Products/Release/Clipy.app
+ls -la /Volumes/dev/code-dev/clipy/build/DerivedData/Build/Products/Release/Clipy.app
 ```
 
 - Run tests from the command line:
@@ -150,7 +152,7 @@ xcodebuild \
   -workspace Clipy.xcworkspace \
   -scheme Clipy \
   -configuration Release \
-  CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release \
+  CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release \
   build
 ```
 
@@ -159,7 +161,7 @@ xcodebuild \
 ```sh
 killall Clipy 2>/dev/null
 rm -rf /Applications/Clipy.app
-cp -R /Users/ank/dev/clipy/build/Release/Clipy.app /Applications/
+cp -R /Volumes/dev/code-dev/clipy/build/Release/Clipy.app /Applications/
 open /Applications/Clipy.app
 ```
 

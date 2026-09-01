@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift 5, AppKit, Magnet (vendored), KeyHolder (vendored), Quick/Nimble (vendored), Xcode workspace build.
 
-**Source spec:** `/Users/ank/dev/clipy/docs/superpowers/specs/2026-05-06-app-launcher-port-design.md`
+**Source spec:** `/Volumes/dev/code-dev/clipy/docs/superpowers/specs/2026-05-06-app-launcher-port-design.md`
 **Source-of-truth implementation:** `/Users/ank/dev/selector/selector/ShortcutCellView.swift` (lines 611–1426 contain AppLauncher + LauncherPanel + AppLauncherShortcut). Line ranges referenced below assume that file at commit `2990604` or later.
 
 ---
@@ -22,7 +22,7 @@ Confirm the clipy `develop` branch builds cleanly before any changes. If it does
 - [ ] **Step 1: Verify clean working tree on `develop`**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git status
 git rev-parse --abbrev-ref HEAD
 ```
@@ -32,12 +32,12 @@ Expected: `working tree clean`, branch `develop`. If dirty, stop and ask the use
 - [ ] **Step 2: Build Release**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
-  -workspace /Users/ank/dev/clipy/Clipy.xcworkspace \
+  -workspace /Volumes/dev/code-dev/clipy/Clipy.xcworkspace \
   -scheme Clipy \
   -configuration Release \
-  -derivedDataPath /Users/ank/dev/clipy/build/DerivedData \
+  -derivedDataPath /Volumes/dev/code-dev/clipy/build/DerivedData \
   CODE_SIGNING_ALLOWED=NO \
   build 2>&1 | tail -3
 ```
@@ -47,7 +47,7 @@ Expected: `** BUILD SUCCEEDED **`. If it fails, stop and report.
 - [ ] **Step 3: Run existing tests**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace \
   -scheme Clipy \
@@ -80,7 +80,7 @@ The first key holds the archived `KeyCombo`; the second is a one-shot flag that 
 - [ ] **Step 2: Compile-check**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
@@ -91,7 +91,7 @@ Expected: `** BUILD SUCCEEDED **`. (No callers of the new constants yet, so no b
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/Constants.swift
 git commit -m "add app launcher hotkey defaults keys"
 ```
@@ -143,7 +143,7 @@ The only behavioural change: requests to `cdn.jsdelivr.net` (any scheme) bypass 
 - [ ] **Step 2: Build**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
@@ -154,7 +154,7 @@ Expected: `** BUILD SUCCEEDED **`.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppDelegate.swift
 git commit -m "whitelist cdn.jsdelivr.net for app launcher fx rates"
 ```
@@ -171,7 +171,7 @@ This task ports translit tables, the `AppEntry` struct, and the static `matches`
 - [ ] **Step 1: Create the folder and the file**
 
 ```bash
-mkdir -p /Users/ank/dev/clipy/Clipy/Sources/AppLauncher
+mkdir -p /Volumes/dev/code-dev/clipy/Clipy/Sources/AppLauncher
 ```
 
 Create `Clipy/Sources/AppLauncher/AppIndex.swift` with the following content:
@@ -273,7 +273,7 @@ This file does NOT yet contain the FS scanner, cache reader, or `resolveURL` —
 - [ ] **Step 2: Commit (file lives on disk; not yet in Xcode project — that's Task 16)**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppLauncher/AppIndex.swift
 git commit -m "add AppIndex transliteration tables and match predicate"
 ```
@@ -288,7 +288,7 @@ git commit -m "add AppIndex transliteration tables and match predicate"
 - [ ] **Step 1: Create the folder and the spec**
 
 ```bash
-mkdir -p /Users/ank/dev/clipy/ClipyTests/AppLauncher
+mkdir -p /Volumes/dev/code-dev/clipy/ClipyTests/AppLauncher
 ```
 
 Create `ClipyTests/AppLauncher/AppIndexTranslitSpec.swift`:
@@ -365,7 +365,7 @@ class AppIndexTranslitSpec: QuickSpec {
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add ClipyTests/AppLauncher/AppIndexTranslitSpec.swift
 git commit -m "test AppIndex transliteration round-trip"
 ```
@@ -441,7 +441,7 @@ class AppIndexFilterSpec: QuickSpec {
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add ClipyTests/AppLauncher/AppIndexFilterSpec.swift
 git commit -m "test AppIndex filter matching against three indexes"
 ```
@@ -657,7 +657,7 @@ The file now contains everything the launcher needs from "the index". `AppLaunch
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppLauncher/AppIndex.swift
 git commit -m "add AppIndex scan, cache, and resolveURL"
 ```
@@ -747,7 +747,7 @@ final class Calculator {
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppLauncher/Calculator.swift
 git commit -m "add Calculator math eval and currency parser"
 ```
@@ -801,7 +801,7 @@ class CalculatorMathSpec: QuickSpec {
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add ClipyTests/AppLauncher/CalculatorMathSpec.swift
 git commit -m "test Calculator math evaluation"
 ```
@@ -873,7 +873,7 @@ class CalculatorCurrencySpec: QuickSpec {
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add ClipyTests/AppLauncher/CalculatorCurrencySpec.swift
 git commit -m "test Calculator currency parsing and rate formatting"
 ```
@@ -1003,7 +1003,7 @@ Inside the existing `Calculator` class, add the instance-state members and the `
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppLauncher/Calculator.swift
 git commit -m "add Calculator currency fetch and items"
 ```
@@ -1079,7 +1079,7 @@ The key clipy-specific change vs selector: `MainWindowController.shared.showAndA
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppLauncher/LauncherPanel.swift
 git commit -m "add LauncherPanel for AppLauncher"
 ```
@@ -1423,7 +1423,7 @@ final class AppLauncher: NSObject, NSWindowDelegate, NSSearchFieldDelegate,
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppLauncher/AppLauncher.swift
 git commit -m "add AppLauncher panel, filter, and activation"
 ```
@@ -1518,7 +1518,7 @@ The KeyCombo `archive()` and `KeyCombo.unarchive(with:)` calls match the pattern
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppLauncher/AppLauncherService.swift
 git commit -m "add AppLauncherService Magnet hotkey wiring"
 ```
@@ -1610,7 +1610,7 @@ In `fromStorage(...)`, add the same pass-through to its `Environment(...)` call.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/Environments/Environment.swift Clipy/Sources/Environments/AppEnvironment.swift
 git commit -m "wire AppLauncherService into AppEnvironment"
 ```
@@ -1636,7 +1636,7 @@ Expected: `ok`. If `gem install` fails on permissions, retry with `sudo gem inst
 - [ ] **Step 2: Run the project mutation script**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 ruby <<'RUBY'
 require "xcodeproj"
 
@@ -1694,7 +1694,7 @@ The script is idempotent — running it again is a no-op.
 - [ ] **Step 3: Build to verify the new files compile**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -8
@@ -1705,7 +1705,7 @@ Expected: `** BUILD SUCCEEDED **`. If failures appear, read the error: a likely 
 - [ ] **Step 4: Run tests**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace -scheme Clipy -destination 'platform=macOS' \
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO test 2>&1 | tail -15
@@ -1716,7 +1716,7 @@ Expected: all 4 new spec files run, all `it` blocks pass, no regressions in exis
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy.xcodeproj/project.pbxproj
 git commit -m "register AppLauncher sources and specs in xcode project"
 ```
@@ -1731,7 +1731,7 @@ git commit -m "register AppLauncher sources and specs in xcode project"
 - [ ] **Step 1: Find the right insertion point**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 grep -n "setupDefaultHotKeys" Clipy/Sources/AppDelegate.swift
 ```
 
@@ -1749,7 +1749,7 @@ Open `Clipy/Sources/AppDelegate.swift`. After `AppEnvironment.current.hotKeyServ
 - [ ] **Step 3: Build**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
@@ -1760,7 +1760,7 @@ Expected: `** BUILD SUCCEEDED **`.
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/AppDelegate.swift
 git commit -m "bootstrap AppLauncherService at launch"
 ```
@@ -1815,7 +1815,7 @@ In the `didChangeKeyCombo` switch, after the `clearHistoryShortcutRecordView` ca
 - [ ] **Step 2: Commit (XIB still has only 4 rows — that's Task 19)**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/Preferences/Panels/CPYShortcutsPreferenceViewController.swift
 git commit -m "add app launcher row to shortcuts preferences view controller"
 ```
@@ -1838,7 +1838,7 @@ This is the only XIB edit in the plan. It is small but tedious. Two acceptable a
 - [ ] **Step 1 (Approach A): Open the XIB in Xcode**
 
 ```bash
-open /Users/ank/dev/clipy/Clipy.xcworkspace
+open /Volumes/dev/code-dev/clipy/Clipy.xcworkspace
 ```
 
 In Project Navigator: **Clipy → Sources → Preferences → Panels → Base.lproj → CPYShortcutsPreferenceViewController.xib**.
@@ -1860,7 +1860,7 @@ Save (⌘S).
 - [ ] **Step 4: Build and smoke-test the preferences pane**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
@@ -1871,7 +1871,7 @@ Expected: `** BUILD SUCCEEDED **`.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 git add Clipy/Sources/Preferences/Panels/Base.lproj/CPYShortcutsPreferenceViewController.xib
 git commit -m "add app launcher row to shortcuts preferences xib"
 ```
@@ -1885,7 +1885,7 @@ git commit -m "add app launcher row to shortcuts preferences xib"
 - [ ] **Step 1: Run all tests**
 
 ```bash
-cd /Users/ank/dev/clipy
+cd /Volumes/dev/code-dev/clipy
 xcodebuild \
   -workspace Clipy.xcworkspace -scheme Clipy -destination 'platform=macOS' \
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO test 2>&1 | tail -20
@@ -1913,7 +1913,7 @@ sleep 1
 
 ```bash
 rm -rf /Applications/Clipy.app
-cp -R /Users/ank/dev/clipy/build/DerivedData/Build/Products/Release/Clipy.app /Applications/Clipy.app
+cp -R /Volumes/dev/code-dev/clipy/build/DerivedData/Build/Products/Release/Clipy.app /Applications/Clipy.app
 open /Applications/Clipy.app
 ```
 

@@ -34,9 +34,9 @@ Recent selector commits relevant to the port:
 - Quick/Nimble specs for pure-logic units (filter, math, currency parsing).
 - Build verified per `AGENTS.md`:
   ```
-  xcodebuild -workspace /Users/ank/dev/clipy/Clipy.xcworkspace \
+  xcodebuild -workspace /Volumes/dev/code-dev/clipy/Clipy.xcworkspace \
     -scheme Clipy -configuration Release \
-    -derivedDataPath /Users/ank/dev/clipy/build/DerivedData \
+    -derivedDataPath /Volumes/dev/code-dev/clipy/build/DerivedData \
     CODE_SIGNING_ALLOWED=NO build
   ```
 

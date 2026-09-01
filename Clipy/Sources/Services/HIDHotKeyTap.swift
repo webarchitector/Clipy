@@ -38,20 +38,16 @@ final class HIDHotKeyTap: @unchecked Sendable {
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var didPromptForPermission = false
 
     private init() {}
 
     func install() {
         guard eventTap == nil else { return }
-
-        // Synchronously prompts the user the first time; subsequent calls
-        // return the cached decision. If denied, tapCreate below returns nil
-        // and we leave Magnet alone.
-        if !didPromptForPermission {
-            didPromptForPermission = true
-            _ = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
-        }
+        // Permission prompts at launch are disproportionate for an optional
+        // reliability enhancement. Only install the HID tap when the user has
+        // already granted Input Monitoring; Carbon/Magnet remains functional
+        // without it.
+        guard IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted else { return }
 
         let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
 

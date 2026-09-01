@@ -753,9 +753,9 @@ After Task 2 + 4, existing user data (still flat) should render identically in t
 1. Build Release into the local dir per `CLAUDE.md`:
    ```
    xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
-     CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release build
+     CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release build
    ```
-2. Quit the running Clipy and `open /Users/ank/dev/clipy/build/Release/Clipy.app`.
+2. Quit the running Clipy and `open /Volumes/dev/code-dev/clipy/build/Release/Clipy.app`.
 3. Click the menubar item — snippet folders + their snippets should appear identically to before.
 
 (If something is missing, the most likely cause is that `parentIdentifier` was not backfilled — which means migration was skipped because the user's realm was already at the new schema before the backfill code ran. In that case manually run a one-off cleanup or re-test on a fresh realm.)
@@ -2185,9 +2185,9 @@ Expected: all tests pass.
 Per `CLAUDE.md`:
 ```bash
 xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
-  CONFIGURATION_BUILD_DIR=/Users/ank/dev/clipy/build/Release build
+  CONFIGURATION_BUILD_DIR=/Volumes/dev/code-dev/clipy/build/Release build
 ```
-Quit running Clipy and `open /Users/ank/dev/clipy/build/Release/Clipy.app`. Walk through the smoke checklist from Task 8 Step 9.
+Quit running Clipy and `open /Volumes/dev/code-dev/clipy/build/Release/Clipy.app`. Walk through the smoke checklist from Task 8 Step 9.
 
 - [ ] **Step 3: Confirm git log is clean**
 

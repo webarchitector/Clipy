@@ -206,9 +206,9 @@ final class CPYClipData: NSObject {
     }
 
     var colorCodeImage: NSImage? {
-        guard CPYClipData.looksLikeHexColorString(stringValue) else { return nil }
-        guard let color = NSColor(clipyHexString: stringValue) else { return nil }
-        return NSImage.create(with: color, size: NSSize(width: 20, height: 20))
+        // Text is never promoted to an image. In particular, digit strings
+        // must remain readable clipboard text rather than giant color tiles.
+        return nil
     }
 
     /// Auto-detection guard for the color-code thumbnail: only treat a string

@@ -32,6 +32,8 @@
 	<string>Copyright © 2015年 Shunsuke Furubayashi. All rights reserved.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Clipy accesses Apple Notes only when Apple Notes is selected as the snippets source.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

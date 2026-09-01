@@ -293,8 +293,8 @@ extension MenuManager {
             menuItem.title = menuItemTitle("(Filenames)", listNumber: listNumber, isMarkWithNumber: settings.isMarkWithNumber)
         }
 
-        let showThumbnail = !clip.thumbnailPath.isEmpty &&
-            ((!clip.isColorCode && settings.isShowImage) || (clip.isColorCode && settings.isShowColorCode))
+        // Also suppress color thumbnails stored by older app versions.
+        let showThumbnail = !clip.isColorCode && !clip.thumbnailPath.isEmpty && settings.isShowImage
         if showThumbnail {
             // Wrap the non-Sendable NSMenuItem / NSImage refs in main-thread
             // boxes so Swift 6 strict concurrency lets us cross the cache's

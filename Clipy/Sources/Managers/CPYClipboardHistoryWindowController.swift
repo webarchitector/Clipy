@@ -593,7 +593,7 @@ private extension CPYClipboardHistoryWindowController {
     }
 
     /// Compact, fixed row heights. `thumbnailWidth/Height` in settings are
-    /// **pixel** sizes for menu-popup thumbnails (default 576), so feeding
+    /// **pixel** sizes for menu-popup thumbnails (default 192), so feeding
     /// them straight into pt-based row height blew rows up to ~584pt. Rows
     /// here are sized for readable single-line titles, with a slightly taller
     /// row when image-style previews are enabled to host the inline thumb.

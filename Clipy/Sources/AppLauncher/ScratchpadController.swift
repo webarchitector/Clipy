@@ -33,8 +33,13 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
     private var editorScroll: NSScrollView?
     private var editorTextView: ScratchEditorTextView?
     private var editorBackButton: NSButton?
+    private var decreaseFontButton: NSButton?
+    private var increaseFontButton: NSButton?
 
     private static let newRowTitle = "➕ New from clipboard"
+    private static let editorFontSizeKey = "Clipy.Scratchpad.editorFontSize"
+    private static let defaultEditorFontSize: CGFloat = 28
+    private static let editorFontSizeRange: ClosedRange<CGFloat> = 12...52
 
     init(store: ScratchpadStore,
          copyToPasteboard: @escaping (String) -> Void,
@@ -218,7 +223,7 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
 
         guard let contentView = contentView else { return }
         let textView = ScratchEditorTextView()
-        textView.font = NSFont.systemFont(ofSize: 14)
+        textView.font = NSFont.systemFont(ofSize: savedEditorFontSize)
         textView.isRichText = false
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.string = store.note(id: noteID)?.content ?? ""
@@ -226,9 +231,18 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         textView.onCancel = { [weak self] in self?.saveAndShowList() }
         textView.onCommandEnter = { [weak self] in self?.copyCurrentAndHide() }
         textView.onDeleteNote = { [weak self] in self?.deleteCurrentAndShowList() }
+        textView.onIncreaseFont = { [weak self] in self?.changeEditorFontSize(by: 2) }
+        textView.onDecreaseFont = { [weak self] in self?.changeEditorFontSize(by: -2) }
+        textView.onResetFont = { [weak self] in self?.setEditorFontSize(Self.defaultEditorFontSize) }
 
         let backButton = makeBackButton(title: "← List", action: #selector(backToList))
+        let decreaseButton = makeBackButton(title: "A−", action: #selector(decreaseEditorFont))
+        decreaseButton.toolTip = "Decrease font (⌘−)"
+        let increaseButton = makeBackButton(title: "A+", action: #selector(increaseEditorFont))
+        increaseButton.toolTip = "Increase font (⌘+)"
         contentView.addSubview(backButton)
+        contentView.addSubview(decreaseButton)
+        contentView.addSubview(increaseButton)
 
         let scroll = NSScrollView()
         scroll.documentView = textView
@@ -239,6 +253,10 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         NSLayoutConstraint.activate([
             backButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             backButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            increaseButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            increaseButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            decreaseButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            decreaseButton.trailingAnchor.constraint(equalTo: increaseButton.leadingAnchor, constant: -6),
             scroll.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 6),
             scroll.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             scroll.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
@@ -247,6 +265,8 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         self.editorScroll = scroll
         self.editorTextView = textView
         self.editorBackButton = backButton
+        self.decreaseFontButton = decreaseButton
+        self.increaseFontButton = increaseButton
         contentView.window?.makeFirstResponder(textView)
     }
 
@@ -254,9 +274,32 @@ final class ScratchpadController: NSObject, NSSearchFieldDelegate,
         flushEditorSave()
         editorScroll?.removeFromSuperview()
         editorBackButton?.removeFromSuperview()
+        decreaseFontButton?.removeFromSuperview()
+        increaseFontButton?.removeFromSuperview()
         editorScroll = nil
         editorTextView = nil
         editorBackButton = nil
+        decreaseFontButton = nil
+        increaseFontButton = nil
+    }
+
+    private var savedEditorFontSize: CGFloat {
+        let stored = UserDefaults.standard.double(forKey: Self.editorFontSizeKey)
+        let size = stored > 0 ? CGFloat(stored) : Self.defaultEditorFontSize
+        return min(max(size, Self.editorFontSizeRange.lowerBound), Self.editorFontSizeRange.upperBound)
+    }
+
+    @objc private func decreaseEditorFont() { changeEditorFontSize(by: -2) }
+    @objc private func increaseEditorFont() { changeEditorFontSize(by: 2) }
+
+    private func changeEditorFontSize(by delta: CGFloat) {
+        setEditorFontSize((editorTextView?.font?.pointSize ?? savedEditorFontSize) + delta)
+    }
+
+    private func setEditorFontSize(_ requestedSize: CGFloat) {
+        let size = min(max(requestedSize, Self.editorFontSizeRange.lowerBound), Self.editorFontSizeRange.upperBound)
+        editorTextView?.font = NSFont.systemFont(ofSize: size)
+        UserDefaults.standard.set(Double(size), forKey: Self.editorFontSizeKey)
     }
 
     private func flushEditorSave() {

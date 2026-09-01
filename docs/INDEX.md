@@ -1,7 +1,7 @@
 # Project Index
 
 For code navigation (classes, methods, call paths, references) use the
-`codebase-memory-mcp` graph — project key `Users-ank-dev-clipy`. The
+`codebase-memory-mcp` graph — project key `Volumes-dev-code-dev-clipy`. The
 graph is authoritative and does not drift; this file only carries the
 non-code knowledge that the graph cannot infer.
 
@@ -14,12 +14,12 @@ get_architecture              — high-level overview
 ```
 
 If the graph for this repo is missing or stale:
-`codebase-memory-mcp cli index_repository '{"repo_path": "/Users/ank/dev/clipy"}'`
+`codebase-memory-mcp cli index_repository '{"repo_path": "/Volumes/dev/code-dev/clipy"}'`
 
 ## Bootstrap order — `AppDelegate.applicationDidFinishLaunching`
 
 1. `AppEnvironment.replaceCurrent(...)` — register UserDefaults.
-2. Login item sync, accessibility check.
+2. Login item sync. Accessibility and Input Monitoring are not requested at launch.
 3. `clipService → dataCleanService → excludeAppService → pasteService → hotKeyService.setupDefaultHotKeys()`.
 4. `appLauncherService.setupHotKey()` — default ⌘Space, gated by `Constants.HotKey.appLauncherDidPreSeed`. Schedules a 200 ms `AppLauncher.shared.preload()`.
 5. `inputSourceService.setupHotKeys()` — iterates `InputSource.sources`, re-registers stored KeyCombos.

@@ -57,11 +57,11 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showToolTipOnMenuItem)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showImageInTheMenu)
         defaultValues.updateValue(NSNumber(value: 200), forKey: Constants.UserDefaults.maxLengthOfToolTip)
-        defaultValues.updateValue(NSNumber(value: 576), forKey: Constants.UserDefaults.thumbnailWidth)
-        defaultValues.updateValue(NSNumber(value: 576), forKey: Constants.UserDefaults.thumbnailHeight)
+        defaultValues.updateValue(NSNumber(value: 192), forKey: Constants.UserDefaults.thumbnailWidth)
+        defaultValues.updateValue(NSNumber(value: 192), forKey: Constants.UserDefaults.thumbnailHeight)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.overwriteSameHistory)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.copySameHistory)
-        defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showColorPreviewInTheMenu)
+        defaultValues.updateValue(NSNumber(value: false), forKey: Constants.UserDefaults.showColorPreviewInTheMenu)
 
         /* Beta */
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.Beta.pastePlainText)

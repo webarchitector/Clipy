@@ -311,9 +311,6 @@ extension AppDelegate: NSApplicationDelegate {
         syncStoredLoginItemState()
         // SDKs
         CPYUtilities.initSDKs()
-        // Check Accessibility Permission
-        AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: true)
-
         // Show Login Item
         if !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.loginItem) && !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.suppressAlertForLoginItem) {
             promptToAddLoginItems()
@@ -330,10 +327,9 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.current.hotKeyService.setupDefaultHotKeys()
         AppEnvironment.current.appLauncherService.setupHotKey()
         AppEnvironment.current.inputSourceService.setupHotKeys()
-        // Higher-priority hotkey delivery: shadows Magnet at HID-tap level so
-        // Zoom-style apps that install their own session-tap can't eat ⌘Space
-        // and per-input-source layout shortcuts. Requests Input Monitoring on
-        // first launch; falls back silently to plain Magnet if denied.
+        // Higher-priority hotkey delivery when Input Monitoring has already
+        // been granted. The service never prompts during app launch; without
+        // permission it falls back silently to plain Magnet.
         HIDHotKeyTap.shared.install()
 
         // Managers
